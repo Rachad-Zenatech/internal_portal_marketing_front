@@ -37,8 +37,8 @@ flowchart TD
     end
 
     subgraph BackendAPI [FastAPI Backend Service :8006]
-        RestAPI[/api/auth, /api/configuration, /api/logs]
-        SSEStream[/api/notifications/stream]
+        RestAPI["/api/auth, /api/configuration, /api/logs"]
+        SSEStream["/api/notifications/stream"]
     end
 
     AppRoot --> AuthRouter
