@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useCreateInitiative, useUpdateInitiative } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
-import type { InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
+import type { EventDetailsInput, InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
+import CountryPicker from "./CountryPicker";
+import { EVENTS_CHANNEL_CODE, missingEventFields, requiredEventFields } from "./eventRules";
 import OwnerPicker from "./OwnerPicker";
 import { STATUS_LABELS, STATUS_TRANSITIONS } from "./status";
 
@@ -30,6 +32,12 @@ interface FormState {
   budget: string;
   currency: string;
   status: InitiativeStatus;
+  // Event details, only used in the Events channel
+  eventTypeId: string;
+  venue: string;
+  city: string;
+  countryCode: string;
+  regionId: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -45,6 +53,11 @@ const EMPTY_FORM: FormState = {
   budget: "",
   currency: "USD",
   status: "PLANNED",
+  eventTypeId: "",
+  venue: "",
+  city: "",
+  countryCode: "",
+  regionId: "",
 };
 
 const idText = (value: number | null) => (value === null ? "" : String(value));
@@ -63,18 +76,43 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     budget: item.budget_amount === null ? "" : String(item.budget_amount),
     currency: item.currency,
     status: item.status,
+    eventTypeId: idText(item.event_type_id),
+    venue: item.venue ?? "",
+    city: item.city ?? "",
+    countryCode: item.country_code ?? "",
+    regionId: idText(item.region_id),
   };
 }
 
 const toId = (value: string) => (value ? Number(value) : null);
+const toText = (value: string) => value.trim() || null;
+
+function eventFromForm(form: FormState): Required<EventDetailsInput> {
+  return {
+    event_type_id: toId(form.eventTypeId),
+    venue: toText(form.venue),
+    city: toText(form.city),
+    country_code: form.countryCode || null,
+    region_id: toId(form.regionId),
+  };
+}
+
+// Only the event fields that differ from the saved initiative, or undefined if none do
+function changedEventFields(form: FormState, initiative: InitiativeListItem): EventDetailsInput | undefined {
+  const changed = Object.fromEntries(
+    Object.entries(eventFromForm(form)).filter(([field, value]) => value !== initiative[field as keyof EventDetailsInput]),
+  );
+  return Object.keys(changed).length ? changed : undefined;
+}
 
 // Same rules the API enforces, checked first so people get instant feedback
-function validate(form: FormState): string | null {
+function validate(form: FormState, isEvent: boolean, subChannelCode: string | undefined): string | null {
   if (!form.name.trim()) return "Enter a name.";
   if (!form.brandId) return "Choose a brand.";
   if (!form.channelId) return "Choose a channel.";
   if (form.startDate && form.endDate && form.endDate < form.startDate) return "End date can't be before the start date.";
   if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be a positive number.";
+  if (isEvent) return missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
   return null;
 }
 
@@ -161,6 +199,11 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
     return reference.sub_channels.filter((s) => allowed.has(s.id));
   }, [reference, form.channelId]);
 
+  // The event block appears for the Events channel, with required fields set by the sub-channel
+  const isEvent = reference?.channels.find((c) => String(c.id) === form.channelId)?.code === EVENTS_CHANNEL_CODE;
+  const subChannelCode = reference?.sub_channels.find((s) => String(s.id) === form.subChannelId)?.code;
+  const requiredEvent = requiredEventFields(subChannelCode);
+
   // Goal options follow the funnel stage (Rule 1)
   const goals = useMemo(() => {
     if (!reference || !form.funnelStageId) return [];
@@ -174,7 +217,7 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    const problem = validate(form);
+    const problem = validate(form, isEvent, subChannelCode);
     if (problem) {
       setError(problem);
       return;
@@ -195,8 +238,13 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
       currency: form.currency,
       status: form.status,
     };
+    // Other channels never send event details. Edits send only the event fields that changed.
+    if (isEvent) {
+      const event = initiative ? changedEventFields(form, initiative) : eventFromForm(form);
+      if (event) payload.event = event;
+    }
 
-    // The API ignores fields that didn't change, so editing sends the whole form
+    // The API ignores top-level fields that didn't change, so editing sends the whole form
     mutation.mutate(payload, {
       onSuccess: (saved) => {
         toast.success(isEdit ? `"${saved.name}" saved` : `"${saved.name}" created`);
@@ -314,6 +362,53 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
         <Field label="End date" htmlFor="initiative-end" optional>
           <Input id="initiative-end" type="date" value={form.endDate} min={form.startDate || undefined} onChange={(e) => set({ endDate: e.target.value })} />
         </Field>
+
+        {isEvent && (
+          <fieldset className="sm:col-span-2 grid grid-cols-1 gap-4 rounded-lg border border-slate-200 p-4 sm:grid-cols-2 dark:border-zinc-800">
+            <legend className="px-1 text-sm font-medium text-slate-900 dark:text-zinc-100">Event details</legend>
+            <p className="sm:col-span-2 text-sm text-slate-500 dark:text-zinc-400">
+              {initiative?.event_code ? (
+                <>
+                  <span className="font-mono font-medium text-slate-900 dark:text-zinc-100">{initiative.event_code}</span> · generated automatically
+                </>
+              ) : (
+                "An event code (EVT-YYYY-NNNN) is generated automatically when you save."
+              )}
+            </p>
+
+            <Field label="Event type" htmlFor="initiative-event-type" optional>
+              <ReferenceSelect
+                id="initiative-event-type"
+                value={form.eventTypeId}
+                items={reference?.event_types ?? []}
+                placeholder="Choose an event type"
+                onChange={(v) => set({ eventTypeId: v })}
+                allowNone
+              />
+            </Field>
+            <Field label="Venue" htmlFor="initiative-venue" optional>
+              <Input id="initiative-venue" value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="e.g. Las Vegas Convention Center" maxLength={255} />
+            </Field>
+
+            <Field label="City" htmlFor="initiative-city" optional={!requiredEvent.includes("city")}>
+              <Input id="initiative-city" value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Las Vegas" maxLength={120} />
+            </Field>
+            <Field label="Country" htmlFor="initiative-country" optional={!requiredEvent.includes("country_code")}>
+              <CountryPicker id="initiative-country" value={form.countryCode} onChange={(v) => set({ countryCode: v })} />
+            </Field>
+
+            <Field label="Region" htmlFor="initiative-region" optional>
+              <ReferenceSelect
+                id="initiative-region"
+                value={form.regionId}
+                items={reference?.regions ?? []}
+                placeholder="Choose a region"
+                onChange={(v) => set({ regionId: v })}
+                allowNone
+              />
+            </Field>
+          </fieldset>
+        )}
 
         <Field label="Budget" htmlFor="initiative-budget" optional>
           <Input

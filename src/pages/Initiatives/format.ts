@@ -1,3 +1,5 @@
+import { countryName } from "@/lib/countries";
+
 export function formatBudget(amount: number | null, currency: string) {
   if (amount === null) return "—";
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
@@ -17,4 +19,11 @@ export function formatDates(start: string | null, end: string | null) {
   if (s) return `From ${s}`;
   if (e) return `Until ${e}`;
   return "—";
+}
+
+/** "City, Country" for an event; "Online" for virtual events and webinars without a location */
+export function formatEventLocation(city: string | null, countryCode: string | null, online: boolean) {
+  const place = [city, countryName(countryCode)].filter(Boolean).join(", ");
+  if (place) return place;
+  return online ? "Online" : "—";
 }

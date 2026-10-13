@@ -13,7 +13,8 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeFilters, InitiativeStatus } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
-import { formatBudget, formatDates } from "./format";
+import { EVENTS_CHANNEL_CODE, ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
+import { formatBudget, formatDates, formatEventLocation } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
@@ -120,6 +121,11 @@ export default function Initiatives() {
   const firstRow = total === 0 ? 0 : page * PAGE_SIZE + 1;
   const lastRow = Math.min(total, (page + 1) * PAGE_SIZE);
 
+  // The Events channel gets Code and Location columns
+  const isEventsView = channelCode === EVENTS_CHANNEL_CODE;
+  const columnCount = isEventsView ? 9 : 7;
+  const subChannelCodes = useMemo(() => new Map(reference?.sub_channels.map((s) => [s.id, s.code])), [reference]);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -153,7 +159,7 @@ export default function Initiatives() {
               setSearchInput(e.target.value);
               setPage(0);
             }}
-            placeholder="Search initiatives..."
+            placeholder="Search by name or event code"
             className="pl-8"
           />
         </div>
@@ -202,6 +208,8 @@ export default function Initiatives() {
           <TableHeader>
             <TableRow className="border-t-0">
               <TableHead className="h-12">Initiative</TableHead>
+              {isEventsView && <TableHead className="h-12">Code</TableHead>}
+              {isEventsView && <TableHead className="h-12">Location</TableHead>}
               <TableHead className="h-12">Brand</TableHead>
               <TableHead className="h-12">Channel</TableHead>
               <TableHead className="h-12">Owner</TableHead>
@@ -213,15 +221,15 @@ export default function Initiatives() {
           <TableBody className={isFetching && !isLoading ? "opacity-60 transition-opacity" : undefined}>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-slate-500">Loading initiatives...</TableCell>
+                <TableCell colSpan={columnCount} className="text-center py-8 text-slate-500">Loading initiatives...</TableCell>
               </TableRow>
             ) : isError ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-red-600">Could not load initiatives. Please try again.</TableCell>
+                <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">Could not load initiatives. Please try again.</TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12">
+                <TableCell colSpan={columnCount} className="py-12">
                   <div className="flex flex-col items-center text-center">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
                       <Megaphone className="h-5 w-5" />
@@ -244,6 +252,18 @@ export default function Initiatives() {
                       {item.name}
                     </Link>
                   </TableCell>
+                  {isEventsView && (
+                    <TableCell className="whitespace-nowrap font-mono text-xs text-slate-600 dark:text-zinc-300">{item.event_code ?? "—"}</TableCell>
+                  )}
+                  {isEventsView && (
+                    <TableCell>
+                      {formatEventLocation(
+                        item.city,
+                        item.country_code,
+                        ONLINE_EVENT_SUB_CHANNELS.has(subChannelCodes.get(item.sub_channel_id ?? -1) ?? ""),
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell>{item.brand_name}</TableCell>
                   <TableCell>
                     <div className="text-slate-900 dark:text-zinc-100">{item.channel_name}</div>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Check, Copy, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useInitiative } from "@/hooks/useInitiatives";
 import { useAuth } from "@/lib/AuthContext";
+import { countryName } from "@/lib/countries";
 import { ApiError } from "@/services/helper";
 import { formatBudget, formatDates } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
@@ -26,6 +27,29 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <h3 className="mb-4 font-semibold text-slate-900 dark:text-zinc-100">{title}</h3>
       {children}
     </Card>
+  );
+}
+
+function CopyCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard unavailable or blocked; the code is still visible to copy by hand
+    }
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className="font-mono">{code}</span>
+      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={copy} aria-label={copied ? "Copied" : "Copy event code"}>
+        {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+      </Button>
+    </span>
   );
 }
 
@@ -89,6 +113,11 @@ export default function InitiativeDetail() {
             <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
               {STATUS_LABELS[initiative.status]}
             </Badge>
+            {initiative.event_code && (
+              <Badge variant="outline" className="font-mono text-slate-600 dark:text-zinc-300">
+                {initiative.event_code}
+              </Badge>
+            )}
           </div>
           <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
             {initiative.brand_name} · {channel}
@@ -113,6 +142,19 @@ export default function InitiativeDetail() {
             <Detail label="Budget" value={formatBudget(initiative.budget_amount, initiative.currency)} />
           </dl>
         </Section>
+
+        {initiative.event_code && (
+          <Section title="Event">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <Detail label="Event code" value={<CopyCode code={initiative.event_code} />} />
+              <Detail label="Event type" value={initiative.event_type_name} />
+              <Detail label="Venue" value={initiative.venue} />
+              <Detail label="City" value={initiative.city} />
+              <Detail label="Country" value={countryName(initiative.country_code)} />
+              <Detail label="Region" value={initiative.region_name} />
+            </dl>
+          </Section>
+        )}
 
         <Section title="Goal">
           <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
