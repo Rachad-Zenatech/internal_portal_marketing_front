@@ -1,6 +1,7 @@
 import { ChevronDown, ChevronRight, PanelRight } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { navigation, type NavigationItem } from "./Navigation";
+import { navigation, withChannelSubItems, type NavigationItem } from "./Navigation";
+import { useReferenceData } from "@/hooks/useReferenceData";
 import { useState } from "react";
 import zenatechLogo from "@/assets/zenatech_logo.png";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -16,11 +17,14 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
+    Initiatives: true,
     "System & Security": true,
     "Logs & Audit": true,
   });
   const location = useLocation();
   const navigate = useNavigate();
+  const { data: reference } = useReferenceData();
+  const navigationItems = withChannelSubItems(navigation, reference?.channels ?? []);
 
   const { hasPermission, hasRole, user } = useAuth();
   const isSuperAdmin = hasRole("SUPER_ADMIN") || user?.is_super_admin;
@@ -44,7 +48,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
     setExpandedItems((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const groupedNavigation = navigation.reduce<Record<string, NavigationItem[]>>((acc, item) => {
+  const groupedNavigation = navigationItems.reduce<Record<string, NavigationItem[]>>((acc, item) => {
     // Pure Role Permission Gating: Check item navigation permission
     if (item.navigationCode) {
       const hasItemAccess =
@@ -206,7 +210,8 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                           }`}
                         >
                           {item.subItems.map((sub) => {
-                            const isSubActive = location.pathname === sub.path;
+                            // Compare the query too, so "?channel=" links highlight individually
+                            const isSubActive = `${location.pathname}${location.search}` === sub.path;
                             return (
                               <Link
                                 key={sub.path}

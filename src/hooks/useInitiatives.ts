@@ -9,10 +9,11 @@ import {
 } from "@/services/initiativesService";
 import type { InitiativeCreate, InitiativeFilters, InitiativeUpdate } from "@/types/initiatives";
 
-export function useInitiatives(filters: InitiativeFilters) {
+export function useInitiatives(filters: InitiativeFilters, enabled = true) {
   return useQuery({
     queryKey: queryKeys.initiatives(filters),
     queryFn: () => getInitiatives(filters),
+    enabled,
     // Keep the current rows on screen while a new filter combination loads
     placeholderData: keepPreviousData,
   });

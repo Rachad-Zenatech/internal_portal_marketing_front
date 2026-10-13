@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
 import HelpIcon from "@/components/ui/HelpIcon";
 import { Badge } from "@/components/ui/badge";
@@ -53,7 +53,10 @@ function FilterSelect({ label, value, options, onChange, disabled }: FilterSelec
 const toOptions = (items: ReferenceItem[]) => items.map((i) => ({ value: String(i.id), label: i.name }));
 
 export default function Initiatives() {
-  const [filters, setFilters] = useState<InitiativeFilters>({});
+  // The channel lives in the URL (?channel=PAID_SEARCH) so sidebar links and back/forward work
+  const [searchParams, setSearchParams] = useSearchParams();
+  const channelCode = searchParams.get("channel");
+  const [filters, setFilters] = useState<Omit<InitiativeFilters, "channel_id">>({});
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -68,35 +71,50 @@ export default function Initiatives() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  // A new channel may not include the selected sub-channel; start again from page 1
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, sub_channel_id: undefined }));
+    setPage(0);
+  }, [channelCode]);
+
   const { data: reference } = useReferenceData();
-  const query = { ...filters, search: search || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE };
-  const { data, isLoading, isError, isFetching } = useInitiatives(query);
+  const channel = channelCode ? reference?.channels.find((c) => c.code === channelCode) : undefined;
+  const query = { ...filters, channel_id: channel?.id, search: search || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE };
+  // With a channel in the URL, wait for the channel list so the unfiltered list doesn't flash first
+  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(query, !channelCode || Boolean(reference));
 
   // Sub-channel options follow the chosen channel
   const subChannelOptions = useMemo(() => {
     if (!reference) return [];
-    if (filters.channel_id === undefined) return toOptions(reference.sub_channels);
-    const channel = reference.channels.find((c) => c.id === filters.channel_id);
-    const allowed = new Set(channel?.sub_channel_ids ?? []);
+    if (!channel) return toOptions(reference.sub_channels);
+    const allowed = new Set(channel.sub_channel_ids);
     return toOptions(reference.sub_channels.filter((s) => allowed.has(s.id)));
-  }, [reference, filters.channel_id]);
+  }, [reference, channel]);
 
-  const updateFilter = (key: "channel_id" | "sub_channel_id" | "brand_id" | "status", value: string | undefined) => {
+  const setChannel = (id: string | undefined) => {
+    const code = reference?.channels.find((c) => String(c.id) === id)?.code;
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (code) next.set("channel", code);
+      else next.delete("channel");
+      return next;
+    });
+  };
+
+  const updateFilter = (key: "sub_channel_id" | "brand_id" | "status", value: string | undefined) => {
     setPage(0);
     setFilters((prev) => {
-      const next: InitiativeFilters = { ...prev };
+      const next = { ...prev };
       if (key === "status") {
         next.status = value as InitiativeStatus | undefined;
       } else {
         next[key] = value === undefined ? undefined : Number(value);
       }
-      // A new channel may not include the selected sub-channel
-      if (key === "channel_id") next.sub_channel_id = undefined;
       return next;
     });
   };
 
-  const hasFilters = Object.values(filters).some((v) => v !== undefined) || search !== "";
+  const hasFilters = Object.values(filters).some((v) => v !== undefined) || search !== "" || Boolean(channelCode);
   const total = data?.total ?? 0;
   const items = data?.items ?? [];
   const firstRow = total === 0 ? 0 : page * PAGE_SIZE + 1;
@@ -107,10 +125,14 @@ export default function Initiatives() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">Initiatives</h2>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+              {channel ? `${channel.name} initiatives` : "Initiatives"}
+            </h2>
             <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
           </div>
-          <p className="text-sm text-slate-500 dark:text-zinc-400">All marketing initiatives across every channel and brand.</p>
+          <p className="text-sm text-slate-500 dark:text-zinc-400">
+            {channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
+          </p>
         </div>
         {canCreate && (
           <Button onClick={() => setCreateOpen(true)} className="gap-2">
@@ -137,9 +159,9 @@ export default function Initiatives() {
         </div>
         <FilterSelect
           label="Channels"
-          value={filters.channel_id}
+          value={channel?.id}
           options={reference ? toOptions(reference.channels) : []}
-          onChange={(v) => updateFilter("channel_id", v)}
+          onChange={setChannel}
         />
         <FilterSelect
           label="Sub-channels"
@@ -167,6 +189,7 @@ export default function Initiatives() {
               setSearchInput("");
               setSearch("");
               setPage(0);
+              setChannel(undefined);
             }}
           >
             Clear filters

@@ -19,6 +19,26 @@ export interface NavigationItem {
   section?: string;
   navigationCode?: string;
   subItems?: NavigationSubItem[];
+  /** Sub-items built at runtime from reference data (see withChannelSubItems) */
+  subItemsFrom?: "channels";
+}
+
+/** Fill in sub-items that come from reference data, e.g. one link per marketing channel. */
+export function withChannelSubItems(items: NavigationItem[], channels: { code: string; name: string }[]): NavigationItem[] {
+  return items.map((item) => {
+    if (item.subItemsFrom !== "channels" || !item.path) return item;
+    return {
+      ...item,
+      subItems: [
+        { label: `All ${item.label.toLowerCase()}`, path: item.path, navigationCode: item.navigationCode },
+        ...channels.map((channel) => ({
+          label: channel.name,
+          path: `${item.path}?channel=${channel.code}`,
+          navigationCode: item.navigationCode,
+        })),
+      ],
+    };
+  });
 }
 
 export const navigation: NavigationItem[] = [
@@ -35,6 +55,7 @@ export const navigation: NavigationItem[] = [
     icon: Megaphone,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
+    subItemsFrom: "channels",
   },
   {
     label: "System & Security",
