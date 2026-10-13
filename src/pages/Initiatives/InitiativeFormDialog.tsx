@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { CalendarDays, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -119,19 +119,33 @@ function validate(form: FormState, isEvent: boolean, subChannelCode: string | un
 interface FieldProps {
   label: string;
   htmlFor: string;
-  optional?: boolean;
+  required?: boolean;
+  className?: string;
   children: React.ReactNode;
 }
 
-function Field({ label, htmlFor, optional, children }: FieldProps) {
+function Field({ label, htmlFor, required, className, children }: FieldProps) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={htmlFor}>
+    <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
+      <Label htmlFor={htmlFor} className="text-slate-700 dark:text-zinc-300">
         {label}
-        {optional && <span className="ml-1 font-normal text-slate-400">(optional)</span>}
+        {required && (
+          <span className="text-red-500" aria-hidden="true">
+            *
+          </span>
+        )}
       </Label>
       {children}
     </div>
+  );
+}
+
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-400">{title}</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
+    </section>
   );
 }
 
@@ -265,9 +279,9 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
         </DialogDescription>
       </DialogHeader>
 
-      <form id="initiative-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <Field label="Name" htmlFor="initiative-name">
+      <form id="initiative-form" onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
+        <FormSection title="Basics">
+          <Field label="Name" htmlFor="initiative-name" required className="sm:col-span-2">
             <Input
               id="initiative-name"
               value={form.name}
@@ -277,165 +291,177 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
               autoFocus
             />
           </Field>
-        </div>
+          <Field label="Brand" htmlFor="initiative-brand" required>
+            <ReferenceSelect id="initiative-brand" value={form.brandId} items={reference?.brands ?? []} placeholder="Choose a brand" onChange={(v) => set({ brandId: v })} />
+          </Field>
+          <Field label="Owner" htmlFor="initiative-owner">
+            <OwnerPicker id="initiative-owner" value={owner} onChange={setOwner} />
+          </Field>
+          <Field label="Channel" htmlFor="initiative-channel" required>
+            <ReferenceSelect
+              id="initiative-channel"
+              value={form.channelId}
+              items={reference?.channels ?? []}
+              placeholder="Choose a channel"
+              // A new channel may not include the selected sub-channel
+              onChange={(v) => set({ channelId: v, subChannelId: "" })}
+            />
+          </Field>
+          <Field label="Sub-channel" htmlFor="initiative-sub-channel">
+            <ReferenceSelect
+              id="initiative-sub-channel"
+              value={form.subChannelId}
+              items={subChannels}
+              placeholder={form.channelId ? "Choose a sub-channel" : "Choose a channel first"}
+              onChange={(v) => set({ subChannelId: v })}
+              allowNone
+              disabled={!form.channelId}
+            />
+          </Field>
+        </FormSection>
 
-        <Field label="Brand" htmlFor="initiative-brand">
-          <ReferenceSelect id="initiative-brand" value={form.brandId} items={reference?.brands ?? []} placeholder="Choose a brand" onChange={(v) => set({ brandId: v })} />
-        </Field>
-        <Field label="Owner" htmlFor="initiative-owner">
-          <OwnerPicker id="initiative-owner" value={owner} onChange={setOwner} />
-        </Field>
-
-        <Field label="Channel" htmlFor="initiative-channel">
-          <ReferenceSelect
-            id="initiative-channel"
-            value={form.channelId}
-            items={reference?.channels ?? []}
-            placeholder="Choose a channel"
-            // A new channel may not include the selected sub-channel
-            onChange={(v) => set({ channelId: v, subChannelId: "" })}
-          />
-        </Field>
-        <Field label="Sub-channel" htmlFor="initiative-sub-channel" optional>
-          <ReferenceSelect
-            id="initiative-sub-channel"
-            value={form.subChannelId}
-            items={subChannels}
-            placeholder={form.channelId ? "Choose a sub-channel" : "Choose a channel first"}
-            onChange={(v) => set({ subChannelId: v })}
-            allowNone
-            disabled={!form.channelId}
-          />
-        </Field>
-
-        <Field label="Funnel stage" htmlFor="initiative-funnel-stage" optional>
-          <ReferenceSelect
-            id="initiative-funnel-stage"
-            value={form.funnelStageId}
-            items={reference?.funnel_stages ?? []}
-            placeholder="Choose a funnel stage"
-            // A new stage may not allow the selected goal
-            onChange={(v) => set({ funnelStageId: v, goalId: "" })}
-            allowNone
-          />
-        </Field>
-        <Field label="Goal" htmlFor="initiative-goal" optional>
-          <ReferenceSelect
-            id="initiative-goal"
-            value={form.goalId}
-            items={goals}
-            placeholder={form.funnelStageId ? "Choose a goal" : "Choose a funnel stage first"}
-            onChange={(v) => set({ goalId: v })}
-            allowNone
-            disabled={!form.funnelStageId}
-          />
-        </Field>
-
-        <Field label="Primary KPI" htmlFor="initiative-kpi" optional>
-          <ReferenceSelect
-            id="initiative-kpi"
-            value={form.primaryKpiId}
-            items={reference?.primary_kpis ?? []}
-            placeholder="Choose a KPI"
-            onChange={(v) => set({ primaryKpiId: v })}
-            allowNone
-          />
-        </Field>
-        <Field label="Status" htmlFor="initiative-status">
-          <Select value={form.status} onValueChange={(v) => set({ status: v as InitiativeStatus })}>
-            <SelectTrigger id="initiative-status" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOptions.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {STATUS_LABELS[value]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-
-        <Field label="Start date" htmlFor="initiative-start" optional>
-          <Input id="initiative-start" type="date" value={form.startDate} onChange={(e) => set({ startDate: e.target.value })} />
-        </Field>
-        <Field label="End date" htmlFor="initiative-end" optional>
-          <Input id="initiative-end" type="date" value={form.endDate} min={form.startDate || undefined} onChange={(e) => set({ endDate: e.target.value })} />
-        </Field>
+        <FormSection title="Schedule & budget">
+          <Field label="Start date" htmlFor="initiative-start">
+            <Input id="initiative-start" type="date" value={form.startDate} onChange={(e) => set({ startDate: e.target.value })} />
+          </Field>
+          <Field label="End date" htmlFor="initiative-end">
+            <Input id="initiative-end" type="date" value={form.endDate} min={form.startDate || undefined} onChange={(e) => set({ endDate: e.target.value })} />
+          </Field>
+          <Field label="Budget" htmlFor="initiative-budget">
+            <div className="flex">
+              <Select value={form.currency} onValueChange={(v) => set({ currency: v })}>
+                <SelectTrigger aria-label="Currency" className="w-24 shrink-0 rounded-r-none border-r-0 bg-slate-50 dark:bg-zinc-800/60">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from(new Set([...CURRENCIES, form.currency])).map((code) => (
+                    <SelectItem key={code} value={code}>
+                      {code}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                id="initiative-budget"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                value={form.budget}
+                onChange={(e) => set({ budget: e.target.value })}
+                placeholder="0.00"
+                className="rounded-l-none tabular-nums"
+              />
+            </div>
+          </Field>
+          <Field label="Status" htmlFor="initiative-status" required>
+            <Select value={form.status} onValueChange={(v) => set({ status: v as InitiativeStatus })}>
+              <SelectTrigger id="initiative-status" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {STATUS_LABELS[value]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        </FormSection>
 
         {isEvent && (
-          <fieldset className="sm:col-span-2 grid grid-cols-1 gap-4 rounded-lg border border-slate-200 p-4 sm:grid-cols-2 dark:border-zinc-800">
-            <legend className="px-1 text-sm font-medium text-slate-900 dark:text-zinc-100">Event details</legend>
-            <p className="sm:col-span-2 text-sm text-slate-500 dark:text-zinc-400">
+          <section className="flex flex-col gap-4 rounded-xl border border-blue-100 bg-blue-50/40 p-4 dark:border-blue-900/50 dark:bg-blue-950/20">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
+                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400">
+                  <CalendarDays className="h-4 w-4" />
+                </span>
+                Event details
+              </h3>
               {initiative?.event_code ? (
-                <>
-                  <span className="font-mono font-medium text-slate-900 dark:text-zinc-100">{initiative.event_code}</span> · generated automatically
-                </>
+                <span
+                  className="rounded-md border border-slate-200 bg-white px-2 py-0.5 font-mono text-xs text-slate-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  title="Generated automatically"
+                >
+                  {initiative.event_code}
+                </span>
               ) : (
-                "An event code (EVT-YYYY-NNNN) is generated automatically when you save."
+                <span className="text-xs text-slate-500 dark:text-zinc-400">Event code is generated when you save</span>
               )}
-            </p>
+            </div>
 
-            <Field label="Event type" htmlFor="initiative-event-type" optional>
-              <ReferenceSelect
-                id="initiative-event-type"
-                value={form.eventTypeId}
-                items={reference?.event_types ?? []}
-                placeholder="Choose an event type"
-                onChange={(v) => set({ eventTypeId: v })}
-                allowNone
-              />
-            </Field>
-            <Field label="Venue" htmlFor="initiative-venue" optional>
-              <Input id="initiative-venue" value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="e.g. Las Vegas Convention Center" maxLength={255} />
-            </Field>
-
-            <Field label="City" htmlFor="initiative-city" optional={!requiredEvent.includes("city")}>
-              <Input id="initiative-city" value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Las Vegas" maxLength={120} />
-            </Field>
-            <Field label="Country" htmlFor="initiative-country" optional={!requiredEvent.includes("country_code")}>
-              <CountryPicker id="initiative-country" value={form.countryCode} onChange={(v) => set({ countryCode: v })} />
-            </Field>
-
-            <Field label="Region" htmlFor="initiative-region" optional>
-              <ReferenceSelect
-                id="initiative-region"
-                value={form.regionId}
-                items={reference?.regions ?? []}
-                placeholder="Choose a region"
-                onChange={(v) => set({ regionId: v })}
-                allowNone
-              />
-            </Field>
-          </fieldset>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Field label="Event type" htmlFor="initiative-event-type">
+                <ReferenceSelect
+                  id="initiative-event-type"
+                  value={form.eventTypeId}
+                  items={reference?.event_types ?? []}
+                  placeholder="Choose an event type"
+                  onChange={(v) => set({ eventTypeId: v })}
+                  allowNone
+                />
+              </Field>
+              <Field label="Region" htmlFor="initiative-region">
+                <ReferenceSelect
+                  id="initiative-region"
+                  value={form.regionId}
+                  items={reference?.regions ?? []}
+                  placeholder="Choose a region"
+                  onChange={(v) => set({ regionId: v })}
+                  allowNone
+                />
+              </Field>
+              <Field label="Venue" htmlFor="initiative-venue" className="sm:col-span-2">
+                <Input id="initiative-venue" value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="e.g. Las Vegas Convention Center" maxLength={255} />
+              </Field>
+              <Field label="City" htmlFor="initiative-city" required={requiredEvent.includes("city")}>
+                <Input id="initiative-city" value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Las Vegas" maxLength={120} />
+              </Field>
+              <Field label="Country" htmlFor="initiative-country" required={requiredEvent.includes("country_code")}>
+                <CountryPicker id="initiative-country" value={form.countryCode} onChange={(v) => set({ countryCode: v })} />
+              </Field>
+            </div>
+          </section>
         )}
 
-        <Field label="Budget" htmlFor="initiative-budget" optional>
-          <Input
-            id="initiative-budget"
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step="0.01"
-            value={form.budget}
-            onChange={(e) => set({ budget: e.target.value })}
-            placeholder="0.00"
-          />
-        </Field>
-        <Field label="Currency" htmlFor="initiative-currency">
-          <Select value={form.currency} onValueChange={(v) => set({ currency: v })}>
-            <SelectTrigger id="initiative-currency" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from(new Set([...CURRENCIES, form.currency])).map((code) => (
-                <SelectItem key={code} value={code}>
-                  {code}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        <section className="flex flex-col gap-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-400">Goal</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <Field label="Funnel stage" htmlFor="initiative-funnel-stage">
+              <ReferenceSelect
+                id="initiative-funnel-stage"
+                value={form.funnelStageId}
+                items={reference?.funnel_stages ?? []}
+                placeholder="Choose a stage"
+                // A new stage may not allow the selected goal
+                onChange={(v) => set({ funnelStageId: v, goalId: "" })}
+                allowNone
+              />
+            </Field>
+            <Field label="Goal" htmlFor="initiative-goal">
+              <ReferenceSelect
+                id="initiative-goal"
+                value={form.goalId}
+                items={goals}
+                placeholder={form.funnelStageId ? "Choose a goal" : "Choose a stage first"}
+                onChange={(v) => set({ goalId: v })}
+                allowNone
+                disabled={!form.funnelStageId}
+              />
+            </Field>
+            <Field label="Primary KPI" htmlFor="initiative-kpi">
+              <ReferenceSelect
+                id="initiative-kpi"
+                value={form.primaryKpiId}
+                items={reference?.primary_kpis ?? []}
+                placeholder="Choose a KPI"
+                onChange={(v) => set({ primaryKpiId: v })}
+                allowNone
+              />
+            </Field>
+          </div>
+        </section>
       </form>
 
       {error && (
@@ -444,7 +470,11 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
         </p>
       )}
 
-      <DialogFooter>
+      {/* Stays visible while the form scrolls */}
+      <DialogFooter className="sticky -bottom-4 z-10 bg-slate-50 dark:bg-zinc-900">
+        <span className="mr-auto hidden self-center text-xs text-slate-500 sm:block dark:text-zinc-400">
+          <span className="text-red-500">*</span> Required
+        </span>
         <Button type="button" variant="outline" onClick={onDone} disabled={mutation.isPending}>
           Cancel
         </Button>

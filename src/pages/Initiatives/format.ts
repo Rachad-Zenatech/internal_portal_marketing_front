@@ -27,3 +27,61 @@ export function formatEventLocation(city: string | null, countryCode: string | n
   if (place) return place;
   return online ? "Online" : "—";
 }
+
+/** "3 days" for an inclusive date range, or null when either date is missing */
+export function formatDuration(start: string | null, end: string | null) {
+  if (!start || !end) return null;
+  const days = Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000) + 1;
+  return days === 1 ? "1 day" : `${days} days`;
+}
+
+/** Up to two initials for an avatar, e.g. "Jane Doe" -> "JD" */
+export function initials(name: string | null) {
+  if (!name) return "?";
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
+/** Compact range for tight spaces: "Nov 4 – 6, 2026", "Nov 28 – Dec 2, 2026", or the full range across years */
+export function formatDateRangeShort(start: string | null, end: string | null) {
+  if (!start || !end || start.slice(0, 4) !== end.slice(0, 4)) return formatDates(start, end);
+  const [y, m1, d1] = start.split("-").map(Number);
+  const [, m2, d2] = end.split("-").map(Number);
+  const month = (m: number) => new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short" });
+  if (start === end) return formatDate(start);
+  return m1 === m2 ? `${month(m1)} ${d1} – ${d2}, ${y}` : `${month(m1)} ${d1} – ${month(m2)} ${d2}, ${y}`;
+}
+
+/** Today's local date as YYYY-MM-DD, comparable with API dates */
+export function isoToday() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}-${String(t.getDate()).padStart(2, "0")}`;
+}
+
+const daysBetween = (from: string, to: string) => Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
+const inDays = (n: number) => (n === 1 ? "tomorrow" : `in ${n} days`);
+const daysAgo = (n: number) => (n === 0 ? "today" : n === 1 ? "yesterday" : `${n} days ago`);
+
+/** Where today sits between the start and end dates: a 0–100 percentage (null when there's no range) and a caption */
+export function timelineProgress(start: string | null, end: string | null, today = isoToday()) {
+  if (start && end) {
+    const total = daysBetween(start, end) + 1;
+    if (today < start) return { percent: 0, label: `Starts ${inDays(daysBetween(today, start))}` };
+    if (today > end) return { percent: 100, label: `Ended ${daysAgo(daysBetween(end, today))}` };
+    const day = daysBetween(start, today) + 1;
+    return { percent: Math.round((day / total) * 100), label: `Day ${day} of ${total}` };
+  }
+  if (start) {
+    if (today < start) return { percent: null, label: `Starts ${inDays(daysBetween(today, start))}` };
+    return { percent: null, label: `Running for ${daysBetween(start, today) + 1} days · no end date` };
+  }
+  if (end) {
+    if (today > end) return { percent: null, label: `Ended ${daysAgo(daysBetween(end, today))}` };
+    return { percent: null, label: today === end ? "Ends today" : `Ends ${inDays(daysBetween(today, end))}` };
+  }
+  return null;
+}

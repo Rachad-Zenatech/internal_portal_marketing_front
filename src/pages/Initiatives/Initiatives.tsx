@@ -13,8 +13,9 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeFilters, InitiativeStatus } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
+import { channelStyle } from "./channelStyles";
 import { EVENTS_CHANNEL_CODE, ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBudget, formatDates, formatEventLocation } from "./format";
+import { formatBudget, formatDates, formatEventLocation, initials } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
@@ -48,6 +49,21 @@ function FilterSelect({ label, value, options, onChange, disabled }: FilterSelec
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+function ChannelCell({ code, name, subName }: { code: string | undefined; name: string; subName: string | null }) {
+  const { icon: Icon, tile } = channelStyle(code);
+  return (
+    <div className="flex items-center gap-2.5">
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tile}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <div className="min-w-0">
+        <div className="whitespace-nowrap text-slate-900 dark:text-zinc-100">{name}</div>
+        {subName && <div className="whitespace-nowrap text-xs text-slate-500 dark:text-zinc-400">{subName}</div>}
+      </div>
+    </div>
   );
 }
 
@@ -125,20 +141,28 @@ export default function Initiatives() {
   const isEventsView = channelCode === EVENTS_CHANNEL_CODE;
   const columnCount = isEventsView ? 9 : 7;
   const subChannelCodes = useMemo(() => new Map(reference?.sub_channels.map((s) => [s.id, s.code])), [reference]);
+  const channelCodes = useMemo(() => new Map(reference?.channels.map((c) => [c.id, c.code])), [reference]);
+  const header = channel ? channelStyle(channel.code) : { icon: Megaphone, tile: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" };
+  const HeaderIcon = header.icon;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out h-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-              {channel ? `${channel.name} initiatives` : "Initiatives"}
-            </h2>
-            <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
+        <div className="flex items-center gap-4">
+          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:flex ${header.tile}`}>
+            <HeaderIcon className="h-6 w-6" />
           </div>
-          <p className="text-sm text-slate-500 dark:text-zinc-400">
-            {channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
+                {channel ? `${channel.name} initiatives` : "Initiatives"}
+              </h2>
+              <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
+            </div>
+            <p className="text-sm text-slate-500 dark:text-zinc-400">
+              {channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
+            </p>
+          </div>
         </div>
         {canCreate && (
           <Button onClick={() => setCreateOpen(true)} className="gap-2">
@@ -210,10 +234,10 @@ export default function Initiatives() {
               <TableHead className="h-12">Initiative</TableHead>
               {isEventsView && <TableHead className="h-12">Code</TableHead>}
               {isEventsView && <TableHead className="h-12">Location</TableHead>}
-              <TableHead className="h-12">Brand</TableHead>
+              <TableHead className="hidden h-12 md:table-cell">Brand</TableHead>
               <TableHead className="h-12">Channel</TableHead>
-              <TableHead className="h-12">Owner</TableHead>
-              <TableHead className="h-12">Dates</TableHead>
+              <TableHead className="hidden h-12 lg:table-cell">Owner</TableHead>
+              <TableHead className="hidden h-12 sm:table-cell">Dates</TableHead>
               <TableHead className="h-12 text-right">Budget</TableHead>
               <TableHead className="h-12">Status</TableHead>
             </TableRow>
@@ -251,6 +275,7 @@ export default function Initiatives() {
                     <Link to={`/initiatives/${item.id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
                       {item.name}
                     </Link>
+                    <div className="text-xs font-normal text-slate-500 md:hidden dark:text-zinc-400">{item.brand_name}</div>
                   </TableCell>
                   {isEventsView && (
                     <TableCell className="whitespace-nowrap font-mono text-xs text-slate-600 dark:text-zinc-300">{item.event_code ?? "—"}</TableCell>
@@ -264,15 +289,23 @@ export default function Initiatives() {
                       )}
                     </TableCell>
                   )}
-                  <TableCell>{item.brand_name}</TableCell>
+                  <TableCell className="hidden md:table-cell">{item.brand_name}</TableCell>
                   <TableCell>
-                    <div className="text-slate-900 dark:text-zinc-100">{item.channel_name}</div>
-                    {item.sub_channel_name && (
-                      <div className="text-xs text-slate-500 dark:text-zinc-400">{item.sub_channel_name}</div>
+                    <ChannelCell code={channelCodes.get(item.channel_id)} name={item.channel_name} subName={item.sub_channel_name} />
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell">
+                    {item.owner_name ? (
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white dark:bg-zinc-200 dark:text-zinc-900">
+                          {initials(item.owner_name)}
+                        </span>
+                        {item.owner_name}
+                      </div>
+                    ) : (
+                      "—"
                     )}
                   </TableCell>
-                  <TableCell>{item.owner_name ?? "—"}</TableCell>
-                  <TableCell className="whitespace-nowrap">{formatDates(item.start_date, item.end_date)}</TableCell>
+                  <TableCell className="hidden whitespace-nowrap sm:table-cell">{formatDates(item.start_date, item.end_date)}</TableCell>
                   <TableCell className="text-right tabular-nums whitespace-nowrap">{formatBudget(item.budget_amount, item.currency)}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={STATUS_STYLES[item.status]}>
