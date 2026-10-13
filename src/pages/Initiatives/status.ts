@@ -8,6 +8,15 @@ export const STATUS_LABELS: Record<InitiativeStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
+// Mirrors STATUS_TRANSITIONS in the backend's initiative_service.py
+export const STATUS_TRANSITIONS: Record<InitiativeStatus, InitiativeStatus[]> = {
+  PLANNED: ["ACTIVE", "CANCELLED"],
+  ACTIVE: ["PAUSED", "COMPLETED", "CANCELLED"],
+  PAUSED: ["ACTIVE", "CANCELLED"],
+  COMPLETED: ["ACTIVE"],
+  CANCELLED: ["PLANNED"],
+};
+
 export const STATUS_STYLES: Record<InitiativeStatus, string> = {
   PLANNED: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
   ACTIVE: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-900",

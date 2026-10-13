@@ -4,6 +4,7 @@ import type {
   InitiativeFilters,
   InitiativeListItem,
   InitiativeListResponse,
+  InitiativeUpdate,
   OwnerOption,
 } from "@/types/initiatives";
 
@@ -25,4 +26,12 @@ export function createInitiative(data: InitiativeCreate) {
 export function getOwnerOptions(search: string) {
   const query = search.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
   return apiClient.get<OwnerOption[]>(`/api/initiatives/owner-options${query}`, { skipGlobalLoading: true });
+}
+
+export function getInitiative(id: string) {
+  return apiClient.get<InitiativeListItem>(`/api/initiatives/${id}`);
+}
+
+export function updateInitiative(id: string, data: InitiativeUpdate) {
+  return apiClient.patch<InitiativeListItem>(`/api/initiatives/${id}`, data, { actionLabel: "Saving initiative" });
 }

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
 import HelpIcon from "@/components/ui/HelpIcon";
 import { Badge } from "@/components/ui/badge";
@@ -12,32 +13,12 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeFilters, InitiativeStatus } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
-import CreateInitiativeDialog from "./CreateInitiativeDialog";
+import { formatBudget, formatDates } from "./format";
+import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
 const PAGE_SIZE = 25;
 const ALL = "all";
-
-function formatBudget(amount: number | null, currency: string) {
-  if (amount === null) return "—";
-  return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
-}
-
-function formatDate(value: string | null) {
-  if (!value) return null;
-  // Dates arrive as YYYY-MM-DD; parse as local to avoid a timezone shift
-  const [y, m, d] = value.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
-}
-
-function formatDates(start: string | null, end: string | null) {
-  const s = formatDate(start);
-  const e = formatDate(end);
-  if (s && e) return `${s} – ${e}`;
-  if (s) return `From ${s}`;
-  if (e) return `Until ${e}`;
-  return "—";
-}
 
 interface FilterSelectProps {
   label: string;
@@ -78,6 +59,7 @@ export default function Initiatives() {
   const [page, setPage] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const { hasPermission } = useAuth();
+  const navigate = useNavigate();
   const canCreate = hasPermission("INITIATIVES_CREATE");
 
   // Wait until typing pauses before searching
@@ -138,7 +120,7 @@ export default function Initiatives() {
         )}
       </div>
 
-      {canCreate && <CreateInitiativeDialog open={createOpen} onOpenChange={setCreateOpen} />}
+      {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} />}
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
         <div className="relative w-full sm:w-64">
@@ -232,8 +214,13 @@ export default function Initiatives() {
               </TableRow>
             ) : (
               items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium text-slate-900 dark:text-zinc-100">{item.name}</TableCell>
+                <TableRow key={item.id} className="cursor-pointer" onClick={() => navigate(`/initiatives/${item.id}`)}>
+                  <TableCell className="font-medium text-slate-900 dark:text-zinc-100">
+                    {/* Real link for keyboard and screen-reader users; the row click covers the mouse */}
+                    <Link to={`/initiatives/${item.id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
+                      {item.name}
+                    </Link>
+                  </TableCell>
                   <TableCell>{item.brand_name}</TableCell>
                   <TableCell>
                     <div className="text-slate-900 dark:text-zinc-100">{item.channel_name}</div>

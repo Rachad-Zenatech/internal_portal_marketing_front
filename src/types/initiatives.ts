@@ -65,3 +65,6 @@ export interface OwnerOption {
   full_name: string | null;
   email: string;
 }
+
+/** Partial update: only the fields sent are changed; null clears an optional field */
+export type InitiativeUpdate = Partial<InitiativeCreate>;

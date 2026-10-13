@@ -9,6 +9,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 const AppShell = lazy(() => import("./components/AppShell/AppShell"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Initiatives = lazy(() => import("./pages/Initiatives/Initiatives"));
+const InitiativeDetail = lazy(() => import("./pages/Initiatives/InitiativeDetail"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -74,6 +75,14 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="INITIATIVES">
                     <Initiatives />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/initiatives/:id"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <InitiativeDetail />
                   </ProtectedRoute>
                 }
               />
