@@ -28,4 +28,6 @@ export interface ReferenceData {
   primary_kpis: ReferenceItem[];
   performance_ratings: DescribedReferenceItem[];
   scale_or_cut_options: DescribedReferenceItem[];
+  regions: ReferenceItem[];
+  event_types: ReferenceItem[];
 }

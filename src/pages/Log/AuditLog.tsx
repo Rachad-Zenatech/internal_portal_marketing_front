@@ -107,14 +107,22 @@ export default function AuditLog() {
       accessorKey: "entity_id",
       header: ({ column }) => (
         <Button variant="ghost" className="px-0 font-semibold" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Entity ID
+          Item
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
+      // Show the item's name (e.g. the initiative) with its id underneath; fall back to the id alone
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-slate-500 max-w-[150px] truncate block" title={row.original.entity_id}>
-          {row.original.entity_id}
-        </span>
+        <div className="max-w-[220px]">
+          {row.original.entity_title && (
+            <span className="block truncate text-sm text-slate-900 dark:text-zinc-100" title={row.original.entity_title}>
+              {row.original.entity_title}
+            </span>
+          )}
+          <span className="font-mono text-xs text-slate-500 truncate block" title={row.original.entity_id}>
+            {row.original.entity_id}
+          </span>
+        </div>
       ),
     },
   ], []);
