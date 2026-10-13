@@ -21,4 +21,7 @@ export const queryKeys = {
   // Notifications
   notifications: () => ["notifications"] as const,
   unreadNotificationCount: () => ["notifications", "unread-count"] as const,
+
+  // Marketing reference data
+  referenceData: () => ["reference-data"] as const,
 };
