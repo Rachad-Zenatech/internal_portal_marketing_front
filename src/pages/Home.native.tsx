@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigation } from "@react-navigation/native";
 import {
   Text,
   ScrollView,
@@ -17,7 +18,8 @@ import { getApiBaseUrl } from "@/lib/env";
 
 // Placeholder home screen; marketing modules (events, requests, budgets) land here.
 export default function Home() {
-  const { user, roles, logout } = useAuth();
+  const { user, roles, logout, hasPermission } = useAuth();
+  const navigation = useNavigation();
 
   const health = useQuery({
     queryKey: ["health"],
@@ -59,6 +61,12 @@ export default function Home() {
           </NativeCardContent>
         </NativeCard>
 
+        {hasPermission("EVENTS_VIEW") && (
+          <NativeButton onPress={() => navigation.navigate("Events" as never)}>
+            <Text style={styles.buttonText}>Events</Text>
+          </NativeButton>
+        )}
+
         <NativeButton variant="outline" onPress={logout}>
           <Text>Sign out</Text>
         </NativeButton>
@@ -85,5 +93,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  buttonText: {
+    color: "#ffffff",
+    fontWeight: "600",
   },
 });

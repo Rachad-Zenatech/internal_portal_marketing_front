@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppShell = lazy(() => import("./components/AppShell/AppShell"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Events = lazy(() => import("./pages/Events/Events"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -63,6 +64,16 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="DASHBOARD">
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Marketing */}
+              <Route
+                path="/events"
+                element={
+                  <ProtectedRoute navigationCode="EVENTS">
+                    <Events />
                   </ProtectedRoute>
                 }
               />

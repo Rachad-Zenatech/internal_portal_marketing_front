@@ -8,6 +8,7 @@ import { View, ActivityIndicator, StyleSheet } from "@/components/native";
 import Login from "./pages/Login.native";
 import PendingAccess from "./pages/PendingAccess.native";
 import Home from "./pages/Home.native";
+import Events from "./pages/Events.native";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,7 +45,10 @@ function NavigationContent() {
       ) : user.is_active === false ? (
         <Stack.Screen name="PendingAccess" component={PendingAccess} />
       ) : (
-        <Stack.Screen name="Home" component={Home} />
+        <>
+          <Stack.Screen name="Home" component={Home} />
+          <Stack.Screen name="Events" component={Events} />
+        </>
       )}
     </Stack.Navigator>
   );
