@@ -8,7 +8,7 @@ import { View, ActivityIndicator, StyleSheet } from "@/components/native";
 import Login from "./pages/Login.native";
 import PendingAccess from "./pages/PendingAccess.native";
 import Home from "./pages/Home.native";
-import Events from "./pages/Events.native";
+import Initiatives from "./pages/Initiatives.native";
 
 const Stack = createNativeStackNavigator();
 
@@ -47,7 +47,7 @@ function NavigationContent() {
       ) : (
         <>
           <Stack.Screen name="Home" component={Home} />
-          <Stack.Screen name="Events" component={Events} />
+          <Stack.Screen name="Initiatives" component={Initiatives} />
         </>
       )}
     </Stack.Navigator>

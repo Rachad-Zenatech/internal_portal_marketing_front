@@ -8,7 +8,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppShell = lazy(() => import("./components/AppShell/AppShell"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
-const Events = lazy(() => import("./pages/Events/Events"));
+const Initiatives = lazy(() => import("./pages/Initiatives/Initiatives"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -70,13 +70,14 @@ function App() {
 
               {/* Marketing */}
               <Route
-                path="/events"
+                path="/initiatives"
                 element={
-                  <ProtectedRoute navigationCode="EVENTS">
-                    <Events />
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <Initiatives />
                   </ProtectedRoute>
                 }
               />
+              <Route path="/events" element={<Navigate to="/initiatives" replace />} />
 
               {/* Configuration Routes */}
               <Route path="/configuration" element={<Navigate to="/configurations/users" replace />} />

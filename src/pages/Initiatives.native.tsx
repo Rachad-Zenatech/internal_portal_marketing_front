@@ -11,21 +11,21 @@ import {
   NativeButton,
 } from "@/components/native";
 
-// Placeholder for the events list (task E1). Physical / in-person events only for now.
-export default function Events() {
+// Placeholder until the mobile initiatives list (task I9).
+export default function Initiatives() {
   const navigation = useNavigation();
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.heading}>Events</Text>
-        <Text style={styles.subheading}>In-person events, their costs and outcomes.</Text>
+        <Text style={styles.heading}>Initiatives</Text>
+        <Text style={styles.subheading}>All marketing initiatives across every channel.</Text>
 
         <NativeCard>
           <NativeCardHeader>
-            <NativeCardTitle>No events yet</NativeCardTitle>
+            <NativeCardTitle>No initiatives yet</NativeCardTitle>
             <NativeCardDescription>
-              Events you track will appear here, with their costs, outcomes and performance rating.
+              The full list is coming to mobile soon. Use the web app to see all initiatives.
             </NativeCardDescription>
           </NativeCardHeader>
         </NativeCard>

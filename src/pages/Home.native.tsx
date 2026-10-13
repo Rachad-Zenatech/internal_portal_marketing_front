@@ -42,9 +42,7 @@ export default function Home() {
           </NativeCardHeader>
           <NativeCardContent style={styles.row}>
             {roles.map((role) => (
-              <NativeBadge key={role.id} variant="secondary">
-                {role.name}
-              </NativeBadge>
+              <NativeBadge key={role.id} variant="secondary" label={role.name} />
             ))}
           </NativeCardContent>
         </NativeCard>
@@ -55,15 +53,16 @@ export default function Home() {
             <NativeCardDescription>{getApiBaseUrl()}</NativeCardDescription>
           </NativeCardHeader>
           <NativeCardContent>
-            <NativeBadge variant={health.isSuccess ? "success" : health.isError ? "destructive" : "outline"}>
-              {health.isSuccess ? "Connected" : health.isError ? "Unreachable" : "Checking..."}
-            </NativeBadge>
+            <NativeBadge
+              variant={health.isSuccess ? "success" : health.isError ? "destructive" : "outline"}
+              label={health.isSuccess ? "Connected" : health.isError ? "Unreachable" : "Checking..."}
+            />
           </NativeCardContent>
         </NativeCard>
 
-        {hasPermission("EVENTS_VIEW") && (
-          <NativeButton onPress={() => navigation.navigate("Events" as never)}>
-            <Text style={styles.buttonText}>Events</Text>
+        {hasPermission("INITIATIVES_VIEW") && (
+          <NativeButton onPress={() => navigation.navigate("Initiatives" as never)}>
+            <Text style={styles.buttonText}>Initiatives</Text>
           </NativeButton>
         )}
 

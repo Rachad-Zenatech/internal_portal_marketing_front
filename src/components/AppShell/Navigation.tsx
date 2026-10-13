@@ -1,6 +1,6 @@
 import {
   LayoutDashboard,
-  CalendarDays,
+  Megaphone,
   ShieldCheck,
   FileClock,
 } from "lucide-react";
@@ -30,11 +30,11 @@ export const navigation: NavigationItem[] = [
     navigationCode: "DASHBOARD",
   },
   {
-    label: "Events",
-    path: "/events",
-    icon: CalendarDays,
+    label: "Initiatives",
+    path: "/initiatives",
+    icon: Megaphone,
     section: "MARKETING",
-    navigationCode: "EVENTS",
+    navigationCode: "INITIATIVES",
   },
   {
     label: "System & Security",
