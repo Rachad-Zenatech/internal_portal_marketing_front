@@ -16,7 +16,7 @@ import {
 import { useAuth } from "@/lib/AuthContext";
 import { getApiBaseUrl } from "@/lib/env";
 
-// Placeholder home screen; marketing modules (events, requests, budgets) land here.
+// Placeholder home screen; marketing modules (initiatives, budgets, results) land here.
 export default function Home() {
   const { user, roles, logout, hasPermission } = useAuth();
   const navigation = useNavigation();

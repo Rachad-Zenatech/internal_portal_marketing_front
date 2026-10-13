@@ -25,4 +25,5 @@ export const queryKeys = {
   // Marketing reference data
   referenceData: () => ["reference-data"] as const,
   initiatives: (filters: object = {}) => ["initiatives", filters] as const,
+  initiativeOwnerOptions: (search: string) => ["initiative-owner-options", search] as const,
 };

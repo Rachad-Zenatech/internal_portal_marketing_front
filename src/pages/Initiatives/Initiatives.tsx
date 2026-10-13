@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Megaphone, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
 import HelpIcon from "@/components/ui/HelpIcon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,27 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useInitiatives } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
+import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeFilters, InitiativeStatus } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
+import CreateInitiativeDialog from "./CreateInitiativeDialog";
+import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
 const PAGE_SIZE = 25;
 const ALL = "all";
-
-const STATUS_LABELS: Record<InitiativeStatus, string> = {
-  PLANNED: "Planned",
-  ACTIVE: "Active",
-  COMPLETED: "Completed",
-  PAUSED: "Paused",
-  CANCELLED: "Cancelled",
-};
-
-const STATUS_STYLES: Record<InitiativeStatus, string> = {
-  PLANNED: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
-  ACTIVE: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-900",
-  COMPLETED: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900",
-  PAUSED: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-900",
-  CANCELLED: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-400 dark:border-red-900",
-};
 
 function formatBudget(amount: number | null, currency: string) {
   if (amount === null) return "—";
@@ -89,6 +76,9 @@ export default function Initiatives() {
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
+  const { hasPermission } = useAuth();
+  const canCreate = hasPermission("INITIATIVES_CREATE");
 
   // Wait until typing pauses before searching
   useEffect(() => {
@@ -140,7 +130,15 @@ export default function Initiatives() {
           </div>
           <p className="text-sm text-slate-500 dark:text-zinc-400">All marketing initiatives across every channel and brand.</p>
         </div>
+        {canCreate && (
+          <Button onClick={() => setCreateOpen(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            New initiative
+          </Button>
+        )}
       </div>
+
+      {canCreate && <CreateInitiativeDialog open={createOpen} onOpenChange={setCreateOpen} />}
 
       <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
         <div className="relative w-full sm:w-64">
