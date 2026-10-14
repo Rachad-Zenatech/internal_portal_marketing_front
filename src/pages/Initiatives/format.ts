@@ -85,3 +85,20 @@ export function timelineProgress(start: string | null, end: string | null, today
   }
   return null;
 }
+
+/** A cost in its own currency, with cents only when there are any: "$4,500", "£12.50" */
+export function formatMoney(amount: number, currency: string) {
+  return new Intl.NumberFormat(undefined, { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount);
+}
+
+/** A difference with its sign: "+$500", "−$200", "$0" */
+export function formatVariance(amount: number, currency: string) {
+  if (amount === 0) return formatMoney(0, currency);
+  return `${amount > 0 ? "+" : "−"}${formatMoney(Math.abs(amount), currency)}`;
+}
+
+/** "Oct 2026" from a YYYY-MM-DD date */
+export function formatMonth(value: string) {
+  const [y, m] = value.split("-").map(Number);
+  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Target, TrendingUp, Trophy, Video, Wallet } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Receipt, Target, TrendingUp, Trophy, Video, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { ApiError } from "@/services/helper";
 import type { InitiativeListItem } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import { channelStyle, FUNNEL_STAGE_STYLES } from "./channelStyles";
+import CostSheet from "./CostSheet";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
@@ -406,6 +407,10 @@ export default function InitiativeDetail() {
         </div>
         <PerformanceSection />
       </div>
+
+      <Section title="Costs" icon={Receipt}>
+        <CostSheet initiativeId={initiative.id} currency={initiative.currency} isEvent={Boolean(initiative.event_code)} />
+      </Section>
 
       {hasPermission("INITIATIVES_UPDATE") && (
         <InitiativeFormDialog open={editOpen} onOpenChange={setEditOpen} initiative={initiative} />

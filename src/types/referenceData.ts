@@ -19,6 +19,23 @@ export interface GoalItem extends ReferenceItem {
   funnel_stage_id: number;
 }
 
+/** Groups cost categories for reporting */
+export interface ExpenseType extends DescribedReferenceItem {
+  /** Where costs of this type come from */
+  source: "PORTAL" | "TRAVEL_SYSTEM";
+}
+
+/** Picked on each cost */
+export interface SpendCategory extends ReferenceItem {
+  expense_type_id: number;
+  applies_to: "ALL" | "EVENTS" | "ADS";
+  /** False when costs only arrive from another system (e.g. travel) */
+  manual_entry_allowed: boolean;
+  default_cost_type: "OPEX" | "CAPEX" | null;
+  /** Shown under the category picker */
+  help_text: string | null;
+}
+
 export interface ReferenceData {
   brands: ReferenceItem[];
   channels: ChannelItem[];
@@ -30,4 +47,6 @@ export interface ReferenceData {
   scale_or_cut_options: DescribedReferenceItem[];
   regions: ReferenceItem[];
   event_types: ReferenceItem[];
+  expense_types: ExpenseType[];
+  spend_categories: SpendCategory[];
 }
