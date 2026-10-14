@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Building2, CalendarDays, Check, ChevronRight, Clock, Copy, MapPin, Pencil, Target, TrendingUp, Trophy, Wallet } from "lucide-react";
+import { ArrowLeft, Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Target, TrendingUp, Trophy, Video, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -193,16 +193,43 @@ function TimelineSection({ initiative, barColour }: { initiative: InitiativeList
 }
 
 function EventSection({ initiative, online }: { initiative: InitiativeListItem; online: boolean }) {
-  const location = formatEventLocation(initiative.city, initiative.country_code, online);
+  const location = formatEventLocation(initiative.city, initiative.country_code, false);
+  const place = [initiative.venue, location === "—" ? null : location].filter(Boolean).join(" · ");
   return (
     <Section title="Event" icon={CalendarDays}>
-      <div className="flex items-start gap-3 rounded-lg bg-slate-50/80 p-3 dark:bg-muted">
-        <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{location === "—" ? <Empty text="No location yet" /> : location}</p>
-          {initiative.venue && <p className={`truncate text-sm ${MUTED}`}>{initiative.venue}</p>}
+      {online ? (
+        <div className="flex items-start gap-3 rounded-lg bg-slate-50/80 p-3 dark:bg-muted">
+          <Video className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{initiative.platform ? `Online · ${initiative.platform}` : "Online"}</p>
+            {initiative.event_url ? (
+              // The API only accepts http(s) links, so this can't run script
+              <a
+                href={initiative.event_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex max-w-full items-center gap-1 text-sm text-blue-600 hover:underline dark:text-blue-400"
+              >
+                <span className="truncate">{initiative.event_url}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            ) : (
+              <p className="text-sm">
+                <Empty text="No event link yet" />
+              </p>
+            )}
+            {place && <p className={`truncate text-sm ${MUTED}`}>Hosted from {place}</p>}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="flex items-start gap-3 rounded-lg bg-slate-50/80 p-3 dark:bg-muted">
+          <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{location === "—" ? <Empty text="No location yet" /> : location}</p>
+            {initiative.venue && <p className={`truncate text-sm ${MUTED}`}>{initiative.venue}</p>}
+          </div>
+        </div>
+      )}
       <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
         <Detail label="Event code" value={initiative.event_code && <CopyCode code={initiative.event_code} />} />
         <Detail label="Event type" value={initiative.event_type_name} />

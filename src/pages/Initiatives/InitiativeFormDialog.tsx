@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, Loader2, MapPin, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,7 +12,15 @@ import { useAuth } from "@/lib/AuthContext";
 import type { EventDetailsInput, InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import CountryPicker from "./CountryPicker";
-import { EVENTS_CHANNEL_CODE, missingEventFields, requiredEventFields } from "./eventRules";
+import {
+  EVENT_PLATFORM_SUGGESTIONS,
+  EVENTS_CHANNEL_CODE,
+  eventUrlProblem,
+  IN_PERSON_EVENT_SUB_CHANNELS,
+  missingEventFields,
+  ONLINE_EVENT_SUB_CHANNELS,
+  requiredEventFields,
+} from "./eventRules";
 import OwnerPicker from "./OwnerPicker";
 import { STATUS_LABELS, STATUS_TRANSITIONS } from "./status";
 
@@ -38,6 +46,9 @@ interface FormState {
   city: string;
   countryCode: string;
   regionId: string;
+  // Virtual events and webinars
+  platform: string;
+  eventUrl: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -58,6 +69,8 @@ const EMPTY_FORM: FormState = {
   city: "",
   countryCode: "",
   regionId: "",
+  platform: "",
+  eventUrl: "",
 };
 
 const idText = (value: number | null) => (value === null ? "" : String(value));
@@ -81,26 +94,32 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     city: item.city ?? "",
     countryCode: item.country_code ?? "",
     regionId: idText(item.region_id),
+    platform: item.platform ?? "",
+    eventUrl: item.event_url ?? "",
   };
 }
 
 const toId = (value: string) => (value ? Number(value) : null);
 const toText = (value: string) => value.trim() || null;
 
-function eventFromForm(form: FormState): Required<EventDetailsInput> {
+function eventFromForm(form: FormState, subChannelCode: string | undefined): Required<EventDetailsInput> {
+  // In-person events can't have a platform or link, so switching to one clears them
+  const inPerson = IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "");
   return {
     event_type_id: toId(form.eventTypeId),
     venue: toText(form.venue),
     city: toText(form.city),
     country_code: form.countryCode || null,
     region_id: toId(form.regionId),
+    platform: inPerson ? null : toText(form.platform),
+    event_url: inPerson ? null : toText(form.eventUrl),
   };
 }
 
 // Only the event fields that differ from the saved initiative, or undefined if none do
-function changedEventFields(form: FormState, initiative: InitiativeListItem): EventDetailsInput | undefined {
+function changedEventFields(form: FormState, subChannelCode: string | undefined, initiative: InitiativeListItem): EventDetailsInput | undefined {
   const changed = Object.fromEntries(
-    Object.entries(eventFromForm(form)).filter(([field, value]) => value !== initiative[field as keyof EventDetailsInput]),
+    Object.entries(eventFromForm(form, subChannelCode)).filter(([field, value]) => value !== initiative[field as keyof EventDetailsInput]),
   );
   return Object.keys(changed).length ? changed : undefined;
 }
@@ -112,7 +131,11 @@ function validate(form: FormState, isEvent: boolean, subChannelCode: string | un
   if (!form.channelId) return "Choose a channel.";
   if (form.startDate && form.endDate && form.endDate < form.startDate) return "End date can't be before the start date.";
   if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be a positive number.";
-  if (isEvent) return missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
+  if (isEvent) {
+    const missing = missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
+    if (missing) return missing;
+    if (!IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")) return eventUrlProblem(form.eventUrl);
+  }
   return null;
 }
 
@@ -217,6 +240,13 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
   const isEvent = reference?.channels.find((c) => String(c.id) === form.channelId)?.code === EVENTS_CHANNEL_CODE;
   const subChannelCode = reference?.sub_channels.find((s) => String(s.id) === form.subChannelId)?.code;
   const requiredEvent = requiredEventFields(subChannelCode);
+  const isOnline = ONLINE_EVENT_SUB_CHANNELS.has(subChannelCode ?? "");
+  // Online events lead with platform and link; a location is optional and tucked behind a toggle
+  // (it stays visible whenever it has values, so nothing hidden gets saved)
+  const [locationOpen, setLocationOpen] = useState(false);
+  const hasLocation = Boolean(form.venue || form.city || form.countryCode);
+  const locationVisible = locationOpen || hasLocation;
+  const showLocation = !isOnline || locationVisible;
 
   // Goal options follow the funnel stage (Rule 1)
   const goals = useMemo(() => {
@@ -254,7 +284,7 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
     };
     // Other channels never send event details. Edits send only the event fields that changed.
     if (isEvent) {
-      const event = initiative ? changedEventFields(form, initiative) : eventFromForm(form);
+      const event = initiative ? changedEventFields(form, subChannelCode, initiative) : eventFromForm(form, subChannelCode);
       if (event) payload.event = event;
     }
 
@@ -412,21 +442,91 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
                   allowNone
                 />
               </Field>
-              <Field label="Venue" htmlFor="initiative-venue" className="sm:col-span-2">
-                <Input id="initiative-venue" value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="e.g. Las Vegas Convention Center" maxLength={255} />
-              </Field>
-              <Field label="City" htmlFor="initiative-city" required={requiredEvent.includes("city")}>
-                <Input id="initiative-city" value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Las Vegas" maxLength={120} />
-              </Field>
-              <Field label="Country" htmlFor="initiative-country" required={requiredEvent.includes("country_code")}>
-                <CountryPicker id="initiative-country" value={form.countryCode} onChange={(v) => set({ countryCode: v })} />
-              </Field>
+              {isOnline && (
+                <>
+                  <Field label="Platform" htmlFor="initiative-platform">
+                    <Input
+                      id="initiative-platform"
+                      list="initiative-platform-options"
+                      value={form.platform}
+                      onChange={(e) => set({ platform: e.target.value })}
+                      placeholder="e.g. Zoom"
+                      maxLength={80}
+                      autoComplete="off"
+                    />
+                    <datalist id="initiative-platform-options">
+                      {EVENT_PLATFORM_SUGGESTIONS.map((name) => (
+                        <option key={name} value={name} />
+                      ))}
+                    </datalist>
+                  </Field>
+                  <Field label="Event link" htmlFor="initiative-event-url">
+                    <Input
+                      id="initiative-event-url"
+                      type="url"
+                      inputMode="url"
+                      value={form.eventUrl}
+                      onChange={(e) => set({ eventUrl: e.target.value })}
+                      placeholder="https://"
+                      maxLength={500}
+                    />
+                  </Field>
+                </>
+              )}
+
+              {isOnline && (
+                <div className="sm:col-span-2">
+                  {locationVisible ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 gap-1.5 px-2 text-slate-500"
+                      // Hiding the location removes it, so nothing is saved that you can't see
+                      onClick={() => {
+                        setLocationOpen(false);
+                        set({ venue: "", city: "", countryCode: "" });
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      Remove location
+                    </Button>
+                  ) : (
+                    <Button type="button" variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-blue-600 dark:text-blue-400" onClick={() => setLocationOpen(true)}>
+                      <MapPin className="h-3.5 w-3.5" />
+                      Add a location
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {showLocation && (
+                <>
+                  <Field label="Venue" htmlFor="initiative-venue" className="sm:col-span-2">
+                    <Input id="initiative-venue" value={form.venue} onChange={(e) => set({ venue: e.target.value })} placeholder="e.g. Las Vegas Convention Center" maxLength={255} />
+                  </Field>
+                  <Field label="City" htmlFor="initiative-city" required={requiredEvent.includes("city")}>
+                    <Input id="initiative-city" value={form.city} onChange={(e) => set({ city: e.target.value })} placeholder="e.g. Las Vegas" maxLength={120} />
+                  </Field>
+                  <Field label="Country" htmlFor="initiative-country" required={requiredEvent.includes("country_code")}>
+                    <CountryPicker id="initiative-country" value={form.countryCode} onChange={(v) => set({ countryCode: v })} />
+                  </Field>
+                </>
+              )}
             </div>
           </section>
         )}
 
-        <section className="flex flex-col gap-3">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-zinc-400">Goal</h3>
+        <section className="flex flex-col gap-4 rounded-xl border border-violet-100 bg-violet-50/40 p-4 dark:border-violet-900/50 dark:bg-violet-950/20">
+          <div>
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400">
+                <Target className="h-4 w-4" />
+              </span>
+              Goal
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">What this initiative is for, and the number you'll judge it on.</p>
+          </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <Field label="Funnel stage" htmlFor="initiative-funnel-stage">
               <ReferenceSelect

@@ -10,8 +10,19 @@ export const EVENT_REQUIRED_FIELDS: Record<string, { fields: EventRequiredField[
   SPONSORSHIPS: { fields: ["country_code"], message: "Sponsorships need a country." },
 };
 
-/** Sub-channels that happen online, so they have no location */
+/** Sub-channels that happen online: they get a platform and event link, and a location is optional */
 export const ONLINE_EVENT_SUB_CHANNELS = new Set(["VIRTUAL_EVENTS", "WEBINARS"]);
+
+/** Sub-channels where the API rejects a platform or event link (mirrors IN_PERSON_SUB_CHANNELS in the backend) */
+export const IN_PERSON_EVENT_SUB_CHANNELS = new Set(["IN_PERSON_EVENTS", "SPONSORSHIPS"]);
+
+export const EVENT_PLATFORM_SUGGESTIONS = ["Zoom", "Teams", "Google Meet", "ON24", "Hopin", "Other"];
+
+/** Same check as the API: an event link must be a web address */
+export function eventUrlProblem(url: string): string | null {
+  const value = url.trim();
+  return value && !/^https?:\/\//i.test(value) ? "Event link must start with http:// or https://" : null;
+}
 
 export function requiredEventFields(subChannelCode: string | null | undefined): EventRequiredField[] {
   return (subChannelCode && EVENT_REQUIRED_FIELDS[subChannelCode]?.fields) || [];
