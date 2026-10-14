@@ -1,6 +1,7 @@
 // Cost rules shared by the cost sheet and the cost dialog — mirrors services/spend_service.py
 import type { ExpenseType, ReferenceData, SpendCategory } from "@/types/referenceData";
 import type { PaymentMethod, SpendStatus } from "@/types/spend";
+import { formatMoney } from "./format";
 
 export const SPEND_STATUSES: SpendStatus[] = ["ESTIMATED", "COMMITTED", "INVOICED", "PAID"];
 
@@ -26,6 +27,12 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export const INVOICE_HELP =
   "The supplier's invoice number, so the same invoice can't be entered twice. The invoice itself stays with Finance.";
+
+/** "5 people × 3 days × $400/day = $6,000": a staff-time cost's description, so the working stays visible */
+export function staffTimeSentence(people: number, days: number, dayRate: number, currency: string) {
+  const total = Math.round(people * days * dayRate * 100) / 100;
+  return `${people} ${people === 1 ? "person" : "people"} × ${days} ${days === 1 ? "day" : "days"} × ${formatMoney(dayRate, currency)}/day = ${formatMoney(total, currency)}`;
+}
 
 /** INVOICED and PAID amounts are actuals; before that they're estimates or agreed figures */
 export const isActualStatus = (status: SpendStatus) => status === "INVOICED" || status === "PAID";

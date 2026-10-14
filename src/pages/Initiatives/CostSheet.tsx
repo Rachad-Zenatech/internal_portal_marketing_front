@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AlertCircle, ChevronDown, Clock, Lock, Plane, Plus } from "lucide-react";
+import { AlertCircle, Calculator, ChevronDown, Clock, Lock, Plane, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -14,6 +14,7 @@ import type { SpendExpenseTypeSummary, SpendLine, SpendStatus } from "@/types/sp
 import { formatDate, formatMoney, formatMonth, formatVariance, isoToday } from "./format";
 import SpendLineActions from "./SpendLineActions";
 import SpendLineDialog from "./SpendLineDialog";
+import StaffTimeDialog from "./StaffTimeDialog";
 import { isActualStatus, SPEND_STATUS_LABELS, SPEND_STATUS_STYLES } from "./spendRules";
 
 const MUTED = "text-slate-500 dark:text-zinc-400";
@@ -83,7 +84,14 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
             </Tooltip>
           )}
           <div className="min-w-0">
-            <div className="font-medium text-slate-900 dark:text-zinc-100">{line.description || line.category_name}</div>
+            <div className="font-medium text-slate-900 dark:text-zinc-100">
+              {line.description || line.category_name}
+              {line.source === "STAFF_CALCULATOR" && (
+                <Badge variant="outline" className="ml-1.5 h-4 px-1.5 align-middle text-[10px] font-medium text-indigo-700 dark:text-indigo-300" title="Worked out with Add staff time">
+                  Calculated
+                </Badge>
+              )}
+            </div>
             <div className={`text-xs ${MUTED}`}>{line.category_name}</div>
           </div>
         </div>
@@ -243,6 +251,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
   const focusGroup = params.get("group");
   // The add / edit dialog: open, and the cost being edited (none when adding)
   const [dialog, setDialog] = useState<{ open: boolean; line?: SpendLine }>({ open: false });
+  const [staffTimeOpen, setStaffTimeOpen] = useState(false);
   const today = isoToday();
 
   // Lines arrive ordered by expense type, category and date; keep that order within each group
@@ -295,10 +304,16 @@ export default function CostSheet({ initiative }: CostSheetProps) {
   }
 
   const addButton = canEdit && (
-    <Button size="sm" className="gap-1.5" onClick={() => setDialog({ open: true })}>
-      <Plus className="h-4 w-4" />
-      Add cost
-    </Button>
+    <div className="flex flex-wrap gap-2">
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStaffTimeOpen(true)}>
+        <Calculator className="h-4 w-4" />
+        Add staff time
+      </Button>
+      <Button size="sm" className="gap-1.5" onClick={() => setDialog({ open: true })}>
+        <Plus className="h-4 w-4" />
+        Add cost
+      </Button>
+    </div>
   );
   const costDialog = canEdit && (
     <SpendLineDialog
@@ -309,6 +324,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
       vendors={vendors}
     />
   );
+  const staffTimeDialog = canEdit && <StaffTimeDialog open={staffTimeOpen} onOpenChange={setStaffTimeOpen} initiative={initiative} />;
 
   if (lines.data.length === 0) {
     return (
@@ -320,6 +336,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
         </p>
         {addButton}
         {costDialog}
+        {staffTimeDialog}
       </div>
     );
   }
@@ -398,6 +415,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
         </div>
       </div>
       {costDialog}
+      {staffTimeDialog}
     </TooltipProvider>
   );
 }

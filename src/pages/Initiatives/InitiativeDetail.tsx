@@ -13,7 +13,7 @@ import { channelStyle, FUNNEL_STAGE_STYLES } from "./channelStyles";
 import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
 import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
+import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
@@ -206,6 +206,7 @@ function EventSection({ initiative, online }: { initiative: InitiativeListItem; 
         <Detail label="Event code" value={initiative.event_code && <CopyCode code={initiative.event_code} />} />
         <Detail label="Event type" value={initiative.event_type_name} />
         <Detail label="Region" value={initiative.region_name} />
+        {!online && <Detail label="Booth size" value={initiative.booth_size_sqm !== null && formatBoothSize(initiative.booth_size_sqm)} />}
       </dl>
     </Section>
   );

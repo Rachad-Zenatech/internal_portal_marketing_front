@@ -1,4 +1,5 @@
 import { countryName } from "@/lib/countries";
+import { SQFT_TO_SQM as SQM_PER_SQFT } from "./eventRules";
 
 export function formatBudget(amount: number | null, currency: string) {
   if (amount === null) return "—";
@@ -101,4 +102,16 @@ export function formatVariance(amount: number, currency: string) {
 export function formatMonth(value: string) {
   const [y, m] = value.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+const area = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
+
+/** "18.6 m² (200 sq ft)" */
+export function formatBoothSize(sqm: number) {
+  return `${area(sqm)} m² (${area(Math.round(sqm / SQM_PER_SQFT))} sq ft)`;
+}
+
+/** The other unit, for the hint under the booth size field: "200 sq ft = 18.6 m²" */
+export function boothSizeEquivalent(value: number, unit: "sqm" | "sqft") {
+  return unit === "sqft" ? `${area(value)} sq ft = ${area(value * SQM_PER_SQFT)} m²` : `${area(value)} m² = ${area(value / SQM_PER_SQFT)} sq ft`;
 }

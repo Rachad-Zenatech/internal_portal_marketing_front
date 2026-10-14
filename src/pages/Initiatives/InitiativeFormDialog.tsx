@@ -6,15 +6,20 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateInitiative, useUpdateInitiative } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { EventDetailsInput, InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import CountryPicker from "./CountryPicker";
+import { boothSizeEquivalent } from "./format";
 import {
   EVENT_PLATFORM_SUGGESTIONS,
   EVENTS_CHANNEL_CODE,
+  type AreaUnit,
+  boothSizeInSqm,
+  boothSizeProblem,
   eventUrlProblem,
   IN_PERSON_EVENT_SUB_CHANNELS,
   missingEventFields,
@@ -26,6 +31,8 @@ import { STATUS_LABELS, STATUS_TRANSITIONS } from "./status";
 
 const CURRENCIES = ["USD", "CAD", "GBP", "AUD", "EUR"];
 const NONE = "none";
+// The picked option in a segmented control, so it stands out in light and dark
+const SELECTED = "data-[state=on]:bg-slate-900 data-[state=on]:text-white dark:data-[state=on]:bg-zinc-100 dark:data-[state=on]:text-zinc-900";
 
 interface FormState {
   name: string;
@@ -49,6 +56,9 @@ interface FormState {
   // Virtual events and webinars
   platform: string;
   eventUrl: string;
+  // In-person events: typed in either unit, always sent in m²
+  boothSize: string;
+  boothUnit: AreaUnit;
 }
 
 const EMPTY_FORM: FormState = {
@@ -71,6 +81,8 @@ const EMPTY_FORM: FormState = {
   regionId: "",
   platform: "",
   eventUrl: "",
+  boothSize: "",
+  boothUnit: "sqm",
 };
 
 const idText = (value: number | null) => (value === null ? "" : String(value));
@@ -96,6 +108,8 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     regionId: idText(item.region_id),
     platform: item.platform ?? "",
     eventUrl: item.event_url ?? "",
+    boothSize: item.booth_size_sqm === null ? "" : String(item.booth_size_sqm),
+    boothUnit: "sqm",
   };
 }
 
@@ -113,6 +127,8 @@ function eventFromForm(form: FormState, subChannelCode: string | undefined): Req
     region_id: toId(form.regionId),
     platform: inPerson ? null : toText(form.platform),
     event_url: inPerson ? null : toText(form.eventUrl),
+    // Only in-person events have a booth, so switching away clears it
+    booth_size_sqm: inPerson ? boothSizeInSqm(form.boothSize, form.boothUnit) : null,
   };
 }
 
@@ -135,6 +151,7 @@ function validate(form: FormState, isEvent: boolean, subChannelCode: string | un
     const missing = missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
     if (missing) return missing;
     if (!IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")) return eventUrlProblem(form.eventUrl);
+    return boothSizeProblem(form.boothSize);
   }
   return null;
 }
@@ -188,7 +205,7 @@ function ReferenceSelect({ id, value, items, placeholder, onChange, allowNone, d
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper" className="max-h-72">
         {allowNone && <SelectItem value={NONE}>None</SelectItem>}
         {items.map((item) => (
           <SelectItem key={item.id} value={String(item.id)}>
@@ -363,7 +380,7 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
                 <SelectTrigger aria-label="Currency" className="w-24 shrink-0 rounded-r-none border-r-0 bg-slate-50 dark:bg-zinc-800/60">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="max-h-72">
                   {Array.from(new Set([...CURRENCIES, form.currency])).map((code) => (
                     <SelectItem key={code} value={code}>
                       {code}
@@ -389,7 +406,7 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
               <SelectTrigger id="initiative-status" className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="max-h-72">
                 {statusOptions.map((value) => (
                   <SelectItem key={value} value={value}>
                     {STATUS_LABELS[value]}
@@ -498,6 +515,46 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
                     </Button>
                   )}
                 </div>
+              )}
+
+              {IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "") && (
+                <Field label="Booth size" htmlFor="initiative-booth-size" className="sm:col-span-2">
+                  <div className="flex gap-2">
+                    <Input
+                      id="initiative-booth-size"
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step="0.1"
+                      value={form.boothSize}
+                      onChange={(e) => set({ boothSize: e.target.value })}
+                      placeholder={form.boothUnit === "sqft" ? "e.g. 200" : "e.g. 18.6"}
+                      className="max-w-40"
+                      aria-describedby="initiative-booth-size-hint"
+                    />
+                    <ToggleGroup
+                      type="single"
+                      variant="outline"
+                      size="sm"
+                      spacing={0}
+                      value={form.boothUnit}
+                      onValueChange={(v) => v && set({ boothUnit: v as AreaUnit })}
+                      aria-label="Booth size unit"
+                    >
+                      <ToggleGroupItem value="sqm" className={`px-3 ${SELECTED}`}>
+                        m²
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="sqft" className={`px-3 ${SELECTED}`}>
+                        sq ft
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                  <p id="initiative-booth-size-hint" className="text-xs text-slate-500 dark:text-zinc-400">
+                    {form.boothSize.trim() && !boothSizeProblem(form.boothSize)
+                      ? boothSizeEquivalent(Number(form.boothSize), form.boothUnit)
+                      : "For comparing cost per m² across events, e.g. a 10×20 ft booth = 200 sq ft = 18.6 m²."}
+                  </p>
+                </Field>
               )}
 
               {showLocation && (

@@ -201,10 +201,20 @@ export default function CostOverview({ initiative }: { initiative: InitiativeLis
                   </p>
                 )}
               </div>
-              {summary.per_day !== null && (
-                <div className="text-right">
-                  <div className={`text-xs font-medium ${MUTED}`}>Cost per day</div>
-                  <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">{money(summary.per_day)}</div>
+              {(summary.per_day !== null || summary.per_sqm !== null) && (
+                <div className="flex gap-6 text-right">
+                  {summary.per_day !== null && (
+                    <div>
+                      <div className={`text-xs font-medium ${MUTED}`}>Cost per day</div>
+                      <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">{money(summary.per_day)}</div>
+                    </div>
+                  )}
+                  {summary.per_sqm !== null && (
+                    <div>
+                      <div className={`text-xs font-medium ${MUTED}`}>Cost per m²</div>
+                      <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">{money(summary.per_sqm)}</div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

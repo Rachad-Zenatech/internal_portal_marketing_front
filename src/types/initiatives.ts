@@ -36,6 +36,8 @@ export interface InitiativeListItem {
   // Virtual events and webinars only
   platform: string | null;
   event_url: string | null;
+  /** In-person events only, in square metres */
+  booth_size_sqm: number | null;
   // Costs in the initiative's currency: everything expected (estimates included), and invoiced + paid
   expected_total: number;
   actual_amount: number;
@@ -52,6 +54,8 @@ export interface EventDetailsInput {
   region_id?: number | null;
   platform?: string | null;
   event_url?: string | null;
+  /** In-person events only; always square metres */
+  booth_size_sqm?: number | null;
 }
 
 export interface InitiativeListResponse {

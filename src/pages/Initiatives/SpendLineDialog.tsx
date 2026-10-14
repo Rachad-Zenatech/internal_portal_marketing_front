@@ -48,8 +48,8 @@ type FieldName = keyof FormState;
 // Field order, used to focus the first one with a problem
 const FIELD_IDS: Partial<Record<FieldName, string>> = {
   categoryId: "cost-category",
-  estimate: "cost-estimate",
   amount: "cost-amount",
+  estimate: "cost-estimate",
   currency: "cost-currency",
   incurredOn: "cost-date",
   invoiceRef: "cost-invoice",
@@ -159,7 +159,7 @@ interface FieldProps {
   children: React.ReactNode;
 }
 
-function Field({ label, htmlFor, error, hint, className, children }: FieldProps) {
+export function Field({ label, htmlFor, error, hint, className, children }: FieldProps) {
   return (
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <Label htmlFor={htmlFor} className="text-slate-700 dark:text-zinc-300">
@@ -305,7 +305,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
             <SelectTrigger id="cost-category" className="w-full" {...invalid("categoryId")}>
               <SelectValue placeholder="Choose a category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="max-h-72">
               {groups.map(({ type, categories }) => (
                 <SelectGroup key={type.id}>
                   <SelectLabel>{type.name}</SelectLabel>
@@ -365,19 +365,6 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
           </Field>
         ) : (
           <>
-            <Field label="Estimate (optional)" htmlFor="cost-estimate" error={errors.estimate}>
-              <Input
-                id="cost-estimate"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                value={form.estimate}
-                onChange={(e) => set({ estimate: e.target.value })}
-                placeholder="The quote, to compare with the actual"
-                disabled={isLocked("estimate")}
-                {...invalid("estimate")}
-              />
-            </Field>
             <Field label="Amount" htmlFor="cost-amount" error={errors.amount}>
               <Input
                 id="cost-amount"
@@ -391,6 +378,19 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
                 {...invalid("amount")}
               />
             </Field>
+            <Field label="Estimate (optional)" htmlFor="cost-estimate" error={errors.estimate}>
+              <Input
+                id="cost-estimate"
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                value={form.estimate}
+                onChange={(e) => set({ estimate: e.target.value })}
+                placeholder="The quote, to compare with the actual"
+                disabled={isLocked("estimate")}
+                {...invalid("estimate")}
+              />
+            </Field>
           </>
         )}
 
@@ -399,7 +399,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
             <SelectTrigger id="cost-currency" className="w-full">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="max-h-72">
               {currencies.map((code) => (
                 <SelectItem key={code} value={code}>
                   {code}
@@ -432,7 +432,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
                 <SelectTrigger id="cost-payment-method" className="w-full">
                   <SelectValue placeholder="How it was paid" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="max-h-72">
                   {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map((method) => (
                     <SelectItem key={method} value={method}>
                       {PAYMENT_METHOD_LABELS[method]}

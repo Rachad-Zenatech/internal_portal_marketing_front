@@ -37,3 +37,20 @@ export function missingEventFields(
   if (!rule) return null;
   return rule.fields.some((field) => !values[field]?.trim()) ? rule.message : null;
 }
+
+/** Booth size is stored in square metres; people often think in square feet (a 10×20 ft booth) */
+export const SQFT_TO_SQM = 0.092903;
+export type AreaUnit = "sqm" | "sqft";
+
+/** Square metres for what was typed, rounded like the API stores it; null when empty */
+export function boothSizeInSqm(value: string, unit: AreaUnit): number | null {
+  if (value.trim() === "") return null;
+  const size = Number(value);
+  return Math.round((unit === "sqft" ? size * SQFT_TO_SQM : size) * 100) / 100;
+}
+
+export function boothSizeProblem(value: string): string | null {
+  if (value.trim() === "") return null;
+  const size = Number(value);
+  return Number.isNaN(size) || size <= 0 ? "Booth size must be more than zero." : null;
+}

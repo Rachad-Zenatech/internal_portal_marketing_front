@@ -41,7 +41,7 @@ function FilterSelect({ label, value, options, onChange, disabled }: FilterSelec
       <SelectTrigger className="w-full sm:w-44" aria-label={label}>
         <SelectValue placeholder={label} />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent position="popper" className="max-h-72">
         <SelectItem value={ALL}>All {label.toLowerCase()}</SelectItem>
         {options.map((o) => (
           <SelectItem key={o.value} value={o.value}>

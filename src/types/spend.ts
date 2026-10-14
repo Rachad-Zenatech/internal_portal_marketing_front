@@ -90,6 +90,8 @@ export interface SpendSummary {
   by_source: { supplier: number; travel: number };
   by_month: (SpendFigures & { month: string })[];
   per_day: number | null;
+  /** Expected total ÷ booth size; null without a booth size */
+  per_sqm: number | null;
   other_currencies: (SpendFigures & { currency: string })[];
   mixed_currencies: boolean;
 }
@@ -109,7 +111,9 @@ export interface SpendLineCreate {
   paid_on?: string | null;
   payment_method?: PaymentMethod | null;
   cost_type?: CostType | null;
+  /** Where the cost came from; people can only create MANUAL or STAFF_CALCULATOR costs */
+  source?: "MANUAL" | "STAFF_CALCULATOR";
 }
 
-/** PATCH body: only the fields sent change */
-export type SpendLineUpdate = Partial<SpendLineCreate>;
+/** PATCH body: only the fields sent change. Where a cost came from can't be changed. */
+export type SpendLineUpdate = Partial<Omit<SpendLineCreate, "source">>;

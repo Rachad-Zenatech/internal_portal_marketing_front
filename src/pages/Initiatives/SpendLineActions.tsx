@@ -140,7 +140,7 @@ function MarkPaidForm({ line, initiativeId, onDone }: QuickFormProps) {
           <SelectTrigger id={`paid-method-${line.id}`} className="w-full" size="sm">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent position="popper" className="max-h-72">
             {(Object.keys(PAYMENT_METHOD_LABELS) as PaymentMethod[]).map((m) => (
               <SelectItem key={m} value={m}>
                 {PAYMENT_METHOD_LABELS[m]}
@@ -170,8 +170,11 @@ export default function SpendLineActions({ line, initiativeId, onEdit }: SpendLi
   const remove = useDeleteSpendLine(initiativeId);
 
   const locked = new Set(line.locked_fields);
-  const canInvoice = line.editable && (line.status === "ESTIMATED" || line.status === "COMMITTED") && !locked.has("status") && !locked.has("amount");
-  const canPay = line.editable && line.status === "INVOICED" && !locked.has("status");
+  // Staff time is never invoiced, so it has no invoice / payment quick actions
+  const staffTime = line.source === "STAFF_CALCULATOR";
+  const canInvoice =
+    !staffTime && line.editable && (line.status === "ESTIMATED" || line.status === "COMMITTED") && !locked.has("status") && !locked.has("amount");
+  const canPay = !staffTime && line.editable && line.status === "INVOICED" && !locked.has("status");
   const quickAction = canInvoice ? "invoiced" : canPay ? "paid" : null;
 
   if (!line.editable && !line.can_delete) return null;
