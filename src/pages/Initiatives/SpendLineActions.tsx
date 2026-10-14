@@ -184,9 +184,16 @@ export default function SpendLineActions({ line, initiativeId, onEdit }: SpendLi
       {quickAction && (
         <Popover open={quick === quickAction} onOpenChange={(open) => setQuick(open ? quickAction : null)}>
           <PopoverTrigger asChild>
-            <Button type="button" variant="ghost" size="xs" className="gap-1 text-xs whitespace-nowrap">
+            <Button
+              type="button"
+              variant="ghost"
+              size="xs"
+              className="gap-1 text-xs whitespace-nowrap"
+              aria-label={quickAction === "invoiced" ? "Mark invoiced" : "Mark paid"}
+              title={quickAction === "invoiced" ? "Mark invoiced" : "Mark paid"}
+            >
               {quickAction === "invoiced" ? <FileText className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-              {quickAction === "invoiced" ? "Mark invoiced" : "Mark paid"}
+              <span className="hidden @7xl:inline">{quickAction === "invoiced" ? "Mark invoiced" : "Mark paid"}</span>
             </Button>
           </PopoverTrigger>
           <PopoverContent align="end" className="w-72">

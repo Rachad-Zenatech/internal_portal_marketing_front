@@ -23,6 +23,12 @@ export interface NavigationItem {
   subItemsFrom?: "channels";
 }
 
+/**
+ * Event a page dispatches to highlight a sidebar link other than its own URL,
+ * e.g. an initiative's page highlighting its channel. detail: { path: the page's pathname, navPath: the link to highlight }
+ */
+export const SET_ACTIVE_NAV_EVENT = "set-active-nav";
+
 /** Fill in sub-items that come from reference data, e.g. one link per marketing channel. */
 export function withChannelSubItems(items: NavigationItem[], channels: { code: string; name: string }[]): NavigationItem[] {
   return items.map((item) => {

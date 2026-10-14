@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,7 @@ import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
+import { useInitiativeNavigation } from "./useInitiativeNavigation";
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -272,18 +273,8 @@ export default function InitiativeDetail() {
   const { hasPermission } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
 
-  // Show the initiative's name in the breadcrumb instead of its id
-  useEffect(() => {
-    if (!initiative) return;
-    document.dispatchEvent(
-      new CustomEvent("set-breadcrumb-trail", {
-        detail: {
-          path: `/initiatives/${initiative.id}`,
-          items: [{ title: "Initiatives", path: "/initiatives" }, { title: initiative.name }],
-        },
-      }),
-    );
-  }, [initiative]);
+  // Initiatives › Events › Facility Expo 2026, with the channel highlighted in the sidebar
+  useInitiativeNavigation(initiative);
 
   if (isLoading) {
     return <p className="p-8 text-sm text-slate-500">Loading initiative...</p>;

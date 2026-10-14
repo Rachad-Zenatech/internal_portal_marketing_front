@@ -20,7 +20,7 @@ export function useSpendSummary(initiativeId: string | undefined) {
 }
 
 // A cost changes the cost sheet, its totals, and the cost totals on the initiative and the list
-function useRefreshCosts(initiativeId: string) {
+export function useRefreshCosts(initiativeId: string) {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([

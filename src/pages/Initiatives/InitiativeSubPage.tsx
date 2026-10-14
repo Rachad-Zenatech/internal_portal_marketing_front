@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +6,7 @@ import type { InitiativeListItem } from "@/types/initiatives";
 import { InitiativeNotLoaded } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
+import { useInitiativeNavigation } from "./useInitiativeNavigation";
 
 interface InitiativeSubPageProps {
   /** Page name, e.g. "Costs"; also the last breadcrumb */
@@ -25,22 +25,8 @@ export default function InitiativeSubPage({ title, path, icon: Icon, tone, descr
   const { id } = useParams<{ id: string }>();
   const { data: initiative, isLoading, error } = useInitiative(id);
 
-  // Initiatives › Facility Expo 2026 - Booth › Costs
-  useEffect(() => {
-    if (!initiative) return;
-    document.dispatchEvent(
-      new CustomEvent("set-breadcrumb-trail", {
-        detail: {
-          path: `/initiatives/${initiative.id}/${path}`,
-          items: [
-            { title: "Initiatives", path: "/initiatives" },
-            { title: initiative.name, path: `/initiatives/${initiative.id}` },
-            { title },
-          ],
-        },
-      }),
-    );
-  }, [initiative, path, title]);
+  // Initiatives › Events › Facility Expo 2026 - Booth › Costs, with the channel highlighted in the sidebar
+  useInitiativeNavigation(initiative, { title, path });
 
   if (isLoading) {
     return <p className="p-8 text-sm text-slate-500">Loading initiative...</p>;

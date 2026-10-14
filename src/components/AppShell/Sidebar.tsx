@@ -1,8 +1,8 @@
 import { ChevronDown, ChevronRight, PanelRight } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { navigation, withChannelSubItems, type NavigationItem } from "./Navigation";
+import { navigation, SET_ACTIVE_NAV_EVENT, withChannelSubItems, type NavigationItem } from "./Navigation";
 import { useReferenceData } from "@/hooks/useReferenceData";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import zenatechLogo from "@/assets/zenatech_logo.png";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/lib/AuthContext";
@@ -25,6 +25,17 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { data: reference } = useReferenceData();
   const navigationItems = withChannelSubItems(navigation, reference?.channels ?? []);
+
+  // A page can ask for a different link to be highlighted, e.g. an initiative's page highlights its channel
+  const [activeNav, setActiveNav] = useState<{ path: string; navPath: string } | null>(null);
+  useEffect(() => {
+    const handleSetActiveNav = (e: Event) => setActiveNav((e as CustomEvent<{ path: string; navPath: string }>).detail);
+    document.addEventListener(SET_ACTIVE_NAV_EVENT, handleSetActiveNav);
+    return () => document.removeEventListener(SET_ACTIVE_NAV_EVENT, handleSetActiveNav);
+  }, []);
+  // Only applies while still on the page that asked for it
+  const highlightedPath =
+    activeNav?.path === location.pathname ? activeNav.navPath : `${location.pathname}${location.search}`;
 
   const { hasPermission, hasRole, user } = useAuth();
   const isSuperAdmin = hasRole("SUPER_ADMIN") || user?.is_super_admin;
@@ -211,7 +222,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                         >
                           {item.subItems.map((sub) => {
                             // Compare the query too, so "?channel=" links highlight individually
-                            const isSubActive = `${location.pathname}${location.search}` === sub.path;
+                            const isSubActive = highlightedPath === sub.path;
                             return (
                               <Link
                                 key={sub.path}

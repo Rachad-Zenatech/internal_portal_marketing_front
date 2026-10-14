@@ -16,7 +16,7 @@ import type { InitiativeFilters, InitiativeListItem, InitiativeStatus } from "@/
 import type { ReferenceItem } from "@/types/referenceData";
 import { channelStyle } from "./channelStyles";
 import { EVENTS_CHANNEL_CODE, ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBudget, formatDates, formatEventLocation, formatMoney, initials } from "./format";
+import { formatBudget, formatDateRangeShort, formatEventLocation, formatMoney, initials } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 
@@ -68,14 +68,22 @@ function ChannelCell({ code, name, subName }: { code: string | undefined; name: 
   );
 }
 
-/** Expected cost (estimates included) with a thin bar against the budget: invoiced or paid solid, the rest lighter */
+/**
+ * Expected cost (estimates included) with a thin bar against the budget: invoiced or paid solid, the rest lighter.
+ * Over budget, the bar is the expected total instead: the budget's share in blue, the overspend in red, so no
+ * part of it can be read as budget left.
+ */
 function ExpectedCostCell({ item }: { item: InitiativeListItem }) {
   const { expected_total: expected, actual_amount: actual, budget_amount: budget, currency } = item;
   const hasCosts = expected !== 0 || item.has_mixed_currencies;
   const percent = budget ? (expected / budget) * 100 : null;
-  // Widths within the bar: the invoiced or paid part, then the rest of the expected total (both capped at the budget)
-  const actualWidth = budget ? Math.min((Math.max(actual, 0) / budget) * 100, 100) : 0;
-  const restWidth = percent === null ? 0 : Math.max(Math.min(percent, 100) - actualWidth, 0);
+  const overBudget = budget !== null && percent !== null && percent > 100;
+  // The bar's full width stands for the budget, or for the expected total when that's bigger
+  const scale = overBudget ? expected : (budget ?? 0);
+  const budgetWidth = overBudget && budget ? (budget / scale) * 100 : 100;
+  const actualWidth = scale ? Math.min((Math.max(actual, 0) / scale) * 100, budgetWidth) : 0;
+  const restWidth = overBudget ? budgetWidth - actualWidth : Math.max(Math.min(percent ?? 0, 100) - actualWidth, 0);
+  const overWidth = overBudget ? 100 - budgetWidth : 0;
   return (
     <div className="flex flex-col items-end gap-1">
       <span className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums">
@@ -94,13 +102,20 @@ function ExpectedCostCell({ item }: { item: InitiativeListItem }) {
       {percent !== null && hasCosts && (
         <span
           className="flex h-1.5 w-20 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800"
-          title={`${Math.round(percent)}% of the budget`}
+          title={
+            overBudget && budget !== null
+              ? `${formatMoney(expected - budget, currency)} over the ${formatMoney(budget, currency)} budget`
+              : `${Math.round(percent)}% of the budget`
+          }
         >
-          <span className={`h-full ${percent > 100 ? "bg-red-600 dark:bg-red-400" : "bg-indigo-800 dark:bg-indigo-300"}`} style={{ width: `${actualWidth}%` }} />
-          <span
-            className={`h-full ${percent > 100 ? "bg-red-300 dark:bg-red-800" : "bg-indigo-400 dark:bg-indigo-700"}`}
-            style={{ width: `${restWidth}%` }}
-          />
+          <span className="h-full bg-indigo-800 dark:bg-indigo-300" style={{ width: `${actualWidth}%` }} />
+          <span className="h-full bg-indigo-400 dark:bg-indigo-700" style={{ width: `${restWidth}%` }} />
+          {overBudget && <span className="h-full bg-red-600 dark:bg-red-400" style={{ width: `${overWidth}%` }} />}
+        </span>
+      )}
+      {overBudget && budget !== null && (
+        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-red-600 dark:text-red-400">
+          {formatMoney(expected - budget, currency)} over
         </span>
       )}
     </div>
@@ -179,8 +194,11 @@ export default function Initiatives() {
 
   // The Events channel gets Code and Location columns
   const isEventsView = channelCode === EVENTS_CHANNEL_CODE;
-  const columnCount = isEventsView ? 10 : 8;
+  // Enough to span every column, whichever are showing at this width
+  const columnCount = 10;
   const subChannelCodes = useMemo(() => new Map(reference?.sub_channels.map((s) => [s.id, s.code])), [reference]);
+  const locationOf = (item: InitiativeListItem) =>
+    formatEventLocation(item.city, item.country_code, ONLINE_EVENT_SUB_CHANNELS.has(subChannelCodes.get(item.sub_channel_id ?? -1) ?? ""));
   const channelCodes = useMemo(() => new Map(reference?.channels.map((c) => [c.id, c.code])), [reference]);
   const header = channel ? channelStyle(channel.code) : { icon: Megaphone, tile: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" };
   const HeaderIcon = header.icon;
@@ -267,20 +285,21 @@ export default function Initiatives() {
         )}
       </div>
 
-      <Card className="flex-1 min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm flex flex-col p-0">
+      {/* @container: columns appear as the card gets wider (not the window), so nothing scrolls sideways;
+          the details of hidden columns move under the initiative's name */}
+      <Card className="@container flex-1 min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm flex flex-col p-0">
         <TooltipProvider delayDuration={150}>
           <Table className="m-0 relative" containerClassName="w-full overflow-x-auto">
             <TableHeader>
               <TableRow className="border-t-0">
                 <TableHead className="h-12">Initiative</TableHead>
-                {isEventsView && <TableHead className="h-12">Code</TableHead>}
-                {isEventsView && <TableHead className="h-12">Location</TableHead>}
-                <TableHead className="hidden h-12 md:table-cell">Brand</TableHead>
-                <TableHead className="h-12">Channel</TableHead>
-                <TableHead className="hidden h-12 lg:table-cell">Owner</TableHead>
-                <TableHead className="hidden h-12 sm:table-cell">Dates</TableHead>
-                <TableHead className="h-12 text-right">Budget</TableHead>
-                <TableHead className="hidden h-12 text-right sm:table-cell">Expected cost</TableHead>
+                {isEventsView && <TableHead className="hidden h-12 @4xl:table-cell">Location</TableHead>}
+                <TableHead className="hidden h-12 @3xl:table-cell">Brand</TableHead>
+                <TableHead className="hidden h-12 @5xl:table-cell">{isEventsView ? "Type" : "Channel"}</TableHead>
+                <TableHead className="hidden h-12 @4xl:table-cell">Owner</TableHead>
+                <TableHead className="hidden h-12 @2xl:table-cell">Dates</TableHead>
+                <TableHead className="hidden h-12 text-right @xl:table-cell">Budget</TableHead>
+                <TableHead className="hidden h-12 text-right @lg:table-cell">Expected cost</TableHead>
                 <TableHead className="h-12">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -317,39 +336,42 @@ export default function Initiatives() {
                       <Link to={`/initiatives/${item.id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
                         {item.name}
                       </Link>
-                      <div className="text-xs font-normal text-slate-500 md:hidden dark:text-zinc-400">{item.brand_name}</div>
+                      {/* The event code always, then whatever the hidden columns would have shown */}
+                      <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs font-normal text-slate-500 dark:text-zinc-400">
+                        {item.event_code && <span className="font-mono">{item.event_code}</span>}
+                        <span className="@3xl:hidden">{item.brand_name}</span>
+                        <span className="@5xl:hidden">{isEventsView ? item.sub_channel_name : item.sub_channel_name ? `${item.channel_name} / ${item.sub_channel_name}` : item.channel_name}</span>
+                        {isEventsView && locationOf(item) !== "—" && <span className="@4xl:hidden">{locationOf(item)}</span>}
+                        {(item.start_date || item.end_date) && <span className="@2xl:hidden">{formatDateRangeShort(item.start_date, item.end_date)}</span>}
+                        {item.budget_amount !== null && <span className="@xl:hidden">Budget {formatBudget(item.budget_amount, item.currency)}</span>}
+                        {item.expected_total !== 0 && <span className="@lg:hidden">Expected {formatMoney(item.expected_total, item.currency)}</span>}
+                      </div>
                     </TableCell>
-                    {isEventsView && (
-                      <TableCell className="whitespace-nowrap font-mono text-xs text-slate-600 dark:text-zinc-300">{item.event_code ?? "—"}</TableCell>
-                    )}
-                    {isEventsView && (
-                      <TableCell>
-                        {formatEventLocation(
-                          item.city,
-                          item.country_code,
-                          ONLINE_EVENT_SUB_CHANNELS.has(subChannelCodes.get(item.sub_channel_id ?? -1) ?? ""),
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="hidden md:table-cell">{item.brand_name}</TableCell>
-                    <TableCell>
-                      <ChannelCell code={channelCodes.get(item.channel_id)} name={item.channel_name} subName={item.sub_channel_name} />
+                    {isEventsView && <TableCell className="hidden @4xl:table-cell">{locationOf(item)}</TableCell>}
+                    <TableCell className="hidden @3xl:table-cell">{item.brand_name}</TableCell>
+                    <TableCell className="hidden @5xl:table-cell">
+                      {isEventsView ? (
+                        item.sub_channel_name ?? "—"
+                      ) : (
+                        <ChannelCell code={channelCodes.get(item.channel_id)} name={item.channel_name} subName={item.sub_channel_name} />
+                      )}
                     </TableCell>
-                    <TableCell className="hidden lg:table-cell">
+                    <TableCell className="hidden @4xl:table-cell">
                       {item.owner_name ? (
-                        <div className="flex items-center gap-2 whitespace-nowrap">
+                        <div className="flex items-center gap-2" title={item.owner_name}>
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white dark:bg-zinc-200 dark:text-zinc-900">
                             {initials(item.owner_name)}
                           </span>
-                          {item.owner_name}
+                          {/* Just the initials until there's room for the name */}
+                          <span className="hidden @7xl:inline">{item.owner_name}</span>
                         </div>
                       ) : (
                         "—"
                       )}
                     </TableCell>
-                    <TableCell className="hidden whitespace-nowrap sm:table-cell">{formatDates(item.start_date, item.end_date)}</TableCell>
-                    <TableCell className="text-right tabular-nums whitespace-nowrap">{formatBudget(item.budget_amount, item.currency)}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell className="hidden @2xl:table-cell">{formatDateRangeShort(item.start_date, item.end_date)}</TableCell>
+                    <TableCell className="hidden text-right tabular-nums whitespace-nowrap @xl:table-cell">{formatBudget(item.budget_amount, item.currency)}</TableCell>
+                    <TableCell className="hidden @lg:table-cell">
                       <ExpectedCostCell item={item} />
                     </TableCell>
                     <TableCell>

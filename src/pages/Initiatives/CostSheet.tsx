@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AlertCircle, Calculator, ChevronDown, Clock, Lock, Plane, Plus } from "lucide-react";
+import { AlertCircle, Calculator, ChevronDown, Clock, FileUp, Lock, Plane, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeListItem } from "@/types/initiatives";
 import type { SpendExpenseTypeSummary, SpendLine, SpendStatus } from "@/types/spend";
 import { formatDate, formatMoney, formatMonth, formatVariance, isoToday } from "./format";
+import CostSheetUpload from "./CostSheetUpload";
 import SpendLineActions from "./SpendLineActions";
 import SpendLineDialog from "./SpendLineDialog";
 import StaffTimeDialog from "./StaffTimeDialog";
@@ -49,19 +50,19 @@ function lockMessage(line: SpendLine) {
   return null;
 }
 
-// Shared column widths, so every group's table lines up; people who can edit get an actions column
-const COLUMN_WIDTHS = ["26%", "15%", "10%", "10%", "10%", "11%", "9%", "9%"];
-const EDIT_COLUMN_WIDTHS = ["22%", "12%", "9%", "9%", "8%", "11%", "8%", "9%", "12%"];
-
-function Columns({ canEdit }: { canEdit: boolean }) {
-  return (
-    <colgroup>
-      {(canEdit ? EDIT_COLUMN_WIDTHS : COLUMN_WIDTHS).map((width, i) => (
-        <col key={i} style={{ width }} />
-      ))}
-    </colgroup>
-  );
-}
+// Which columns show depends on the cost sheet's own width (container queries), so the table never scrolls
+// sideways: details of hidden columns move under the item, the status or the actual amount instead.
+const COLUMNS = {
+  vendor: "hidden w-[13%] @3xl:table-cell",
+  estimate: "hidden w-[10%] @xl:table-cell",
+  // Fixed widths while space is tight, so amounts and status chips never squash
+  actual: "w-20 @xl:w-[10%]",
+  variance: "hidden w-[8%] @5xl:table-cell",
+  status: "hidden w-24 @md:table-cell @2xl:w-[13%]",
+  invoice: "hidden w-[10%] @4xl:table-cell",
+  paidOn: "hidden w-[10%] @7xl:table-cell",
+  actions: "w-16 @7xl:w-36",
+};
 
 function LineRow({ line, today, actions }: { line: SpendLine; today: string; actions?: React.ReactNode }) {
   const lock = lockMessage(line);
@@ -83,7 +84,7 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
               <TooltipContent>{lock}</TooltipContent>
             </Tooltip>
           )}
-          <div className="min-w-0">
+          <div className="min-w-0 break-words">
             <div className="font-medium text-slate-900 dark:text-zinc-100">
               {line.description || line.category_name}
               {line.source === "STAFF_CALCULATOR" && (
@@ -93,20 +94,37 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
               )}
             </div>
             <div className={`text-xs ${MUTED}`}>{line.category_name}</div>
+            {/* What the hidden columns would show, at narrower widths */}
+            <div className={`flex flex-wrap gap-x-3 text-xs ${MUTED}`}>
+              {line.vendor && <span className="@3xl:hidden">{line.vendor}</span>}
+              {line.invoice_ref && <span className="font-mono @4xl:hidden">{line.invoice_ref}</span>}
+              {estimate !== null && <span className="tabular-nums @xl:hidden">Est. {formatMoney(estimate, line.currency)}</span>}
+            </div>
+            {/* Phone widths: the status sits under the item instead of in its own column */}
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 @md:hidden">
+              <Badge variant="outline" className={SPEND_STATUS_STYLES[line.status]}>
+                {SPEND_STATUS_LABELS[line.status]}
+              </Badge>
+              {awaitingInvoice && <span className="text-[11px] text-amber-600 dark:text-amber-400">Awaiting invoice</span>}
+              {line.paid_on && <span className={`text-[11px] ${MUTED}`}>on {formatDate(line.paid_on)}</span>}
+            </div>
           </div>
         </div>
       </TableCell>
-      <TableCell className="whitespace-normal">{line.vendor ?? <span className={MUTED}>—</span>}</TableCell>
-      <TableCell className="text-right tabular-nums">
+      <TableCell className={`whitespace-normal break-words ${COLUMNS.vendor}`}>{line.vendor ?? <span className={MUTED}>—</span>}</TableCell>
+      <TableCell className={`text-right tabular-nums ${COLUMNS.estimate}`}>
         {estimate === null ? <span className={MUTED}>—</span> : formatMoney(estimate, line.currency)}
       </TableCell>
       <TableCell className="text-right tabular-nums font-medium">
         {isActualStatus(line.status) ? formatMoney(line.amount, line.currency) : <span className={MUTED}>—</span>}
+        {line.variance !== null && line.variance !== 0 && (
+          <div className={`text-xs font-normal @5xl:hidden ${varianceClass(line.variance)}`}>{formatVariance(line.variance, line.currency)}</div>
+        )}
       </TableCell>
-      <TableCell className={`text-right tabular-nums ${line.variance === null ? MUTED : varianceClass(line.variance)}`}>
+      <TableCell className={`text-right tabular-nums ${COLUMNS.variance} ${line.variance === null ? MUTED : varianceClass(line.variance)}`}>
         {line.variance === null ? "—" : formatVariance(line.variance, line.currency)}
       </TableCell>
-      <TableCell>
+      <TableCell className={COLUMNS.status}>
         <Badge variant="outline" className={SPEND_STATUS_STYLES[line.status]}>
           {SPEND_STATUS_LABELS[line.status]}
         </Badge>
@@ -116,9 +134,10 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
             Awaiting invoice
           </div>
         )}
+        {line.paid_on && <div className={`mt-1 text-[11px] @7xl:hidden ${MUTED}`}>on {formatDate(line.paid_on)}</div>}
       </TableCell>
-      <TableCell className="font-mono text-xs">{line.invoice_ref ?? <span className={`font-sans ${MUTED}`}>—</span>}</TableCell>
-      <TableCell className="whitespace-nowrap">{formatDate(line.paid_on) ?? <span className={MUTED}>—</span>}</TableCell>
+      <TableCell className={`break-all font-mono text-xs ${COLUMNS.invoice}`}>{line.invoice_ref ?? <span className={`font-sans ${MUTED}`}>—</span>}</TableCell>
+      <TableCell className={COLUMNS.paidOn}>{formatDate(line.paid_on) ?? <span className={MUTED}>—</span>}</TableCell>
       {actions !== undefined && <TableCell className="px-1">{actions}</TableCell>}
     </TableRow>
   );
@@ -181,20 +200,19 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today, renderA
       </CollapsibleTrigger>
       <CollapsibleContent>
         {/* Wide table scrolls inside the card on narrow screens; the header above stays full width */}
-        <Table className={`table-fixed ${canEdit ? "min-w-[980px]" : "min-w-[820px]"}`} containerClassName="w-full overflow-x-auto">
-          <Columns canEdit={canEdit} />
+        <Table className="table-fixed" containerClassName="w-full">
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
-              <TableHead>Vendor</TableHead>
-              <TableHead className="text-right">Estimate</TableHead>
-              <TableHead className="text-right">Actual</TableHead>
-              <TableHead className="text-right">Variance</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Invoice #</TableHead>
-              <TableHead>Paid on</TableHead>
+              <TableHead className={COLUMNS.vendor}>Vendor</TableHead>
+              <TableHead className={`text-right ${COLUMNS.estimate}`}>Estimate</TableHead>
+              <TableHead className={`text-right ${COLUMNS.actual}`}>Actual</TableHead>
+              <TableHead className={`text-right ${COLUMNS.variance}`}>Variance</TableHead>
+              <TableHead className={COLUMNS.status}>Status</TableHead>
+              <TableHead className={COLUMNS.invoice}>Invoice #</TableHead>
+              <TableHead className={COLUMNS.paidOn}>Paid on</TableHead>
               {canEdit && (
-                <TableHead>
+                <TableHead className={COLUMNS.actions}>
                   <span className="sr-only">Actions</span>
                 </TableHead>
               )}
@@ -252,6 +270,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
   // The add / edit dialog: open, and the cost being edited (none when adding)
   const [dialog, setDialog] = useState<{ open: boolean; line?: SpendLine }>({ open: false });
   const [staffTimeOpen, setStaffTimeOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const today = isoToday();
 
   // Lines arrive ordered by expense type, category and date; keep that order within each group
@@ -305,6 +324,10 @@ export default function CostSheet({ initiative }: CostSheetProps) {
 
   const addButton = canEdit && (
     <div className="flex flex-wrap gap-2">
+      <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setUploadOpen(true)}>
+        <FileUp className="h-4 w-4" />
+        Upload cost sheet
+      </Button>
       <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStaffTimeOpen(true)}>
         <Calculator className="h-4 w-4" />
         Add staff time
@@ -324,20 +347,29 @@ export default function CostSheet({ initiative }: CostSheetProps) {
       vendors={vendors}
     />
   );
-  const staffTimeDialog = canEdit && <StaffTimeDialog open={staffTimeOpen} onOpenChange={setStaffTimeOpen} initiative={initiative} />;
+  // Rendered in the same place whether the sheet is empty or not, so an open dialog isn't rebuilt (and its
+  // "saved" step lost) when the first costs arrive
+  const dialogs = canEdit && (
+    <>
+      {costDialog}
+      <StaffTimeDialog open={staffTimeOpen} onOpenChange={setStaffTimeOpen} initiative={initiative} />
+      <CostSheetUpload open={uploadOpen} onOpenChange={setUploadOpen} initiative={initiative} />
+    </>
+  );
 
   if (lines.data.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-200 p-6 text-center dark:border-zinc-800">
-        <p className={`text-sm ${MUTED}`}>
-          {isEvent
-            ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them — start with estimates if you only have quotes."
-            : "No costs yet."}
-        </p>
-        {addButton}
-        {costDialog}
-        {staffTimeDialog}
-      </div>
+      <TooltipProvider delayDuration={150}>
+        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-200 p-6 text-center dark:border-zinc-800">
+          <p className={`text-sm ${MUTED}`}>
+            {isEvent
+              ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them — start with estimates if you only have quotes."
+              : "No costs yet."}
+          </p>
+          {addButton}
+        </div>
+        {dialogs}
+      </TooltipProvider>
     );
   }
 
@@ -349,7 +381,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="flex flex-col gap-4">
+      <div className="@container flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filter costs by status">
             {STATUS_FILTERS.map((value) => {
@@ -414,8 +446,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
           )}
         </div>
       </div>
-      {costDialog}
-      {staffTimeDialog}
+      {dialogs}
     </TooltipProvider>
   );
 }
