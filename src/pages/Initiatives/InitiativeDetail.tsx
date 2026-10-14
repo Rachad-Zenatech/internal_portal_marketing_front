@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useDemoSummary } from "@/hooks/useDemos";
 import { useInitiative } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
@@ -244,6 +245,25 @@ function SubPageLink({ to, title, icon: Icon, tone, badge, children }: SubPageLi
   );
 }
 
+/** "20 demos · $1,000 per demo · 2 became customers" */
+function DemosSnapshot({ initiativeId }: { initiativeId: string }) {
+  const { data: summary, isLoading } = useDemoSummary(initiativeId);
+  if (isLoading) return <>Loading demos…</>;
+  if (!summary || summary.total === 0) {
+    return <>No demos logged yet. Log each one as it happens to see what each demo cost and which became customers.</>;
+  }
+  return (
+    <>
+      <span className="font-medium text-slate-900 dark:text-zinc-100">
+        {summary.total} {summary.total === 1 ? "demo" : "demos"}
+      </span>
+      {summary.cost_per_demo !== null && <> · {formatMoney(summary.cost_per_demo, summary.currency)} per demo</>}
+      {" · "}
+      {summary.funnel.customers} became {summary.funnel.customers === 1 ? "a customer" : "customers"}
+    </>
+  );
+}
+
 function CostsSnapshot({ initiative }: { initiative: InitiativeListItem }) {
   const { expected_total: expected, actual_amount: actual, budget_amount: budget, currency } = initiative;
   if (expected === 0 && !initiative.has_mixed_currencies) {
@@ -359,8 +379,8 @@ export default function InitiativeDetail() {
         />
       </div>
 
-      {/* Costs and performance each have their own page, so this one stays an overview */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {/* Costs, performance and (for events) demos each have their own page, so this one stays an overview */}
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${initiative.event_code ? "xl:grid-cols-3" : ""}`}>
         <SubPageLink
           to={`/initiatives/${initiative.id}/costs`}
           title="Costs"
@@ -377,6 +397,16 @@ export default function InitiativeDetail() {
         >
           Where the costs will land against the budget, by expense type. Results and the verdict come next.
         </SubPageLink>
+        {initiative.event_code && (
+          <SubPageLink
+            to={`/initiatives/${initiative.id}/demos`}
+            title="Demos"
+            icon={Presentation}
+            tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400"
+          >
+            <DemosSnapshot initiativeId={initiative.id} />
+          </SubPageLink>
+        )}
       </div>
 
       {initiative.event_code ? (

@@ -12,6 +12,7 @@ const Initiatives = lazy(() => import("./pages/Initiatives/Initiatives"));
 const InitiativeDetail = lazy(() => import("./pages/Initiatives/InitiativeDetail"));
 const InitiativeCosts = lazy(() => import("./pages/Initiatives/InitiativeCosts"));
 const InitiativePerformance = lazy(() => import("./pages/Initiatives/InitiativePerformance"));
+const InitiativeDemos = lazy(() => import("./pages/Initiatives/InitiativeDemos"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -101,6 +102,14 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="INITIATIVES">
                     <InitiativePerformance />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/initiatives/:id/demos"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <InitiativeDemos />
                   </ProtectedRoute>
                 }
               />

@@ -36,6 +36,11 @@ export interface SpendCategory extends ReferenceItem {
   help_text: string | null;
 }
 
+/** What came of a demo; funnel_rank: 0 none yet / not a fit, 1 follow-up … 4 became a customer */
+export interface DemoOutcome extends ReferenceItem {
+  funnel_rank: number;
+}
+
 export interface ReferenceData {
   brands: ReferenceItem[];
   channels: ChannelItem[];
@@ -49,4 +54,7 @@ export interface ReferenceData {
   event_types: ReferenceItem[];
   expense_types: ExpenseType[];
   spend_categories: SpendCategory[];
+  /** Booth, scheduled or live demo */
+  demo_types: ReferenceItem[];
+  demo_outcomes: DemoOutcome[];
 }
