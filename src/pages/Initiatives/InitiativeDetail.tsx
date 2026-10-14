@@ -1,28 +1,21 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Receipt, Target, TrendingUp, Trophy, Video, Wallet } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useInitiative } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
-import { ApiError } from "@/services/helper";
 import type { InitiativeListItem } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import { channelStyle, FUNNEL_STAGE_STYLES } from "./channelStyles";
-import CostSheet from "./CostSheet";
+import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
+import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, initials, timelineProgress } from "./format";
+import { formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
-
-const CARD = "rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm";
-const MUTED = "text-slate-500 dark:text-zinc-400";
-
-function Empty({ text = "Not set" }: { text?: string }) {
-  return <span className="font-normal text-slate-400 dark:text-zinc-500">{text}</span>;
-}
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -30,28 +23,6 @@ function Detail({ label, value }: { label: string; value: React.ReactNode }) {
       <dt className={`text-xs font-medium ${MUTED}`}>{label}</dt>
       <dd className="mt-1 truncate text-sm font-medium text-slate-900 dark:text-zinc-100">{value || <Empty />}</dd>
     </div>
-  );
-}
-
-interface SectionProps {
-  title: string;
-  icon: React.ElementType;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}
-
-function Section({ title, icon: Icon, action, children }: SectionProps) {
-  return (
-    <Card className={`${CARD} gap-0 p-5`}>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h3 className="flex items-center gap-2 font-semibold text-slate-900 dark:text-zinc-100">
-          <Icon className={`h-4 w-4 ${MUTED}`} />
-          {title}
-        </h3>
-        {action}
-      </div>
-      {children}
-    </Card>
   );
 }
 
@@ -240,44 +211,56 @@ function EventSection({ initiative, online }: { initiative: InitiativeListItem; 
   );
 }
 
-const COMING_SOON = [
-  {
-    icon: Wallet,
-    title: "Budget & spend",
-    text: "Spend recorded against this initiative's budget.",
-    tone: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400",
-  },
-  {
-    icon: TrendingUp,
-    title: "Results",
-    text: "Leads, demos, customers and revenue it brought in.",
-    tone: "bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400",
-  },
-  {
-    icon: Trophy,
-    title: "Was it worth it?",
-    text: "Cost per outcome, ROI and the performance rating.",
-    tone: "bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400",
-  },
-];
+interface SubPageLinkProps {
+  to: string;
+  title: string;
+  icon: React.ElementType;
+  tone: string;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}
 
-function PerformanceSection() {
+/** A card that opens one of the initiative's own pages (Costs, Performance) */
+function SubPageLink({ to, title, icon: Icon, tone, badge, children }: SubPageLinkProps) {
   return (
-    <Section title="Performance" icon={TrendingUp} action={<Badge variant="outline" className={MUTED}>Coming soon</Badge>}>
-      <ul className="flex flex-col gap-4">
-        {COMING_SOON.map(({ icon: Icon, title, text, tone }) => (
-          <li key={title} className="flex gap-3">
-            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${tone}`}>
-              <Icon className="h-4 w-4" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-900 dark:text-zinc-100">{title}</p>
-              <p className={`text-sm ${MUTED}`}>{text}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Section>
+    <Link
+      to={to}
+      className={`${CARD} group flex items-center gap-4 p-5 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:hover:border-zinc-700`}
+    >
+      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-slate-900 dark:text-zinc-100">{title}</span>
+          {badge}
+        </div>
+        <div className={`mt-0.5 text-sm ${MUTED}`}>{children}</div>
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+    </Link>
+  );
+}
+
+function CostsSnapshot({ initiative }: { initiative: InitiativeListItem }) {
+  const { expected_total: expected, actual_amount: actual, budget_amount: budget, currency } = initiative;
+  if (expected === 0 && !initiative.has_mixed_currencies) {
+    return <>No costs yet. Add estimates, orders and invoices as they come in.</>;
+  }
+  const percent = budget ? Math.round((expected / budget) * 100) : null;
+  return (
+    <>
+      <span className="font-medium text-slate-900 dark:text-zinc-100">{formatMoney(expected, currency)}</span> expected
+      {percent !== null && <> · {percent}% of budget</>} · {formatMoney(actual, currency)} invoiced
+      {percent !== null && (
+        <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
+          <span
+            className={`block h-full rounded-full ${percent > 100 ? "bg-red-500" : "bg-amber-500"}`}
+            style={{ width: `${Math.min(Math.max(percent, 2), 100)}%` }}
+          />
+        </span>
+      )}
+    </>
   );
 }
 
@@ -306,20 +289,7 @@ export default function InitiativeDetail() {
   }
 
   if (error || !initiative) {
-    const notFound = error instanceof ApiError && error.status === 404;
-    return (
-      <div className="flex flex-col items-start gap-3 p-8">
-        <p className="text-sm text-slate-600 dark:text-zinc-400">
-          {notFound ? "This initiative doesn't exist or was removed." : "Could not load this initiative. Please try again."}
-        </p>
-        <Button variant="outline" asChild>
-          <Link to="/initiatives">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to initiatives
-          </Link>
-        </Button>
-      </div>
-    );
+    return <InitiativeNotLoaded error={error} />;
   }
 
   const subChannelCode = reference?.sub_channels.find((s) => s.id === initiative.sub_channel_id)?.code;
@@ -397,20 +367,41 @@ export default function InitiativeDetail() {
         />
       </div>
 
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-3 2xl:grid-cols-4">
-        <div className="flex flex-col gap-6 lg:col-span-2 2xl:col-span-3">
-          {initiative.event_code && <EventSection initiative={initiative} online={ONLINE_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")} />}
-          <div className="grid grid-cols-1 gap-6 2xl:grid-cols-2">
+      {/* Costs and performance each have their own page, so this one stays an overview */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <SubPageLink
+          to={`/initiatives/${initiative.id}/costs`}
+          title="Costs"
+          icon={Receipt}
+          tone="bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
+        >
+          <CostsSnapshot initiative={initiative} />
+        </SubPageLink>
+        <SubPageLink
+          to={`/initiatives/${initiative.id}/performance`}
+          title="Performance"
+          icon={TrendingUp}
+          tone="bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400"
+        >
+          Where the costs will land against the budget, by expense type. Results and the verdict come next.
+        </SubPageLink>
+      </div>
+
+      {initiative.event_code ? (
+        // Event beside Goal + Timeline, so neither column leaves a gap
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          <EventSection initiative={initiative} online={ONLINE_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")} />
+          <div className="flex flex-col gap-6">
             <GoalSection initiative={initiative} stages={reference?.funnel_stages ?? []} />
             <TimelineSection initiative={initiative} barColour={channel.dot} />
           </div>
         </div>
-        <PerformanceSection />
-      </div>
-
-      <Section title="Costs" icon={Receipt}>
-        <CostSheet initiativeId={initiative.id} currency={initiative.currency} isEvent={Boolean(initiative.event_code)} />
-      </Section>
+      ) : (
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
+          <GoalSection initiative={initiative} stages={reference?.funnel_stages ?? []} />
+          <TimelineSection initiative={initiative} barColour={channel.dot} />
+        </div>
+      )}
 
       {hasPermission("INITIATIVES_UPDATE") && (
         <InitiativeFormDialog open={editOpen} onOpenChange={setEditOpen} initiative={initiative} />

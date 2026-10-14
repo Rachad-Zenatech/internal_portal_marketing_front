@@ -93,3 +93,23 @@ export interface SpendSummary {
   other_currencies: (SpendFigures & { currency: string })[];
   mixed_currencies: boolean;
 }
+
+/** POST body. Currency defaults to the initiative's; cost type to the category's. */
+export interface SpendLineCreate {
+  category_id: number;
+  status?: SpendStatus;
+  amount: number;
+  estimated_amount?: number | null;
+  currency?: string | null;
+  incurred_on: string;
+  description?: string | null;
+  vendor?: string | null;
+  note?: string | null;
+  invoice_ref?: string | null;
+  paid_on?: string | null;
+  payment_method?: PaymentMethod | null;
+  cost_type?: CostType | null;
+}
+
+/** PATCH body: only the fields sent change */
+export type SpendLineUpdate = Partial<SpendLineCreate>;

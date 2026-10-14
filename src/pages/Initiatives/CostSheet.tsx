@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import { AlertCircle, ChevronDown, Clock, Lock, Plane } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AlertCircle, ChevronDown, Clock, Lock, Plane, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -7,26 +8,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSpendLines, useSpendSummary } from "@/hooks/useSpend";
+import { useAuth } from "@/lib/AuthContext";
+import type { InitiativeListItem } from "@/types/initiatives";
 import type { SpendExpenseTypeSummary, SpendLine, SpendStatus } from "@/types/spend";
 import { formatDate, formatMoney, formatMonth, formatVariance, isoToday } from "./format";
+import SpendLineActions from "./SpendLineActions";
+import SpendLineDialog from "./SpendLineDialog";
+import { isActualStatus, SPEND_STATUS_LABELS, SPEND_STATUS_STYLES } from "./spendRules";
 
 const MUTED = "text-slate-500 dark:text-zinc-400";
 
-const STATUS_LABELS: Record<SpendStatus, string> = {
-  ESTIMATED: "Estimate",
-  COMMITTED: "Committed",
-  INVOICED: "Invoiced",
-  PAID: "Paid",
-};
+// "AWAITING" = committed costs whose date has passed, so their invoice is probably late
+type CostFilter = SpendStatus | "ALL" | "AWAITING";
+const STATUS_FILTERS: CostFilter[] = ["ALL", "ESTIMATED", "COMMITTED", "INVOICED", "PAID", "AWAITING"];
+const FILTER_LABELS: Record<CostFilter, string> = { ...SPEND_STATUS_LABELS, ALL: "All", AWAITING: "Awaiting invoice" };
 
-const STATUS_STYLES: Record<SpendStatus, string> = {
-  ESTIMATED: "border-gray-200 bg-gray-100 text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-  COMMITTED: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
-  INVOICED: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
-  PAID: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
-};
+const isAwaitingInvoice = (line: SpendLine, today: string) => line.status === "COMMITTED" && line.incurred_on < today;
 
-const STATUS_FILTERS: (SpendStatus | "ALL")[] = ["ALL", "ESTIMATED", "COMMITTED", "INVOICED", "PAID"];
+/** The filter a link asked for: ?awaiting=1 or ?status=PAID */
+function filterFromParams(params: URLSearchParams): CostFilter {
+  if (params.get("awaiting") === "1") return "AWAITING";
+  const status = params.get("status");
+  return status && status in SPEND_STATUS_LABELS ? (status as SpendStatus) : "ALL";
+}
 
 const TRAVEL_TYPE = "TRAVEL_ACCOMMODATION";
 
@@ -44,29 +48,25 @@ function lockMessage(line: SpendLine) {
   return null;
 }
 
-const isActual = (status: SpendStatus) => status === "INVOICED" || status === "PAID";
+// Shared column widths, so every group's table lines up; people who can edit get an actions column
+const COLUMN_WIDTHS = ["26%", "15%", "10%", "10%", "10%", "11%", "9%", "9%"];
+const EDIT_COLUMN_WIDTHS = ["22%", "12%", "9%", "9%", "8%", "11%", "8%", "9%", "12%"];
 
-// Shared column widths, so every group's table lines up
-function Columns() {
+function Columns({ canEdit }: { canEdit: boolean }) {
   return (
     <colgroup>
-      <col className="w-[26%]" />
-      <col className="w-[15%]" />
-      <col className="w-[10%]" />
-      <col className="w-[10%]" />
-      <col className="w-[10%]" />
-      <col className="w-[11%]" />
-      <col className="w-[9%]" />
-      <col className="w-[9%]" />
+      {(canEdit ? EDIT_COLUMN_WIDTHS : COLUMN_WIDTHS).map((width, i) => (
+        <col key={i} style={{ width }} />
+      ))}
     </colgroup>
   );
 }
 
-function LineRow({ line, today }: { line: SpendLine; today: string }) {
+function LineRow({ line, today, actions }: { line: SpendLine; today: string; actions?: React.ReactNode }) {
   const lock = lockMessage(line);
-  const awaitingInvoice = line.status === "COMMITTED" && line.incurred_on < today;
+  const awaitingInvoice = isAwaitingInvoice(line, today);
   // Until it's invoiced, a line's amount is its estimate or agreed figure
-  const estimate = line.estimated_amount ?? (isActual(line.status) ? null : line.amount);
+  const estimate = line.estimated_amount ?? (isActualStatus(line.status) ? null : line.amount);
 
   return (
     <TableRow>
@@ -93,14 +93,14 @@ function LineRow({ line, today }: { line: SpendLine; today: string }) {
         {estimate === null ? <span className={MUTED}>—</span> : formatMoney(estimate, line.currency)}
       </TableCell>
       <TableCell className="text-right tabular-nums font-medium">
-        {isActual(line.status) ? formatMoney(line.amount, line.currency) : <span className={MUTED}>—</span>}
+        {isActualStatus(line.status) ? formatMoney(line.amount, line.currency) : <span className={MUTED}>—</span>}
       </TableCell>
       <TableCell className={`text-right tabular-nums ${line.variance === null ? MUTED : varianceClass(line.variance)}`}>
         {line.variance === null ? "—" : formatVariance(line.variance, line.currency)}
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className={STATUS_STYLES[line.status]}>
-          {STATUS_LABELS[line.status]}
+        <Badge variant="outline" className={SPEND_STATUS_STYLES[line.status]}>
+          {SPEND_STATUS_LABELS[line.status]}
         </Badge>
         {awaitingInvoice && (
           <div className="mt-1 flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400">
@@ -111,6 +111,7 @@ function LineRow({ line, today }: { line: SpendLine; today: string }) {
       </TableCell>
       <TableCell className="font-mono text-xs">{line.invoice_ref ?? <span className={`font-sans ${MUTED}`}>—</span>}</TableCell>
       <TableCell className="whitespace-nowrap">{formatDate(line.paid_on) ?? <span className={MUTED}>—</span>}</TableCell>
+      {actions !== undefined && <TableCell className="px-1">{actions}</TableCell>}
     </TableRow>
   );
 }
@@ -122,13 +123,23 @@ interface GroupProps {
   summary: SpendExpenseTypeSummary | undefined;
   currency: string;
   today: string;
+  /** Row actions for people who can edit; leave out for view only */
+  renderActions?: (line: SpendLine) => React.ReactNode;
+  /** Opened from a link to this group: outlined so it's easy to spot */
+  highlighted?: boolean;
 }
 
-function ExpenseTypeGroup({ name, code, lines, summary, currency, today }: GroupProps) {
+function ExpenseTypeGroup({ name, code, lines, summary, currency, today, renderActions, highlighted }: GroupProps) {
+  const canEdit = Boolean(renderActions);
   const [open, setOpen] = useState(true);
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen} className="rounded-lg border border-slate-200 dark:border-zinc-800">
+    <Collapsible
+      id={`cost-group-${code}`}
+      open={open}
+      onOpenChange={setOpen}
+      className={`scroll-mt-20 rounded-lg border ${highlighted ? "border-indigo-400 ring-2 ring-indigo-200 dark:border-indigo-500 dark:ring-indigo-900" : "border-slate-200 dark:border-zinc-800"}`}
+    >
       <CollapsibleTrigger asChild>
         <button
           type="button"
@@ -162,8 +173,8 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today }: Group
       </CollapsibleTrigger>
       <CollapsibleContent>
         {/* Wide table scrolls inside the card on narrow screens; the header above stays full width */}
-        <Table className="min-w-[820px] table-fixed" containerClassName="w-full overflow-x-auto">
-          <Columns />
+        <Table className={`table-fixed ${canEdit ? "min-w-[980px]" : "min-w-[820px]"}`} containerClassName="w-full overflow-x-auto">
+          <Columns canEdit={canEdit} />
           <TableHeader>
             <TableRow>
               <TableHead>Item</TableHead>
@@ -174,11 +185,16 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today }: Group
               <TableHead>Status</TableHead>
               <TableHead>Invoice #</TableHead>
               <TableHead>Paid on</TableHead>
+              {canEdit && (
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {lines.map((line) => (
-              <LineRow key={line.id} line={line} today={today} />
+              <LineRow key={line.id} line={line} today={today} actions={renderActions ? renderActions(line) : undefined} />
             ))}
           </TableBody>
         </Table>
@@ -210,21 +226,30 @@ function LoadingSheet() {
 }
 
 interface CostSheetProps {
-  initiativeId: string;
-  /** The initiative's currency; totals are in it */
-  currency: string;
-  isEvent: boolean;
+  /** Totals are in the initiative's currency */
+  initiative: InitiativeListItem;
 }
 
-export default function CostSheet({ initiativeId, currency, isEvent }: CostSheetProps) {
+export default function CostSheet({ initiative }: CostSheetProps) {
+  const { id: initiativeId, currency } = initiative;
+  const isEvent = Boolean(initiative.event_code);
   const lines = useSpendLines(initiativeId);
   const summary = useSpendSummary(initiativeId);
-  const [filter, setFilter] = useState<SpendStatus | "ALL">("ALL");
+  const { hasPermission } = useAuth();
+  const canEdit = hasPermission("INITIATIVES_UPDATE");
+  // Links from the Performance page can pre-filter (?awaiting=1, ?status=) or point at a group (?group=CODE)
+  const [params, setParams] = useSearchParams();
+  const [filter, setFilter] = useState<CostFilter>(() => filterFromParams(params));
+  const focusGroup = params.get("group");
+  // The add / edit dialog: open, and the cost being edited (none when adding)
+  const [dialog, setDialog] = useState<{ open: boolean; line?: SpendLine }>({ open: false });
   const today = isoToday();
 
   // Lines arrive ordered by expense type, category and date; keep that order within each group
   const groups = useMemo(() => {
-    const visible = (lines.data ?? []).filter((line) => filter === "ALL" || line.status === filter);
+    const visible = (lines.data ?? []).filter(
+      (line) => filter === "ALL" || (filter === "AWAITING" ? isAwaitingInvoice(line, today) : line.status === filter),
+    );
     const byType = new Map<number, { name: string; code: string; lines: SpendLine[] }>();
     for (const line of visible) {
       const group = byType.get(line.expense_type_id) ?? { name: line.expense_type_name, code: line.expense_type_code, lines: [] };
@@ -232,7 +257,19 @@ export default function CostSheet({ initiativeId, currency, isEvent }: CostSheet
       byType.set(line.expense_type_id, group);
     }
     return [...byType.entries()];
-  }, [lines.data, filter]);
+  }, [lines.data, filter, today]);
+
+  // Bring the linked group into view once the costs have loaded
+  const loaded = Boolean(lines.data && summary.data);
+  useEffect(() => {
+    if (focusGroup && loaded) document.getElementById(`cost-group-${focusGroup}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [focusGroup, loaded]);
+
+  // Vendors already on this initiative, suggested when typing a new one
+  const vendors = useMemo(
+    () => [...new Set((lines.data ?? []).map((line) => line.vendor).filter((v): v is string => Boolean(v)))].sort(),
+    [lines.data],
+  );
 
   if (lines.isPending || summary.isPending) return <LoadingSheet />;
 
@@ -257,43 +294,74 @@ export default function CostSheet({ initiativeId, currency, isEvent }: CostSheet
     );
   }
 
+  const addButton = canEdit && (
+    <Button size="sm" className="gap-1.5" onClick={() => setDialog({ open: true })}>
+      <Plus className="h-4 w-4" />
+      Add cost
+    </Button>
+  );
+  const costDialog = canEdit && (
+    <SpendLineDialog
+      open={dialog.open}
+      onOpenChange={(open) => setDialog((prev) => ({ ...prev, open }))}
+      initiative={initiative}
+      line={dialog.line}
+      vendors={vendors}
+    />
+  );
+
   if (lines.data.length === 0) {
     return (
-      <p className={`rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm dark:border-zinc-800 ${MUTED}`}>
-        {isEvent
-          ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them — start with estimates if you only have quotes."
-          : "No costs yet."}
-      </p>
+      <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-200 p-6 text-center dark:border-zinc-800">
+        <p className={`text-sm ${MUTED}`}>
+          {isEvent
+            ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them — start with estimates if you only have quotes."
+            : "No costs yet."}
+        </p>
+        {addButton}
+        {costDialog}
+      </div>
     );
   }
 
   const totals = summary.data.totals;
   const typeSummaries = new Map(summary.data.by_expense_type.map((t) => [t.expense_type_id, t]));
   const counts = lines.data.reduce<Record<string, number>>((acc, line) => ({ ...acc, [line.status]: (acc[line.status] ?? 0) + 1 }), {});
+  counts.ALL = lines.data.length;
+  counts.AWAITING = lines.data.filter((line) => isAwaitingInvoice(line, today)).length;
 
   return (
     <TooltipProvider delayDuration={150}>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter costs by status">
-          {STATUS_FILTERS.map((value) => {
-            const active = filter === value;
-            const count = value === "ALL" ? lines.data.length : counts[value] ?? 0;
-            return (
-              <button
-                key={value}
-                type="button"
-                aria-pressed={active}
-                onClick={() => setFilter(value)}
-                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                  active
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50/80 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                }`}
-              >
-                {value === "ALL" ? "All" : STATUS_LABELS[value]} <span className="opacity-60">{count}</span>
-              </button>
-            );
-          })}
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Filter costs by status">
+            {STATUS_FILTERS.map((value) => {
+              const active = filter === value;
+              const count = counts[value] ?? 0;
+              // Only offer "Awaiting invoice" when there is something late
+              if (value === "AWAITING" && count === 0 && !active) return null;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => {
+                    setFilter(value);
+                    // The chips take over from whatever the link asked for
+                    if (params.size) setParams({}, { replace: true });
+                  }}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    active
+                      ? "border-slate-900 bg-slate-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50/80 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  }`}
+                >
+                  {FILTER_LABELS[value]} <span className="opacity-60">{count}</span>
+                </button>
+              );
+            })}
+          </div>
+          {addButton}
         </div>
 
         {groups.length === 0 ? (
@@ -308,6 +376,10 @@ export default function CostSheet({ initiativeId, currency, isEvent }: CostSheet
               summary={typeSummaries.get(typeId)}
               currency={currency}
               today={today}
+              highlighted={group.code === focusGroup}
+              renderActions={
+                canEdit ? (line) => <SpendLineActions line={line} initiativeId={initiativeId} onEdit={(l) => setDialog({ open: true, line: l })} /> : undefined
+              }
             />
           ))
         )}
@@ -325,6 +397,7 @@ export default function CostSheet({ initiativeId, currency, isEvent }: CostSheet
           )}
         </div>
       </div>
+      {costDialog}
     </TooltipProvider>
   );
 }
