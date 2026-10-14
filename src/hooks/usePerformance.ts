@@ -49,7 +49,10 @@ export function useSaveOutcomes(initiativeId: string) {
     mutationFn: ({ periodStart, values }: { periodStart: string; values: OutcomeInput[] }) => saveOutcomes(initiativeId, periodStart, values),
     onSuccess: (data) => {
       queryClient.setQueryData(queryKeys.outcomes(initiativeId), data);
-      return queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) }),
+        queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+      ]);
     },
   });
 }

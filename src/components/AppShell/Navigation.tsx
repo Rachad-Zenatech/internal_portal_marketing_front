@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   LayoutDashboard,
   Megaphone,
   ShieldCheck,
@@ -54,6 +55,13 @@ export const navigation: NavigationItem[] = [
     icon: LayoutDashboard,
     section: "MAIN",
     navigationCode: "DASHBOARD",
+  },
+  {
+    label: "Events",
+    path: "/events",
+    icon: CalendarDays,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
   },
   {
     label: "Initiatives",

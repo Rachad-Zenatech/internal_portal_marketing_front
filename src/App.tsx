@@ -13,6 +13,8 @@ const InitiativeDetail = lazy(() => import("./pages/Initiatives/InitiativeDetail
 const InitiativeCosts = lazy(() => import("./pages/Initiatives/InitiativeCosts"));
 const InitiativePerformance = lazy(() => import("./pages/Initiatives/InitiativePerformance"));
 const InitiativeDemos = lazy(() => import("./pages/Initiatives/InitiativeDemos"));
+const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
+const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -113,7 +115,22 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/events" element={<Navigate to="/initiatives" replace />} />
+              <Route
+                path="/events"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <EventsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/events/:id"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <EventWorkspace />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Configuration Routes */}
               <Route path="/configuration" element={<Navigate to="/configurations/users" replace />} />

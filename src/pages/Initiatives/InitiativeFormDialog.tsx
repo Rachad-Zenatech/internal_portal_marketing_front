@@ -219,19 +219,28 @@ function ReferenceSelect({ id, value, items, placeholder, onChange, allowNone, d
 
 interface InitiativeFormProps {
   initiative?: InitiativeListItem;
+  /** Start a new initiative in this channel, e.g. "EVENTS" from the Events page */
+  defaultChannelCode?: string;
   onDone: () => void;
 }
 
 // Mounted each time the dialog opens, so the fields always start from the latest values
-function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
+function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFormProps) {
   const isEdit = Boolean(initiative);
   const { user } = useAuth();
   const { data: reference } = useReferenceData();
+  const defaultChannelId = defaultChannelCode ? reference?.channels.find((c) => c.code === defaultChannelCode)?.id : undefined;
   const createInitiative = useCreateInitiative();
   const updateInitiative = useUpdateInitiative(initiative?.id ?? "");
   const mutation = isEdit ? updateInitiative : createInitiative;
 
   const [form, setForm] = useState<FormState>(initiative ? formFromInitiative(initiative) : EMPTY_FORM);
+  // A preset channel applies once reference data has loaded, and only while nothing has been chosen
+  const [presetApplied, setPresetApplied] = useState(false);
+  if (!initiative && !presetApplied && defaultChannelId !== undefined) {
+    setPresetApplied(true);
+    if (!form.channelId) setForm((prev) => ({ ...prev, channelId: String(defaultChannelId) }));
+  }
   const [owner, setOwner] = useState<OwnerOption | null>(() => {
     if (initiative) {
       return initiative.owner_user_id ? { id: initiative.owner_user_id, full_name: initiative.owner_name, email: "" } : null;
@@ -253,8 +262,25 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
     return reference.sub_channels.filter((s) => allowed.has(s.id));
   }, [reference, form.channelId]);
 
+  // Primary KPIs follow the channel too: no ad measures like CPM on an event. A KPI saved before this rule stays
+  // listed (marked) so the field still shows it; the API only checks it when it changes.
+  const channelCode = reference?.channels.find((c) => String(c.id) === form.channelId)?.code;
+  const kpiChoices = useMemo(() => {
+    const all = reference?.primary_kpis ?? [];
+    const allowed = channelCode ? reference?.kpi_choices_by_channel?.[channelCode] : undefined;
+    if (!allowed) return all;
+    return all
+      .filter((k) => allowed.includes(k.code) || String(k.id) === form.primaryKpiId)
+      .map((k) => (allowed.includes(k.code) ? k : { ...k, name: `${k.name} (not used for this channel)` }));
+  }, [reference, channelCode, form.primaryKpiId]);
+  const kpiFitsChannel = (kpiId: string, code: string | undefined) => {
+    const allowed = code ? reference?.kpi_choices_by_channel?.[code] : undefined;
+    const kpiCode = reference?.primary_kpis.find((k) => String(k.id) === kpiId)?.code;
+    return !kpiId || !allowed || (kpiCode !== undefined && allowed.includes(kpiCode));
+  };
+
   // The event block appears for the Events channel, with required fields set by the sub-channel
-  const isEvent = reference?.channels.find((c) => String(c.id) === form.channelId)?.code === EVENTS_CHANNEL_CODE;
+  const isEvent = channelCode === EVENTS_CHANNEL_CODE;
   const subChannelCode = reference?.sub_channels.find((s) => String(s.id) === form.subChannelId)?.code;
   const requiredEvent = requiredEventFields(subChannelCode);
   const isOnline = ONLINE_EVENT_SUB_CHANNELS.has(subChannelCode ?? "");
@@ -351,7 +377,11 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
               items={reference?.channels ?? []}
               placeholder="Choose a channel"
               // A new channel may not include the selected sub-channel
-              onChange={(v) => set({ channelId: v, subChannelId: "" })}
+              onChange={(v) => {
+                // A KPI that doesn't fit the new channel is cleared rather than saved and rejected
+                const newCode = reference?.channels.find((c) => String(c.id) === v)?.code;
+                set({ channelId: v, subChannelId: "", ...(kpiFitsChannel(form.primaryKpiId, newCode) ? {} : { primaryKpiId: "" }) });
+              }}
             />
           </Field>
           <Field label="Sub-channel" htmlFor="initiative-sub-channel">
@@ -611,7 +641,7 @@ function InitiativeForm({ initiative, onDone }: InitiativeFormProps) {
               <ReferenceSelect
                 id="initiative-kpi"
                 value={form.primaryKpiId}
-                items={reference?.primary_kpis ?? []}
+                items={kpiChoices}
                 placeholder="Choose a KPI"
                 onChange={(v) => set({ primaryKpiId: v })}
                 allowNone
@@ -649,13 +679,15 @@ interface InitiativeFormDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Pass an initiative to edit it; leave out to create a new one */
   initiative?: InitiativeListItem;
+  /** For a new initiative: start in this channel, e.g. "EVENTS" */
+  defaultChannelCode?: string;
 }
 
-export default function InitiativeFormDialog({ open, onOpenChange, initiative }: InitiativeFormDialogProps) {
+export default function InitiativeFormDialog({ open, onOpenChange, initiative, defaultChannelCode }: InitiativeFormDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <InitiativeForm initiative={initiative} onDone={() => onOpenChange(false)} />
+        <InitiativeForm initiative={initiative} defaultChannelCode={defaultChannelCode} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

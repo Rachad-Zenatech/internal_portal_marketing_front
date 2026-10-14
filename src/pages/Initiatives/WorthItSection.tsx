@@ -14,7 +14,8 @@ import type { InitiativeListItem } from "@/types/initiatives";
 import type { Performance } from "@/types/performance";
 import { Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
-import { formatDateLong, formatKpiValue, RATING_STYLES, verdictSentence } from "./performanceRules";
+import { formatMoney } from "./format";
+import { EARLY_LABELS, formatDateLong, formatKpiValue, RATING_STYLES, verdictSentence } from "./performanceRules";
 
 const RATING_TEXT: Record<string, string> = {
   HIGH: "Worth it",
@@ -209,37 +210,82 @@ function DecisionPanel({ initiative, performance, canEdit }: { initiative: Initi
   );
 }
 
+function StatusLine({ badge, badgeTone, title, reason, date }: { badge: string; badgeTone: string; title: string; reason: string; date?: string | null }) {
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+      <Badge variant="outline" className={`w-fit shrink-0 px-3 py-1 text-base font-semibold ${badgeTone}`}>
+        {badge}
+      </Badge>
+      <div className="min-w-0">
+        <p className="font-semibold text-slate-900 dark:text-zinc-100">{title}</p>
+        <p className="text-sm text-slate-700 dark:text-zinc-300">{reason}</p>
+        {date && (
+          <p className={`mt-1 flex items-center gap-1.5 text-xs ${MUTED}`}>
+            <CalendarClock className="h-3.5 w-3.5" />
+            {date}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function WorthItSection({ initiative, performance }: { initiative: InitiativeListItem; performance: Performance }) {
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("INITIATIVES_UPDATE");
-  const { rating, evaluation, currency } = performance;
+  const { rating, evaluation, currency, stage } = performance;
   const kpi = evaluation.primary_kpi;
+  const isEvent = Boolean(initiative.event_code);
+  const finalOn = performance.matures_on ? formatDateLong(performance.matures_on) : null;
   const sentence = verdictSentence(performance);
+  // Before the final verdict, money figures are only what's in so far
+  const showSentence = sentence && (stage === "FINAL" || performance.money_outcome !== "NO_REVENUE");
 
   return (
     <Section title="Was it worth it?" icon={Trophy}>
       <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-          <Badge variant="outline" className={`w-fit px-3 py-1 text-base font-semibold ${RATING_STYLES[rating.code]}`}>
-            {rating.name}
-          </Badge>
-          <div className="min-w-0">
-            <p className="font-semibold text-slate-900 dark:text-zinc-100">{RATING_TEXT[rating.code]}</p>
-            <p className="text-sm text-slate-700 dark:text-zinc-300">{rating.reason}</p>
-            {performance.matures_on && (
-              <p className={`mt-1 flex items-center gap-1.5 text-xs ${MUTED}`}>
-                <CalendarClock className="h-3.5 w-3.5" />
-                {rating.code === "TEST" && new Date(`${performance.matures_on}T00:00:00`) > new Date()
-                  ? `Rating is final on ${formatDateLong(performance.matures_on)}`
-                  : `Final since ${formatDateLong(performance.matures_on)}`}
-              </p>
-            )}
-          </div>
-        </div>
+        {stage === "UPCOMING" && (
+          <StatusLine
+            badge="Upcoming"
+            badgeTone={RATING_STYLES.TEST}
+            title={isEvent ? "The verdict comes after the event" : "The verdict comes after it runs"}
+            reason={`Until then, keep the expected cost (${formatMoney(performance.cost, currency)}) within budget. Results and the early read start once it has happened.`}
+          />
+        )}
 
-        {sentence && <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800 dark:bg-zinc-800/60 dark:text-zinc-200">{sentence}</p>}
+        {stage === "EARLY" && performance.early_read && (
+          <StatusLine
+            badge={`Early read: ${EARLY_LABELS[performance.early_read.code]}`}
+            badgeTone={RATING_STYLES[performance.early_read.code]}
+            title={kpi ? `How ${kpi.name} is looking` : "Early read"}
+            reason={performance.early_read.reason}
+            date={finalOn ? `Final verdict on ${finalOn}, once deals have had time to close.` : null}
+          />
+        )}
 
-        {kpi?.supported && (
+        {stage === "FINAL" && (
+          <StatusLine
+            badge={rating.name}
+            badgeTone={RATING_STYLES[rating.code]}
+            title={RATING_TEXT[rating.code]}
+            reason={rating.reason}
+            date={finalOn ? `Final since ${finalOn}` : null}
+          />
+        )}
+
+        {showSentence && (
+          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-800 dark:bg-zinc-800/60 dark:text-zinc-200">
+            {stage === "FINAL" ? sentence : `So far: ${sentence}`}
+          </p>
+        )}
+
+        {evaluation.kpi_note && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+            {evaluation.kpi_note}
+          </p>
+        )}
+
+        {stage !== "UPCOMING" && kpi?.supported && (
           <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
             <span className={MUTED}>{kpi.name}</span>
             <span className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">
@@ -250,7 +296,7 @@ export default function WorthItSection({ initiative, performance }: { initiative
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           {/* Remount when the saved settings change, so the form starts from them */}
           <SuccessSettings
             key={`${evaluation.target_value}-${evaluation.maturity_days}-${evaluation.updated_at}`}
@@ -258,7 +304,19 @@ export default function WorthItSection({ initiative, performance }: { initiative
             performance={performance}
             canEdit={canEdit}
           />
-          <DecisionPanel initiative={initiative} performance={performance} canEdit={canEdit} />
+          {stage === "FINAL" || performance.latest_decision ? (
+            <DecisionPanel initiative={initiative} performance={performance} canEdit={canEdit} />
+          ) : (
+            // The decision belongs to the final verdict; an early one is possible but tucked away
+            <details className="rounded-lg border border-dashed border-slate-200 p-4 text-sm dark:border-zinc-700">
+              <summary className={`cursor-pointer font-medium ${MUTED}`}>
+                Scale or cut? Decided once the final verdict is in{finalOn ? ` (${finalOn})` : ""}. Record an early decision…
+              </summary>
+              <div className="mt-3">
+                <DecisionPanel initiative={initiative} performance={performance} canEdit={canEdit} />
+              </div>
+            </details>
+          )}
         </div>
       </div>
     </Section>

@@ -7,6 +7,11 @@ import { MUTED } from "./detailStyles";
 import { formatMoney } from "./format";
 import { EVENT_METRIC_LABELS, formatCount } from "./performanceRules";
 
+/** "Booth visitors" → "booth visitors" mid-sentence, but acronyms like "SQLs" and "MQLs" keep their capitals */
+function inSentence(name: string) {
+  return /^[A-Z]{2,}/.test(name) ? name : name.toLowerCase();
+}
+
 function Figure({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div>
@@ -60,7 +65,7 @@ export default function CostLadder({ initiative, performance }: { initiative: In
                   {i > 0 && (
                     <div className={`flex items-center gap-2 py-1 pl-5 text-xs ${MUTED}`}>
                       <ArrowDown className="h-3.5 w-3.5" />
-                      {step.from_previous !== null && `${step.from_previous}% of ${(step.previous_name ?? "").toLowerCase()}`}
+                      {step.from_previous !== null && `${step.from_previous}% of ${inSentence(step.previous_name ?? "")}`}
                     </div>
                   )}
                   {linkToDemos ? (

@@ -42,6 +42,8 @@ export interface Evaluation {
   /** The initiative's own primary KPI, or its sub-channel's default */
   primary_kpi: KpiRef | null;
   kpi_from_default: boolean;
+  /** Set when the initiative's own KPI doesn't apply to its channel and the default is used instead */
+  kpi_note: string | null;
   target_value: number | null;
   maturity_days: number;
   revenue_basis: "CLOSED_REVENUE";
@@ -99,6 +101,8 @@ export interface Rating {
 
 export type MoneyOutcome = "PROFIT" | "BROKE_EVEN" | "LOST_MONEY" | "NO_REVENUE";
 
+export type VerdictStage = "UPCOMING" | "EARLY" | "FINAL";
+
 export interface Performance {
   currency: string;
   /** The expected total cost (estimates included) */
@@ -120,6 +124,11 @@ export interface Performance {
   evaluation: Evaluation;
   kpi_actual: number | null;
   matures_on: string | null;
+  /** UPCOMING before it starts; EARLY until the maturity window ends; FINAL after that */
+  stage: VerdictStage;
+  /** Provisional rating on the primary KPI while EARLY */
+  early_read: Rating | null;
+  /** The verdict — Test until FINAL */
   rating: Rating;
   /** Code of the scale-or-cut option the system suggests */
   suggested_decision: string;

@@ -28,6 +28,7 @@ export function useRefreshCosts(initiativeId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.initiative(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+      queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
     ]);
 }
 

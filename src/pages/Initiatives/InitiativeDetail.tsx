@@ -18,7 +18,7 @@ import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
-import { RATING_STYLES } from "./performanceRules";
+import { EARLY_LABELS, RATING_STYLES } from "./performanceRules";
 import { useInitiativeNavigation } from "./useInitiativeNavigation";
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -252,16 +252,23 @@ function PerformanceSnapshot({ initiativeId }: { initiativeId: string }) {
   const { data: performance, isLoading } = usePerformance(initiativeId);
   if (isLoading) return <>Loading…</>;
   if (!performance) return <>Was it worth it? Results, cost per outcome and the rating.</>;
-  const { rating } = performance;
+  // Upcoming → early read on the KPI → final verdict, the same stages as the Performance page
+  const { stage, rating, early_read: early } = performance;
+  const shown =
+    stage === "UPCOMING"
+      ? { badge: "Upcoming", tone: RATING_STYLES.TEST, text: "The verdict comes after it has happened." }
+      : stage === "EARLY" && early
+        ? { badge: `Early read: ${EARLY_LABELS[early.code]}`, tone: RATING_STYLES[early.code], text: early.reason }
+        : { badge: rating.name, tone: RATING_STYLES[rating.code], text: rating.reason };
   return (
     <span className="flex flex-col gap-1">
       <span className="flex items-center gap-2">
-        <Badge variant="outline" className={RATING_STYLES[rating.code]}>
-          {rating.name}
+        <Badge variant="outline" className={shown.tone}>
+          {shown.badge}
         </Badge>
         {performance.latest_decision && <span className="text-xs">Decided: {performance.latest_decision.name}</span>}
       </span>
-      <span className="line-clamp-2">{rating.reason}</span>
+      <span className="line-clamp-2">{shown.text}</span>
     </span>
   );
 }

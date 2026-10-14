@@ -69,6 +69,8 @@ export interface ReferenceData {
   expense_types: ExpenseType[];
   spend_categories: SpendCategory[];
   outcome_metrics: OutcomeMetric[];
+  /** Channel code → primary KPI codes it can use; channels not listed can use any */
+  kpi_choices_by_channel: Record<string, string[]>;
   evaluation_defaults: EvaluationDefault[];
   /** Booth, scheduled or live demo */
   demo_types: ReferenceItem[];

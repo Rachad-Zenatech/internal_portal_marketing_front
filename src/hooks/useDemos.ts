@@ -28,6 +28,7 @@ function useRefreshDemos(initiativeId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.outcomes(initiativeId) }),
+      queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
     ]);
 }
 

@@ -19,6 +19,14 @@ export const RATING_STYLES: Record<RatingCode, string> = {
   TEST: "border-slate-200 bg-slate-50 text-slate-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300",
 };
 
+/** The early read is about the leading KPI only, so its labels speak to the target, not to "worth it" */
+export const EARLY_LABELS: Record<RatingCode, string> = {
+  HIGH: "On track",
+  MEDIUM: "Close to target",
+  LOW: "Behind target",
+  TEST: "Not enough to tell yet",
+};
+
 /** A KPI value in its own unit: "$1,000", "1.5%", "120,000" */
 export function formatKpiValue(value: number | null, unit: KpiUnit | null, currency: string) {
   if (value === null) return "—";
