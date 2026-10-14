@@ -201,23 +201,39 @@ function OutcomeCell({ initiative, demo, editable }: { initiative: InitiativeLis
   );
 }
 
-/** One sentence that reads like the CEO's example */
+/** One sentence that reads like the CEO's example, saying which cost it's based on */
 function CostStory({ summary }: { summary: DemoSummary }) {
   const money = (value: number) => formatMoney(value, summary.currency);
   if (summary.total === 0 || summary.cost_per_demo === null) return null;
+  const strong = "font-semibold text-slate-900 dark:text-zinc-100";
   return (
-    <p className="text-sm text-slate-700 dark:text-zinc-300">
-      {money(summary.expected_cost)} expected cost ÷ {summary.total} {summary.total === 1 ? "demo" : "demos"} ={" "}
-      <span className="font-semibold text-slate-900 dark:text-zinc-100">{money(summary.cost_per_demo)} per demo</span>.{" "}
-      {summary.funnel.customers > 0 && summary.cost_per_customer !== null ? (
-        <>
-          {summary.funnel.customers} became {summary.funnel.customers === 1 ? "a customer" : "customers"}:{" "}
-          <span className="font-semibold text-slate-900 dark:text-zinc-100">{money(summary.cost_per_customer)} per customer</span>.
-        </>
-      ) : (
-        "None has become a customer yet."
+    <div className="flex flex-col gap-1 text-sm text-slate-700 dark:text-zinc-300">
+      <p>
+        {money(summary.expected_cost)} expected cost (estimates included) ÷ {summary.total} {summary.total === 1 ? "demo" : "demos"} given ={" "}
+        <span className={strong}>{money(summary.cost_per_demo)} per demo</span>.{" "}
+        {summary.funnel.customers > 0 && summary.cost_per_customer !== null ? (
+          <>
+            {summary.funnel.customers} became {summary.funnel.customers === 1 ? "a customer" : "customers"} through demos:{" "}
+            <span className={strong}>{money(summary.cost_per_customer)} per customer</span>.
+          </>
+        ) : (
+          "None has become a customer through a demo yet."
+        )}
+      </p>
+      {/* After the event, or once invoices arrive, the same figures on what has actually been invoiced or paid */}
+      {(summary.event_ended || summary.actual_cost > 0) && summary.cost_per_demo_actual !== null && (
+        <p>
+          On {money(summary.actual_cost)} invoiced or paid so far: <span className={strong}>{money(summary.cost_per_demo_actual)} per demo</span>
+          {summary.cost_per_customer_actual !== null && (
+            <>
+              {" "}
+              and <span className={strong}>{money(summary.cost_per_customer_actual)} per customer</span>
+            </>
+          )}
+          .{summary.event_ended && summary.actual_cost < summary.expected_cost && " Some invoices may still be on their way."}
+        </p>
       )}
-    </p>
+    </div>
   );
 }
 
@@ -283,12 +299,29 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
           </p>
         ) : (
           <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <Figure label="Demos" value={s.total} hint={typeLine} />
-              <Figure label="Cost per demo" value={money(s.cost_per_demo)} hint={`${money(s.expected_cost)} expected cost`} />
-              <Figure label="Became customers" value={s.funnel.customers} hint={s.customer_rate === null ? undefined : `${percent(s.customer_rate)} of demos`} />
-              <Figure label="Cost per customer" value={money(s.cost_per_customer)} hint="From demos" />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <Figure label="Demos given" value={s.total} hint={typeLine || undefined} />
+              <Figure
+                label="Companies demoed"
+                value={s.companies_demoed}
+                hint={s.companies_demoed < s.total ? `Some companies had more than one demo` : undefined}
+              />
+              <Figure label="Cost per demo" value={money(s.cost_per_demo)} hint={`On ${money(s.expected_cost)} expected cost`} />
+              <Figure
+                label="Customers via demos"
+                value={s.funnel.customers}
+                hint={s.customer_rate === null ? undefined : `${percent(s.customer_rate)} of demos given`}
+              />
+              <Figure label="Cost per customer via demos" value={money(s.cost_per_customer)} hint="Not every customer the event won" />
             </div>
+
+            {(s.upcoming > 0 || s.no_shows > 0) && (
+              <p className={`text-sm ${MUTED}`}>
+                {s.upcoming > 0 && `${s.upcoming} booked for later — ${s.upcoming === 1 ? "it counts" : "they count"} once ${s.upcoming === 1 ? "it happens" : "they happen"}.`}
+                {s.upcoming > 0 && s.no_shows > 0 && " "}
+                {s.no_shows > 0 && `${s.no_shows} ${s.no_shows === 1 ? "no-show isn't" : "no-shows aren't"} counted.`}
+              </p>
+            )}
 
             <CostStory summary={s} />
             {s.mixed_currencies && (
@@ -320,7 +353,15 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
                 <TableBody>
                   {list.map((d) => (
                     <TableRow key={d.id}>
-                      <TableCell className="whitespace-nowrap tabular-nums text-slate-700 dark:text-zinc-300">{formatWhen(d.demo_at)}</TableCell>
+                      <TableCell className="whitespace-nowrap tabular-nums text-slate-700 dark:text-zinc-300">
+                        {formatWhen(d.demo_at)}
+                        {/* Booked for later: not a demo given yet */}
+                        {new Date(d.demo_at) > new Date() && (
+                          <Badge variant="outline" className="ml-2 border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300">
+                            Upcoming
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={TYPE_STYLES[d.demo_type_code] ?? ""}>
                           {d.demo_type_name.replace(" demo", "")}

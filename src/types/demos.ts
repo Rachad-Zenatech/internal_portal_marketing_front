@@ -67,7 +67,14 @@ export interface DemoFunnel {
 }
 
 export interface DemoSummary {
+  /** Demos given: the date has passed and it wasn't a no-show */
   total: number;
+  /** Booked for a later date (they count once they happen) */
+  upcoming: number;
+  /** Bookings that never happened; never counted */
+  no_shows: number;
+  /** Different companies the demos given reached (a demo with no company counts as one) */
+  companies_demoed: number;
   funnel: DemoFunnel;
   /** % of demos with a known outcome that led to a follow-up or further */
   follow_up_rate: number | null;
@@ -79,10 +86,19 @@ export interface DemoSummary {
   by_given_by: DemoCount[];
   /** The event's expected total cost (estimates included), in its own currency */
   expected_cost: number;
+  /** Invoiced or paid so far */
+  actual_cost: number;
   currency: string;
+  /** The event's end date has passed */
+  event_ended: boolean;
+  /** On the expected cost */
   cost_per_demo: number | null;
-  /** Cost ÷ customers won through demos */
+  cost_per_company: number | null;
+  /** Cost ÷ customers won through demos (not every customer the event brought in) */
   cost_per_customer: number | null;
+  /** On what has been invoiced or paid so far */
+  cost_per_demo_actual: number | null;
+  cost_per_customer_actual: number | null;
   /** Some costs are in another currency and aren't included */
   mixed_currencies: boolean;
 }

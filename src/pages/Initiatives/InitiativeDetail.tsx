@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useDemoSummary } from "@/hooks/useDemos";
 import { useInitiative } from "@/hooks/useInitiatives";
+import { usePerformance } from "@/hooks/usePerformance";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeListItem } from "@/types/initiatives";
@@ -17,6 +18,7 @@ import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
+import { RATING_STYLES } from "./performanceRules";
 import { useInitiativeNavigation } from "./useInitiativeNavigation";
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -245,21 +247,45 @@ function SubPageLink({ to, title, icon: Icon, tone, badge, children }: SubPageLi
   );
 }
 
-/** "20 demos · $1,000 per demo · 2 became customers" */
+/** The suggested rating and why, e.g. "Low · It broke even (ROI 0%) — not a success…" */
+function PerformanceSnapshot({ initiativeId }: { initiativeId: string }) {
+  const { data: performance, isLoading } = usePerformance(initiativeId);
+  if (isLoading) return <>Loading…</>;
+  if (!performance) return <>Was it worth it? Results, cost per outcome and the rating.</>;
+  const { rating } = performance;
+  return (
+    <span className="flex flex-col gap-1">
+      <span className="flex items-center gap-2">
+        <Badge variant="outline" className={RATING_STYLES[rating.code]}>
+          {rating.name}
+        </Badge>
+        {performance.latest_decision && <span className="text-xs">Decided: {performance.latest_decision.name}</span>}
+      </span>
+      <span className="line-clamp-2">{rating.reason}</span>
+    </span>
+  );
+}
+
+/** "20 demos given · $1,000 per demo · 2 became customers · 3 booked" */
 function DemosSnapshot({ initiativeId }: { initiativeId: string }) {
   const { data: summary, isLoading } = useDemoSummary(initiativeId);
   if (isLoading) return <>Loading demos…</>;
-  if (!summary || summary.total === 0) {
+  if (!summary || (summary.total === 0 && summary.upcoming === 0)) {
     return <>No demos logged yet. Log each one as it happens to see what each demo cost and which became customers.</>;
+  }
+  if (summary.total === 0) {
+    // Only bookings so far: they count once they happen
+    return <>{summary.upcoming} {summary.upcoming === 1 ? "demo" : "demos"} booked; none given yet.</>;
   }
   return (
     <>
       <span className="font-medium text-slate-900 dark:text-zinc-100">
-        {summary.total} {summary.total === 1 ? "demo" : "demos"}
+        {summary.total} {summary.total === 1 ? "demo" : "demos"} given
       </span>
       {summary.cost_per_demo !== null && <> · {formatMoney(summary.cost_per_demo, summary.currency)} per demo</>}
       {" · "}
       {summary.funnel.customers} became {summary.funnel.customers === 1 ? "a customer" : "customers"}
+      {summary.upcoming > 0 && <> · {summary.upcoming} booked</>}
     </>
   );
 }
@@ -395,7 +421,7 @@ export default function InitiativeDetail() {
           icon={TrendingUp}
           tone="bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400"
         >
-          Where the costs will land against the budget, by expense type. Results and the verdict come next.
+          <PerformanceSnapshot initiativeId={initiative.id} />
         </SubPageLink>
         {initiative.event_code && (
           <SubPageLink

@@ -31,5 +31,9 @@ export const queryKeys = {
   spendSummary: (initiativeId: string) => ["spend-summary", initiativeId] as const,
   demos: (initiativeId: string) => ["demos", initiativeId] as const,
   demoSummary: (initiativeId: string) => ["demo-summary", initiativeId] as const,
+  performance: (initiativeId: string) => ["performance", initiativeId] as const,
+  outcomes: (initiativeId: string) => ["outcomes", initiativeId] as const,
+  evaluation: (initiativeId: string) => ["evaluation", initiativeId] as const,
+  decisions: (initiativeId: string) => ["decisions", initiativeId] as const,
   initiativeImports: (initiativeId: string) => ["initiative-imports", initiativeId] as const,
 };

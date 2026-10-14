@@ -36,6 +36,20 @@ export interface SpendCategory extends ReferenceItem {
   help_text: string | null;
 }
 
+/** A result recorded per month: counted (COUNT) or money (MONEY: pipeline, revenue) */
+export interface OutcomeMetric extends ReferenceItem {
+  unit: "COUNT" | "MONEY";
+}
+
+/** What success means by default for a sub-channel */
+export interface EvaluationDefault {
+  sub_channel_id: number;
+  funnel_stage_id: number | null;
+  goal_id: number | null;
+  primary_kpi_id: number | null;
+  maturity_days: number;
+}
+
 /** What came of a demo; funnel_rank: 0 none yet / not a fit, 1 follow-up … 4 became a customer */
 export interface DemoOutcome extends ReferenceItem {
   funnel_rank: number;
@@ -54,6 +68,8 @@ export interface ReferenceData {
   event_types: ReferenceItem[];
   expense_types: ExpenseType[];
   spend_categories: SpendCategory[];
+  outcome_metrics: OutcomeMetric[];
+  evaluation_defaults: EvaluationDefault[];
   /** Booth, scheduled or live demo */
   demo_types: ReferenceItem[];
   demo_outcomes: DemoOutcome[];

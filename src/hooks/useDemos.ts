@@ -19,13 +19,15 @@ export function useDemoSummary(initiativeId: string | undefined, options: { enab
   });
 }
 
-// A demo changes the log and its summary (counts, cost per demo, customers)
+// A demo changes the log, its summary (counts, cost per demo, customers), and the performance view's demo count
 function useRefreshDemos(initiativeId: string) {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.demos(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(initiativeId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.outcomes(initiativeId) }),
     ]);
 }
 
