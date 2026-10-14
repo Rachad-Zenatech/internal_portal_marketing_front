@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, CheckCircle2, Circle, MapPin, Pencil, Presentation, Receipt, TrendingUp, Users, Video } from "lucide-react";
+import PageHeader, { type PageTone } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,16 @@ function defaultTab(timing: EventTiming | undefined): WorkspaceTab {
   return "team";
 }
 
+const STEP_TONES: Record<WorkspaceTab, string> = {
+  team: "bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  costs: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  demos: "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+  results: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+};
+
+// The header's colour says when the event is: green while it's on, violet before, grey after
+const TIMING_TONE: Record<EventTiming, PageTone> = { NOW: "emerald", UPCOMING: "violet", PAST: "slate", UNSCHEDULED: "amber" };
+
 interface StepProps {
   tab: WorkspaceTab;
   icon: React.ElementType;
@@ -49,13 +60,15 @@ function Step({ tab, icon: Icon, title, status, done, attention, active, onSelec
     <button
       type="button"
       onClick={() => onSelect(tab)}
-      className={`flex items-start gap-3 rounded-xl border p-3 text-left transition-colors ${
+      className={`flex items-start gap-3 rounded-xl border p-3 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md ${
         active
-          ? "border-violet-300 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/40"
-          : "border-slate-200 bg-white hover:bg-slate-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/60"
+          ? "border-violet-400 bg-white ring-2 ring-violet-200 dark:border-violet-500 dark:bg-card dark:ring-violet-900"
+          : "border-slate-200 bg-white dark:border-zinc-800 dark:bg-card"
       }`}
     >
-      <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${active ? "text-violet-600 dark:text-violet-400" : "text-slate-400"}`} />
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${STEP_TONES[tab]}`}>
+        <Icon className="h-4.5 w-4.5" />
+      </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-zinc-100">
           {title}
@@ -160,7 +173,7 @@ export default function EventWorkspace() {
     if (!initiative) return;
     document.dispatchEvent(
       new CustomEvent("set-breadcrumb-trail", {
-        detail: { path: `/events/${initiative.id}`, items: [{ title: "Events", path: "/events" }, { title: initiative.name }] },
+        detail: { path: `/events/${initiative.id}`, items: [{ title: "Event Management", path: "/events" }, { title: initiative.name }] },
       }),
     );
   }, [initiative]);
@@ -185,30 +198,49 @@ export default function EventWorkspace() {
     <div className="flex w-full flex-1 flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
       <Link to="/events" className={`inline-flex w-fit items-center gap-1.5 text-sm hover:text-slate-900 dark:hover:text-zinc-100 ${MUTED}`}>
         <ArrowLeft className="h-4 w-4" />
-        All events
+        Event Management
       </Link>
 
-      <Card className={`${CARD} flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between`}>
-        <div className="min-w-0">
+      <PageHeader
+        icon={CalendarDays}
+        tone={TIMING_TONE[card?.timing ?? "UPCOMING"]}
+        title={initiative.name}
+        actions={
+          <>
+            {hasPermission("INITIATIVES_UPDATE") && (
+              <Button variant="outline" className="gap-2 bg-white/80 dark:bg-transparent" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4" />
+                Edit event
+              </Button>
+            )}
+            <Button className="gap-2" asChild>
+              <Link to={`/initiatives/${initiative.id}/performance`}>
+                <TrendingUp className="h-4 w-4" />
+                Performance
+              </Link>
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">{initiative.name}</h2>
-            <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
+            <Badge variant="outline" className={`bg-white/70 dark:bg-transparent ${STATUS_STYLES[initiative.status]}`}>
               {STATUS_LABELS[initiative.status]}
             </Badge>
-            <Badge variant="outline" className="font-mono text-slate-600 dark:text-zinc-300">
+            <Badge variant="outline" className="bg-white/70 font-mono text-slate-600 dark:bg-transparent dark:text-zinc-300">
               {initiative.event_code}
             </Badge>
+            {card && <Badge className="bg-slate-900 text-white dark:bg-zinc-100 dark:text-zinc-900">{whenText(card)}</Badge>}
           </div>
-          <div className={`mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm ${MUTED}`}>
+          <div className="flex flex-col gap-1 text-sm text-slate-600 sm:flex-row sm:flex-wrap sm:gap-x-5 dark:text-zinc-400">
             <span className="inline-flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4" />
+              <CalendarDays className="h-4 w-4 shrink-0" />
               {dateRange(initiative.start_date, initiative.end_date)}
-              {card && ` · ${whenText(card)}`}
             </span>
             {place && (
-              <span className="inline-flex items-center gap-1.5">
-                {online ? <Video className="h-4 w-4" /> : <MapPin className="h-4 w-4" />}
-                {initiative.venue && !online ? `${initiative.venue}, ${place}` : place}
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                {online ? <Video className="h-4 w-4 shrink-0" /> : <MapPin className="h-4 w-4 shrink-0" />}
+                <span className="truncate">{initiative.venue && !online ? `${initiative.venue}, ${place}` : place}</span>
               </span>
             )}
             <span>
@@ -217,36 +249,22 @@ export default function EventWorkspace() {
             </span>
           </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          {hasPermission("INITIATIVES_UPDATE") && (
-            <Button variant="outline" className="gap-2" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-4 w-4" />
-              Edit event
-            </Button>
-          )}
-          <Button variant="outline" className="gap-2" asChild>
-            <Link to={`/initiatives/${initiative.id}/performance`}>
-              <TrendingUp className="h-4 w-4" />
-              Performance
-            </Link>
-          </Button>
-        </div>
-      </Card>
+      </PageHeader>
 
       <Checklist card={card} tab={tab} onSelect={selectTab} />
 
       <Tabs value={tab} onValueChange={(v) => selectTab(v as WorkspaceTab)} className="flex flex-col gap-4">
-        <TabsList className="w-full justify-start overflow-x-auto sm:w-fit">
-          <TabsTrigger value="team" className="gap-1.5">
+        <TabsList className="h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-white p-1 shadow-sm scrollbar-none sm:w-fit dark:border-zinc-800 dark:bg-card">
+          <TabsTrigger value="team" className="shrink-0 gap-1.5 rounded-lg px-3 py-1.5 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow dark:data-[state=active]:bg-violet-500">
             <Users className="h-4 w-4" /> Team & travel
           </TabsTrigger>
-          <TabsTrigger value="costs" className="gap-1.5">
+          <TabsTrigger value="costs" className="shrink-0 gap-1.5 rounded-lg px-3 py-1.5 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow dark:data-[state=active]:bg-violet-500">
             <Receipt className="h-4 w-4" /> Costs
           </TabsTrigger>
-          <TabsTrigger value="demos" className="gap-1.5">
+          <TabsTrigger value="demos" className="shrink-0 gap-1.5 rounded-lg px-3 py-1.5 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow dark:data-[state=active]:bg-violet-500">
             <Presentation className="h-4 w-4" /> Demos
           </TabsTrigger>
-          <TabsTrigger value="results" className="gap-1.5">
+          <TabsTrigger value="results" className="shrink-0 gap-1.5 rounded-lg px-3 py-1.5 data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow dark:data-[state=active]:bg-violet-500">
             <TrendingUp className="h-4 w-4" /> Results
           </TabsTrigger>
         </TabsList>

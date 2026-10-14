@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import PageHeader from "@/components/PageHeader";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
 import HelpIcon from "@/components/ui/HelpIcon";
@@ -205,30 +206,25 @@ export default function Initiatives() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out h-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:flex ${header.tile}`}>
-            <HeaderIcon className="h-6 w-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">
-                {channel ? `${channel.name} initiatives` : "Initiatives"}
-              </h2>
-              <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
-            </div>
-            <p className="text-sm text-slate-500 dark:text-zinc-400">
-              {channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
-            </p>
-          </div>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setCreateOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            New initiative
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        icon={HeaderIcon}
+        tone={channel?.code === "EVENTS" ? "violet" : "sky"}
+        title={
+          <span className="inline-flex items-center gap-2">
+            {channel ? `${channel.name} initiatives` : "Initiatives"}
+            <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
+          </span>
+        }
+        description={channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
+        actions={
+          canCreate && (
+            <Button onClick={() => setCreateOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              New initiative
+            </Button>
+          )
+        }
+      />
 
       {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} />}
 

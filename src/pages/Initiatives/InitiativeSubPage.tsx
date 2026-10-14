@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import PageHeader, { type PageTone } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { useInitiative } from "@/hooks/useInitiatives";
 import type { InitiativeListItem } from "@/types/initiatives";
@@ -18,6 +19,14 @@ interface InitiativeSubPageProps {
   tone: string;
   description: string;
   children: (initiative: InitiativeListItem) => React.ReactNode;
+}
+
+/** The header colour from the page's icon tile colours (e.g. "bg-amber-50 …" → amber) */
+function headerTone(tile: string): PageTone {
+  for (const tone of ["amber", "sky", "violet", "emerald", "rose"] as const) {
+    if (tile.includes(tone)) return tone;
+  }
+  return "slate";
 }
 
 /** Layout for a page that belongs to one initiative: a way back, the initiative it's for, then the content */
@@ -45,25 +54,19 @@ export default function InitiativeSubPage({ title, path, icon: Icon, tone, descr
           <ArrowLeft className="h-4 w-4" />
           {initiative.name}
         </Link>
-        <div className="flex items-start gap-4">
-          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:flex ${tone}`}>
-            <Icon className="h-6 w-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">{title}</h2>
-              <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
-                {STATUS_LABELS[initiative.status]}
+        <PageHeader icon={Icon} tone={headerTone(tone)} title={title} description={description}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-slate-700 dark:text-zinc-300">{initiative.name}</span>
+            <Badge variant="outline" className={`bg-white/70 dark:bg-transparent ${STATUS_STYLES[initiative.status]}`}>
+              {STATUS_LABELS[initiative.status]}
+            </Badge>
+            {initiative.event_code && (
+              <Badge variant="outline" className="bg-white/70 font-mono text-slate-600 dark:bg-transparent dark:text-zinc-300">
+                {initiative.event_code}
               </Badge>
-              {initiative.event_code && (
-                <Badge variant="outline" className="font-mono text-slate-600 dark:text-zinc-300">
-                  {initiative.event_code}
-                </Badge>
-              )}
-            </div>
-            <p className={`mt-1 text-sm ${MUTED}`}>{description}</p>
+            )}
           </div>
-        </div>
+        </PageHeader>
       </div>
 
       {children(initiative)}

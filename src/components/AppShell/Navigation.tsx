@@ -57,7 +57,7 @@ export const navigation: NavigationItem[] = [
     navigationCode: "DASHBOARD",
   },
   {
-    label: "Events",
+    label: "Event Management",
     path: "/events",
     icon: CalendarDays,
     section: "MARKETING",

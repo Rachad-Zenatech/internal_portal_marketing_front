@@ -344,9 +344,10 @@ export default function InitiativeDetail() {
 
   return (
     <div className="flex w-full flex-1 min-h-0 flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+      {/* The same coloured banner as the other pages, so the overview reads as the start of the initiative */}
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-100/70 via-white to-violet-50/60 p-4 sm:flex-row sm:items-start sm:p-6 dark:border-sky-900/50 dark:from-sky-950/50 dark:via-card dark:to-card">
         <div className="flex min-w-0 items-start gap-4">
-          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl sm:flex ${channel.tile}`}>
+          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm sm:flex ${channel.tile}`}>
             <ChannelIcon className="h-6 w-6" />
           </div>
           <div className="min-w-0">

@@ -15,14 +15,7 @@ import type { OutcomeMetric } from "@/types/referenceData";
 import { Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { formatMoney, isoToday } from "./format";
-import {
-  DEFAULT_RESULT_METRICS,
-  EVENT_METRIC_LABELS,
-  formatCount,
-  formatMonthLong,
-  monthStart,
-  RESULT_METRICS_BY_CHANNEL,
-} from "./performanceRules";
+import { EVENT_METRIC_LABELS, formatCount, formatMonthLong, monthStart } from "./performanceRules";
 
 const SOURCE_LABELS: Record<string, string> = { HUBSPOT: "HubSpot", GOOGLE_ADS: "Google Ads", MICROSOFT_ADS: "Microsoft Ads", UPLOAD: "Upload" };
 
@@ -149,9 +142,12 @@ export default function ResultsSection({ initiative, performance }: { initiative
   const { data: outcomes, isLoading, error, refetch } = useOutcomes(initiative.id);
   const channelCode = reference?.channels.find((c) => c.id === initiative.channel_id)?.code ?? "";
 
+  // Only the results that make sense for the channel (the API refuses the rest); "Other" can record any
   const metrics = useMemo(() => {
-    const codes = RESULT_METRICS_BY_CHANNEL[channelCode] ?? DEFAULT_RESULT_METRICS;
-    const byCode = new Map((reference?.outcome_metrics ?? []).map((m) => [m.code, m]));
+    const all = reference?.outcome_metrics ?? [];
+    const codes = reference?.result_metrics_by_channel?.[channelCode];
+    if (!codes) return all;
+    const byCode = new Map(all.map((m) => [m.code, m]));
     return codes.map((c) => byCode.get(c)).filter((m): m is OutcomeMetric => Boolean(m));
   }, [reference, channelCode]);
 

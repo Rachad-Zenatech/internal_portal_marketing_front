@@ -1,14 +1,6 @@
 import type { KpiUnit, MoneyOutcome, Performance, RatingCode } from "@/types/performance";
 import { formatMoney } from "./format";
 
-/** The results worth recording for each channel, in funnel order; everything else uses DEFAULT_RESULT_METRICS */
-export const RESULT_METRICS_BY_CHANNEL: Record<string, string[]> = {
-  EVENTS: ["VISITORS", "LEADS", "FOLLOW_UPS", "DEMOS", "MQLS", "SQLS", "CUSTOMERS", "PIPELINE", "REVENUE"],
-  PAID_SEARCH: ["IMPRESSIONS", "CLICKS", "CONVERSIONS", "LEADS", "MQLS", "SQLS", "CUSTOMERS", "REVENUE"],
-  PAID_SOCIAL: ["IMPRESSIONS", "CLICKS", "CONVERSIONS", "LEADS", "MQLS", "SQLS", "CUSTOMERS", "REVENUE"],
-};
-export const DEFAULT_RESULT_METRICS = ["VISITORS", "LEADS", "MQLS", "SQLS", "CUSTOMERS", "PIPELINE", "REVENUE"];
-
 /** Friendlier labels for events, where "visitors" means people at the booth */
 export const EVENT_METRIC_LABELS: Record<string, string> = { VISITORS: "Booth visitors" };
 
