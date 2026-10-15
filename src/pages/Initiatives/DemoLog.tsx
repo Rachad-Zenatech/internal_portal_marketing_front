@@ -244,10 +244,13 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
   const summary = useDemoSummary(initiative.id);
   const [logOpen, setLogOpen] = useState(false);
 
-  // Products come from the log itself: the product shown, or the brand when none was noted
+  // Products come from the log itself: the product shown, or the brand when none was noted.
+  // Only demos given count, as in the API: already happened and not a no-show
   const byProduct = useMemo<DemoCount[]>(() => {
     const counts = new Map<string, number>();
+    const now = new Date();
     for (const d of demos.data ?? []) {
+      if (d.outcome_code === "NO_SHOW" || new Date(d.demo_at) > now) continue;
       const name = d.product_note || d.brand_name || "Not noted";
       counts.set(name, (counts.get(name) ?? 0) + 1);
     }

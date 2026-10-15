@@ -54,7 +54,8 @@ function MonthForm({ initiative, month, metrics, outcomes, canEdit }: MonthFormP
   const changes: OutcomeInput[] = metrics
     .filter((m) => !(m.code === "DEMOS" && outcomes.demos_from_log))
     .flatMap((m): OutcomeInput[] => {
-      const typed = values[m.code].trim();
+      // Metrics can arrive after the form mounted, so a box may not be seeded yet
+      const typed = (values[m.code] ?? "").trim();
       const before = manual[m.code];
       if (typed === "") return before === undefined ? [] : [{ metric_code: m.code, value: null }];
       const value = Number(typed);
@@ -102,7 +103,7 @@ function MonthForm({ initiative, month, metrics, outcomes, canEdit }: MonthFormP
                   min={0}
                   step={m.unit === "MONEY" ? "any" : 1}
                   inputMode="decimal"
-                  value={values[m.code]}
+                  value={values[m.code] ?? ""}
                   onChange={(e) => setValues((prev) => ({ ...prev, [m.code]: e.target.value }))}
                   disabled={!canEdit}
                   placeholder="—"
@@ -199,7 +200,7 @@ export default function ResultsSection({ initiative, performance }: { initiative
           </div>
 
           <MonthForm
-            key={`${month}-${outcomes.values.length}-${outcomes.values.map((v) => v.value).join(",")}`}
+            key={`${month}-${metrics.map((m) => m.code).join(",")}-${outcomes.values.length}-${outcomes.values.map((v) => v.value).join(",")}`}
             initiative={initiative}
             month={month}
             metrics={metrics}

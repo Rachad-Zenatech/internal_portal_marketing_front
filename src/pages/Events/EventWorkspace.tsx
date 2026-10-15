@@ -85,8 +85,18 @@ function Step({ tab, icon: Icon, title, status, done, attention, active, onSelec
 }
 
 function ResultsTab({ initiative }: { initiative: InitiativeListItem }) {
-  const { data: performance, isLoading } = usePerformance(initiative.id);
-  if (isLoading || !performance) return <Skeleton className="h-48 w-full" />;
+  const { data: performance, isLoading, error, refetch } = usePerformance(initiative.id);
+  if (isLoading) return <Skeleton className="h-48 w-full" />;
+  if (error || !performance) {
+    return (
+      <div className="flex items-center gap-3">
+        <p className={`text-sm ${MUTED}`}>Could not load the results.</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-3">
       <ResultsSection initiative={initiative} performance={performance} />

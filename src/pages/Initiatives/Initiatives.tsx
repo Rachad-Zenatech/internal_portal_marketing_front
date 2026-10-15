@@ -150,11 +150,14 @@ export default function Initiatives() {
     setPage(0);
   }, [channelCode]);
 
-  const { data: reference } = useReferenceData();
+  const { data: reference, isError: referenceFailed, refetch: refetchReference } = useReferenceData();
   const channel = channelCode ? reference?.channels.find((c) => c.code === channelCode) : undefined;
+  // A channel in the URL can't be resolved without the channel list, or may not exist at all
+  const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
+  const unknownChannel = Boolean(channelCode) && Boolean(reference) && !channel;
   const query = { ...filters, channel_id: channel?.id, search: search || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE };
-  // With a channel in the URL, wait for the channel list so the unfiltered list doesn't flash first
-  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(query, !channelCode || Boolean(reference));
+  // With a channel in the URL, wait for that channel so the unfiltered list doesn't flash first (or show instead)
+  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(query, !channelCode || Boolean(channel));
 
   // Sub-channel options follow the chosen channel
   const subChannelOptions = useMemo(() => {
@@ -300,7 +303,28 @@ export default function Initiatives() {
               </TableRow>
             </TableHeader>
             <TableBody className={isFetching && !isLoading ? "opacity-60 transition-opacity" : undefined}>
-              {isLoading ? (
+              {referenceMissing ? (
+                <TableRow>
+                  <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">
+                    Could not load the channels.{" "}
+                    <Button variant="outline" size="sm" className="ml-2" onClick={() => refetchReference()}>
+                      Try again
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ) : unknownChannel ? (
+                <TableRow>
+                  <TableCell colSpan={columnCount} className="py-12">
+                    <div className="flex flex-col items-center text-center">
+                      <p className="font-medium text-slate-900 dark:text-zinc-100">Unknown channel “{channelCode}”</p>
+                      <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">The link may be out of date.</p>
+                      <Button variant="outline" size="sm" className="mt-3" onClick={() => setChannel(undefined)}>
+                        Show all initiatives
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : isLoading ? (
                 <TableRow>
                   <TableCell colSpan={columnCount} className="text-center py-8 text-slate-500">Loading initiatives...</TableCell>
                 </TableRow>

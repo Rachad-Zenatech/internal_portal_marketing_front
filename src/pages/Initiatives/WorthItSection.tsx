@@ -40,7 +40,8 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
     const targetValue = target.trim() === "" ? null : Number(target);
-    const maturity = Number(days);
+    // Number("") is 0, so an empty window must be caught before converting
+    const maturity = days.trim() === "" ? NaN : Number(days);
     if (targetValue !== null && (Number.isNaN(targetValue) || targetValue < 0)) return setError("Enter a target of 0 or more.");
     if (!Number.isInteger(maturity) || maturity < 0 || maturity > 730) return setError("The maturity window is 0 to 730 days.");
     setError(null);
