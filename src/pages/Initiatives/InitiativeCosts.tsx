@@ -10,7 +10,6 @@ export default function InitiativeCosts() {
       title="Costs"
       path="costs"
       icon={Receipt}
-      tone="bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
       description="Every cost for this initiative, from estimate to paid, grouped by expense type."
     >
       {(initiative) => (

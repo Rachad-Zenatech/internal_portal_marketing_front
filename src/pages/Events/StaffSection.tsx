@@ -70,7 +70,7 @@ function StaffRow({ event, person, canEdit }: { event: InitiativeListItem; perso
             </>
           ) : (
             <p className={`mt-0.5 text-sm ${MUTED}`}>
-              Local or joining online — nothing to book
+              Local or joining online. Nothing to book.
               {person.cargo_note && ` · cargo: ${person.cargo_note}`}
             </p>
           )}
@@ -108,7 +108,7 @@ function StaffRow({ event, person, canEdit }: { event: InitiativeListItem; perso
             <AlertDialogTitle>Remove {name} from this event?</AlertDialogTitle>
             <AlertDialogDescription>
               {person.travel_status === "BOOKED"
-                ? "Their travel is already booked — the travel team will see they're no longer going, but let them know so bookings get cancelled."
+                ? "Their travel is already booked. The travel team will see they're no longer going, but tell them too so they cancel the bookings."
                 : "The travel team will no longer see them on this event."}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -163,8 +163,8 @@ export default function StaffSection({ event }: { event: InitiativeListItem }) {
         <p className="flex items-start gap-2 rounded-lg bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:bg-sky-950/40 dark:text-sky-200">
           <Plane className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
-            Add who's going and what they need. Flights, hotels, Ubers, stipends and cargo are booked by the travel team in the travel management system —
-            people marked <span className="font-semibold">Ready for travel booking</span> are shared with it.
+            Add who's going and what they need. The travel team books flights, hotels, Ubers, stipends and cargo in the travel management system. It
+            gets everyone marked <span className="font-semibold">Ready for travel booking</span>.
           </span>
         </p>
 
@@ -181,7 +181,7 @@ export default function StaffSection({ event }: { event: InitiativeListItem }) {
           <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-slate-200 p-8 text-center dark:border-zinc-700">
             <Users className="h-6 w-6 text-slate-400" />
             <p className="font-medium text-slate-900 dark:text-zinc-100">No one on the team yet</p>
-            <p className={`max-w-sm text-sm ${MUTED}`}>Add the people going. Their dates default to the day before the event until its last day.</p>
+            <p className={`max-w-sm text-sm ${MUTED}`}>Add the people going. Their travel dates start as the day before the event to its last day.</p>
             {canEdit && (
               <Button size="sm" className="mt-1 gap-2" onClick={() => setAddOpen(true)}>
                 <Plus className="h-4 w-4" />

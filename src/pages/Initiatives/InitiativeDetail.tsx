@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,9 +52,9 @@ function Stat({ label, value, hint, badge }: StatProps) {
   );
 }
 
-function StatIcon({ icon: Icon, tone }: { icon: React.ElementType; tone: string }) {
+function StatIcon({ icon: Icon }: { icon: React.ElementType }) {
   return (
-    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${tone}`}>
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground">
       <Icon className="h-5 w-5" />
     </div>
   );
@@ -170,7 +171,7 @@ function TimelineSection({ initiative, barColour }: { initiative: InitiativeList
 
 function EventSection({ initiative, online }: { initiative: InitiativeListItem; online: boolean }) {
   const location = formatEventLocation(initiative.city, initiative.country_code, false);
-  const place = [initiative.venue, location === "—" ? null : location].filter(Boolean).join(" · ");
+  const place = [initiative.venue, location === "-" ? null : location].filter(Boolean).join(" · ");
   return (
     <Section title="Event" icon={CalendarDays}>
       {online ? (
@@ -201,7 +202,7 @@ function EventSection({ initiative, online }: { initiative: InitiativeListItem; 
         <div className="flex items-start gap-3 rounded-lg bg-slate-50/80 p-3 dark:bg-muted">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{location === "—" ? <Empty text="No location yet" /> : location}</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{location === "-" ? <Empty text="No location yet" /> : location}</p>
             {initiative.venue && <p className={`truncate text-sm ${MUTED}`}>{initiative.venue}</p>}
           </div>
         </div>
@@ -220,19 +221,18 @@ interface SubPageLinkProps {
   to: string;
   title: string;
   icon: React.ElementType;
-  tone: string;
   badge?: React.ReactNode;
   children: React.ReactNode;
 }
 
 /** A card that opens one of the initiative's own pages (Costs, Performance) */
-function SubPageLink({ to, title, icon: Icon, tone, badge, children }: SubPageLinkProps) {
+function SubPageLink({ to, title, icon: Icon, badge, children }: SubPageLinkProps) {
   return (
     <Link
       to={to}
-      className={`${CARD} group flex items-center gap-4 p-5 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:hover:border-zinc-700`}
+      className={`${CARD} group flex items-center gap-4 p-4 transition-colors hover:border-foreground/30 sm:p-5`}
     >
-      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${tone}`}>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-muted/50 text-muted-foreground">
         <Icon className="h-6 w-6" />
       </div>
       <div className="min-w-0 flex-1">
@@ -251,12 +251,12 @@ function SubPageLink({ to, title, icon: Icon, tone, badge, children }: SubPageLi
 function PerformanceSnapshot({ initiativeId }: { initiativeId: string }) {
   const { data: performance, isLoading } = usePerformance(initiativeId);
   if (isLoading) return <>Loading…</>;
-  if (!performance) return <>Was it worth it? Results, cost per outcome and the rating.</>;
+  if (!performance) return <>Was it worth it? See results, cost per outcome and the rating.</>;
   // Upcoming → early read on the KPI → final verdict, the same stages as the Performance page
   const { stage, rating, early_read: early } = performance;
   const shown =
     stage === "UPCOMING"
-      ? { badge: "Upcoming", tone: RATING_STYLES.TEST, text: "The verdict comes after it has happened." }
+      ? { badge: "Upcoming", tone: RATING_STYLES.TEST, text: "The verdict comes after it ends." }
       : stage === "EARLY" && early
         ? { badge: `Early read: ${EARLY_LABELS[early.code]}`, tone: RATING_STYLES[early.code], text: early.reason }
         : { badge: rating.name, tone: RATING_STYLES[rating.code], text: rating.reason };
@@ -278,7 +278,7 @@ function DemosSnapshot({ initiativeId }: { initiativeId: string }) {
   const { data: summary, isLoading } = useDemoSummary(initiativeId);
   if (isLoading) return <>Loading demos…</>;
   if (!summary || (summary.total === 0 && summary.upcoming === 0)) {
-    return <>No demos logged yet. Log each one as it happens to see what each demo cost and which became customers.</>;
+    return <>No demos logged yet. Log each one as it happens to see what each demo cost and which led to customers.</>;
   }
   if (summary.total === 0) {
     // Only bookings so far: they count once they happen
@@ -344,61 +344,59 @@ export default function InitiativeDetail() {
 
   return (
     <div className="flex w-full flex-1 min-h-0 flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-      {/* The same coloured banner as the other pages, so the overview reads as the start of the initiative */}
-      <div className="flex flex-col justify-between gap-4 rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-100/70 via-white to-violet-50/60 p-4 sm:flex-row sm:items-start sm:p-6 dark:border-sky-900/50 dark:from-sky-950/50 dark:via-card dark:to-card">
-        <div className="flex min-w-0 items-start gap-4">
-          <div className={`hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-sm sm:flex ${channel.tile}`}>
-            <ChannelIcon className="h-6 w-6" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-zinc-100">{initiative.name}</h2>
-              <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
-                {STATUS_LABELS[initiative.status]}
+      <PageHeader
+        icon={ChannelIcon}
+        title={initiative.name}
+        actions={
+          hasPermission("INITIATIVES_UPDATE") && (
+            <Button onClick={() => setEditOpen(true)} className="gap-2">
+              <Pencil className="h-4 w-4" />
+              Edit
+            </Button>
+          )
+        }
+      >
+        <div className="flex flex-col gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
+              {STATUS_LABELS[initiative.status]}
+            </Badge>
+            {initiative.event_code && (
+              <Badge variant="outline" className="font-mono text-muted-foreground">
+                {initiative.event_code}
               </Badge>
-              {initiative.event_code && (
-                <Badge variant="outline" className="font-mono text-slate-600 dark:text-zinc-300">
-                  {initiative.event_code}
-                </Badge>
-              )}
-            </div>
-            <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${MUTED}`}>
-              <span className="inline-flex items-center gap-1.5">
-                <Building2 className="h-4 w-4" />
-                {initiative.brand_name}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <span className={`h-2 w-2 rounded-full ${channel.dot}`} />
-                {initiative.channel_name}
-                {initiative.sub_channel_name && <span className="text-slate-400 dark:text-zinc-500">/ {initiative.sub_channel_name}</span>}
-              </span>
-            </div>
+            )}
+          </div>
+          <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 text-sm ${MUTED}`}>
+            <span className="inline-flex items-center gap-1.5">
+              <Building2 className="h-4 w-4" />
+              {initiative.brand_name}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${channel.dot}`} />
+              {initiative.channel_name}
+              {initiative.sub_channel_name && <span className="text-muted-foreground/70">/ {initiative.sub_channel_name}</span>}
+            </span>
           </div>
         </div>
-        {hasPermission("INITIATIVES_UPDATE") && (
-          <Button onClick={() => setEditOpen(true)} className="gap-2 self-start">
-            <Pencil className="h-4 w-4" />
-            Edit
-          </Button>
-        )}
-      </div>
+      </PageHeader>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat
-          badge={<StatIcon icon={Wallet} tone="bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400" />}
+          badge={<StatIcon icon={Wallet} />}
           label="Budget"
           value={initiative.budget_amount === null ? <Empty /> : formatBudget(initiative.budget_amount, initiative.currency)}
           hint={initiative.budget_amount === null ? undefined : initiative.currency}
         />
         <Stat
-          badge={<StatIcon icon={CalendarDays} tone="bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400" />}
+          badge={<StatIcon icon={CalendarDays} />}
           label="Dates"
           value={hasDates ? formatDateRangeShort(initiative.start_date, initiative.end_date) : <Empty text="Not scheduled" />}
           hint={formatDuration(initiative.start_date, initiative.end_date)}
         />
         <Stat
-          badge={<StatIcon icon={Target} tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400" />}
-          label="Primary KPI"
+          badge={<StatIcon icon={Target} />}
+          label="Main KPI"
           value={initiative.primary_kpi_name ?? <Empty />}
           hint={initiative.goal_name}
         />
@@ -419,7 +417,6 @@ export default function InitiativeDetail() {
           to={`/initiatives/${initiative.id}/costs`}
           title="Costs"
           icon={Receipt}
-          tone="bg-amber-50 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
         >
           <CostsSnapshot initiative={initiative} />
         </SubPageLink>
@@ -427,7 +424,6 @@ export default function InitiativeDetail() {
           to={`/initiatives/${initiative.id}/performance`}
           title="Performance"
           icon={TrendingUp}
-          tone="bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400"
         >
           <PerformanceSnapshot initiativeId={initiative.id} />
         </SubPageLink>
@@ -436,7 +432,6 @@ export default function InitiativeDetail() {
             to={`/initiatives/${initiative.id}/demos`}
             title="Demos"
             icon={Presentation}
-            tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400"
           >
             <DemosSnapshot initiativeId={initiative.id} />
           </SubPageLink>

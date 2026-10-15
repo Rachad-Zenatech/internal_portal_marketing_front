@@ -98,7 +98,7 @@ function ExpectedCostCell({ item }: { item: InitiativeListItem }) {
             <TooltipContent>Some costs are in another currency and aren't included</TooltipContent>
           </Tooltip>
         )}
-        {hasCosts ? formatMoney(expected, currency) : <span className="text-slate-400 dark:text-zinc-500">—</span>}
+        {hasCosts ? formatMoney(expected, currency) : <span className="text-slate-400 dark:text-zinc-500">-</span>}
       </span>
       {percent !== null && hasCosts && (
         <span
@@ -204,14 +204,12 @@ export default function Initiatives() {
   const locationOf = (item: InitiativeListItem) =>
     formatEventLocation(item.city, item.country_code, ONLINE_EVENT_SUB_CHANNELS.has(subChannelCodes.get(item.sub_channel_id ?? -1) ?? ""));
   const channelCodes = useMemo(() => new Map(reference?.channels.map((c) => [c.id, c.code])), [reference]);
-  const header = channel ? channelStyle(channel.code) : { icon: Megaphone, tile: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400" };
-  const HeaderIcon = header.icon;
+  const HeaderIcon = channel ? channelStyle(channel.code).icon : Megaphone;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out h-full">
       <PageHeader
         icon={HeaderIcon}
-        tone={channel?.code === "EVENTS" ? "violet" : "sky"}
         title={
           <span className="inline-flex items-center gap-2">
             {channel ? `${channel.name} initiatives` : "Initiatives"}
@@ -330,7 +328,7 @@ export default function Initiatives() {
                 </TableRow>
               ) : isError ? (
                 <TableRow>
-                  <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">Could not load initiatives. Please try again.</TableCell>
+                  <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">Could not load the initiatives. Refresh the page to try again.</TableCell>
                 </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
@@ -361,7 +359,7 @@ export default function Initiatives() {
                         {item.event_code && <span className="font-mono">{item.event_code}</span>}
                         <span className="@3xl:hidden">{item.brand_name}</span>
                         <span className="@5xl:hidden">{isEventsView ? item.sub_channel_name : item.sub_channel_name ? `${item.channel_name} / ${item.sub_channel_name}` : item.channel_name}</span>
-                        {isEventsView && locationOf(item) !== "—" && <span className="@4xl:hidden">{locationOf(item)}</span>}
+                        {isEventsView && locationOf(item) !== "-" && <span className="@4xl:hidden">{locationOf(item)}</span>}
                         {(item.start_date || item.end_date) && <span className="@2xl:hidden">{formatDateRangeShort(item.start_date, item.end_date)}</span>}
                         {item.budget_amount !== null && <span className="@xl:hidden">Budget {formatBudget(item.budget_amount, item.currency)}</span>}
                         {item.expected_total !== 0 && <span className="@lg:hidden">Expected {formatMoney(item.expected_total, item.currency)}</span>}
@@ -371,7 +369,7 @@ export default function Initiatives() {
                     <TableCell className="hidden @3xl:table-cell">{item.brand_name}</TableCell>
                     <TableCell className="hidden @5xl:table-cell">
                       {isEventsView ? (
-                        item.sub_channel_name ?? "—"
+                        item.sub_channel_name ?? "-"
                       ) : (
                         <ChannelCell code={channelCodes.get(item.channel_id)} name={item.channel_name} subName={item.sub_channel_name} />
                       )}
@@ -386,7 +384,7 @@ export default function Initiatives() {
                           <span className="hidden @7xl:inline">{item.owner_name}</span>
                         </div>
                       ) : (
-                        "—"
+                        "-"
                       )}
                     </TableCell>
                     <TableCell className="hidden @2xl:table-cell">{formatDateRangeShort(item.start_date, item.end_date)}</TableCell>

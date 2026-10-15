@@ -65,7 +65,7 @@ function MonthForm({ initiative, month, metrics, outcomes, canEdit }: MonthFormP
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
     if (changes.some((c) => c.value !== null && (Number.isNaN(c.value) || c.value < 0))) {
-      setError("Results must be numbers of 0 or more.");
+      setError("Enter numbers of 0 or more.");
       return;
     }
     setError(null);
@@ -106,12 +106,12 @@ function MonthForm({ initiative, month, metrics, outcomes, canEdit }: MonthFormP
                   value={values[m.code] ?? ""}
                   onChange={(e) => setValues((prev) => ({ ...prev, [m.code]: e.target.value }))}
                   disabled={!canEdit}
-                  placeholder="—"
+                  placeholder="-"
                 />
               )}
               {synced && !fromLog && (
                 <p className={`text-xs ${MUTED}`}>
-                  {SOURCE_LABELS[synced.source] ?? synced.source}: {m.unit === "MONEY" ? formatMoney(synced.value, synced.currency ?? initiative.currency) : formatCount(synced.value)} (counts instead)
+                  {SOURCE_LABELS[synced.source] ?? synced.source}: {m.unit === "MONEY" ? formatMoney(synced.value, synced.currency ?? initiative.currency) : formatCount(synced.value)} (this figure is used)
                 </p>
               )}
             </div>
@@ -125,7 +125,7 @@ function MonthForm({ initiative, month, metrics, outcomes, canEdit }: MonthFormP
       )}
       {canEdit && (
         <div className="flex items-center justify-between gap-3">
-          <p className={`text-xs ${MUTED}`}>Leave a box empty to remove a result. Revenue means closed revenue.</p>
+          <p className={`text-xs ${MUTED}`}>Leave a box empty to remove a result. Revenue means closed deals only.</p>
           <Button type="submit" size="sm" disabled={changes.length === 0 || save.isPending}>
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Save {formatMonthLong(month)}

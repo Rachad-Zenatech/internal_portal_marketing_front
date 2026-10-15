@@ -255,7 +255,7 @@ export default function CostOverview({ initiative }: { initiative: InitiativeLis
                 <span className="inline-flex items-center gap-1.5">
                   <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                   {summary.other_currencies.map((c) => `${c.currency} ${c.expected_total.toLocaleString()}`).join(", ")}{" "}
-                  {summary.other_currencies.length === 1 ? "isn't" : "aren't"} included — amounts in other currencies aren't converted.
+                  {summary.other_currencies.length === 1 ? "isn't" : "aren't"} included, because amounts in other currencies aren't converted.
                 </span>
               )}
             </div>

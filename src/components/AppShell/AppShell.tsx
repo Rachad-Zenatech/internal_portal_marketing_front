@@ -37,7 +37,7 @@ export default function AppShell({ children }: Props) {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
         <TopBar onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         <main
-          className="app-canvas flex-1 overflow-y-auto overflow-x-hidden bg-background px-3 py-3 sm:px-5 sm:py-4 lg:px-6"
+          className="flex-1 overflow-y-auto overflow-x-hidden bg-background px-3 py-3 sm:px-5 sm:py-4 lg:px-6"
         >
           <Breadcrumbs />
           <div className="mx-auto w-full max-w-[1600px] pb-8">

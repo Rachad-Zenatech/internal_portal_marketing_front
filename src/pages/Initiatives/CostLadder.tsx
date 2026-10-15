@@ -24,7 +24,7 @@ function Figure({ label, value, tone }: { label: string; value: string; tone?: s
 /** Visitor → lead → demo → customer: how many at each step, what each one cost, and how many made it from the step before */
 export default function CostLadder({ initiative, performance }: { initiative: InitiativeListItem; performance: Performance }) {
   const { ladder, currency } = performance;
-  const money = (value: number | null) => (value === null ? "—" : formatMoney(value, currency));
+  const money = (value: number | null) => (value === null ? "-" : formatMoney(value, currency));
   const isEvent = Boolean(initiative.event_code);
   const label = (code: string, name: string) => (isEvent ? (EVENT_METRIC_LABELS[code] ?? name) : name);
   const roi = performance.roi_percent;
@@ -34,7 +34,7 @@ export default function CostLadder({ initiative, performance }: { initiative: In
       {ladder.length === 0 ? (
         <p className={`text-sm ${MUTED}`}>
           {performance.cost
-            ? "Record results below — visitors, leads, demos, customers — to see what each one cost."
+            ? "Record results below (visitors, leads, demos, customers) to see what each one cost."
             : "Add costs and record results to see what each outcome cost."}
         </p>
       ) : (
@@ -85,7 +85,7 @@ export default function CostLadder({ initiative, performance }: { initiative: In
             <Figure label="Revenue" value={money(performance.revenue)} />
             <Figure
               label="ROI"
-              value={roi === null ? "—" : `${roi}%`}
+              value={roi === null ? "-" : `${roi}%`}
               tone={roi === null ? undefined : roi <= 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}
             />
             <Figure label="Pipeline" value={money(performance.pipeline)} />

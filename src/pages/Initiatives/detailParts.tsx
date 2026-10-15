@@ -37,7 +37,7 @@ export function InitiativeNotLoaded({ error }: { error: unknown }) {
   return (
     <div className="flex flex-col items-start gap-3 p-8">
       <p className="text-sm text-slate-600 dark:text-zinc-400">
-        {notFound ? "This initiative doesn't exist or was removed." : "Could not load this initiative. Please try again."}
+        {notFound ? "This initiative doesn't exist or was removed." : "Could not load this initiative. Refresh the page to try again."}
       </p>
       <Button variant="outline" asChild>
         <Link to="/initiatives">

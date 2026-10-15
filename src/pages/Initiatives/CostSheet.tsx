@@ -44,8 +44,8 @@ function varianceClass(value: number) {
 }
 
 function lockMessage(line: SpendLine) {
-  if (line.lock_reason === "TRAVEL_FEED") return "From the travel management system — updates automatically";
-  if (line.lock_reason === "ADS_IMPORT") return "From an ads import — updates automatically";
+  if (line.lock_reason === "TRAVEL_FEED") return "From the travel management system. Updates automatically.";
+  if (line.lock_reason === "ADS_IMPORT") return "From an ads import. Updates automatically.";
   if (line.lock_reason === "RECONCILED" && line.reconciled_month) return `Reconciled for ${formatMonth(line.reconciled_month)}`;
   return null;
 }
@@ -111,18 +111,18 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
           </div>
         </div>
       </TableCell>
-      <TableCell className={`whitespace-normal break-words ${COLUMNS.vendor}`}>{line.vendor ?? <span className={MUTED}>—</span>}</TableCell>
+      <TableCell className={`whitespace-normal break-words ${COLUMNS.vendor}`}>{line.vendor ?? <span className={MUTED}>-</span>}</TableCell>
       <TableCell className={`text-right tabular-nums ${COLUMNS.estimate}`}>
-        {estimate === null ? <span className={MUTED}>—</span> : formatMoney(estimate, line.currency)}
+        {estimate === null ? <span className={MUTED}>-</span> : formatMoney(estimate, line.currency)}
       </TableCell>
       <TableCell className="text-right tabular-nums font-medium">
-        {isActualStatus(line.status) ? formatMoney(line.amount, line.currency) : <span className={MUTED}>—</span>}
+        {isActualStatus(line.status) ? formatMoney(line.amount, line.currency) : <span className={MUTED}>-</span>}
         {line.variance !== null && line.variance !== 0 && (
           <div className={`text-xs font-normal @5xl:hidden ${varianceClass(line.variance)}`}>{formatVariance(line.variance, line.currency)}</div>
         )}
       </TableCell>
       <TableCell className={`text-right tabular-nums ${COLUMNS.variance} ${line.variance === null ? MUTED : varianceClass(line.variance)}`}>
-        {line.variance === null ? "—" : formatVariance(line.variance, line.currency)}
+        {line.variance === null ? "-" : formatVariance(line.variance, line.currency)}
       </TableCell>
       <TableCell className={COLUMNS.status}>
         <Badge variant="outline" className={SPEND_STATUS_STYLES[line.status]}>
@@ -136,8 +136,8 @@ function LineRow({ line, today, actions }: { line: SpendLine; today: string; act
         )}
         {line.paid_on && <div className={`mt-1 text-[11px] @7xl:hidden ${MUTED}`}>on {formatDate(line.paid_on)}</div>}
       </TableCell>
-      <TableCell className={`break-all font-mono text-xs ${COLUMNS.invoice}`}>{line.invoice_ref ?? <span className={`font-sans ${MUTED}`}>—</span>}</TableCell>
-      <TableCell className={COLUMNS.paidOn}>{formatDate(line.paid_on) ?? <span className={MUTED}>—</span>}</TableCell>
+      <TableCell className={`break-all font-mono text-xs ${COLUMNS.invoice}`}>{line.invoice_ref ?? <span className={`font-sans ${MUTED}`}>-</span>}</TableCell>
+      <TableCell className={COLUMNS.paidOn}>{formatDate(line.paid_on) ?? <span className={MUTED}>-</span>}</TableCell>
       {actions !== undefined && <TableCell className="px-1">{actions}</TableCell>}
     </TableRow>
   );
@@ -188,7 +188,7 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today, renderA
           {summary && (
             <span className="flex items-center gap-4 text-sm tabular-nums">
               {summary.variance !== 0 && (
-                <span className={varianceClass(summary.variance)} title="Actual vs estimate">
+                <span className={varianceClass(summary.variance)} title="Actual compared with estimate">
                   {formatVariance(summary.variance, currency)}
                 </span>
               )}
@@ -363,7 +363,7 @@ export default function CostSheet({ initiative }: CostSheetProps) {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-200 p-6 text-center dark:border-zinc-800">
           <p className={`text-sm ${MUTED}`}>
             {isEvent
-              ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them — start with estimates if you only have quotes."
+              ? "No costs yet. Add the booth space, build, show services, badges and materials as you book them. If you only have quotes, start with estimates."
               : "No costs yet."}
           </p>
           {addButton}

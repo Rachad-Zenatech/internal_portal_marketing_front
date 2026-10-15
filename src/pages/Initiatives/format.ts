@@ -2,7 +2,7 @@ import { countryName } from "@/lib/countries";
 import { SQFT_TO_SQM as SQM_PER_SQFT } from "./eventRules";
 
 export function formatBudget(amount: number | null, currency: string) {
-  if (amount === null) return "—";
+  if (amount === null) return "-";
   return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(amount);
 }
 
@@ -19,14 +19,14 @@ export function formatDates(start: string | null, end: string | null) {
   if (s && e) return `${s} – ${e}`;
   if (s) return `From ${s}`;
   if (e) return `Until ${e}`;
-  return "—";
+  return "-";
 }
 
 /** "City, Country" for an event; "Online" for virtual events and webinars without a location */
 export function formatEventLocation(city: string | null, countryCode: string | null, online: boolean) {
   const place = [city, countryName(countryCode)].filter(Boolean).join(", ");
   if (place) return place;
-  return online ? "Online" : "—";
+  return online ? "Online" : "-";
 }
 
 /** "3 days" for an inclusive date range, or null when either date is missing */

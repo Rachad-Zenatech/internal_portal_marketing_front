@@ -22,8 +22,8 @@ const COLUMNS_WE_READ =
 
 function columnsFor(currency: string): ImportPreviewColumn<CostSheetPreviewRow>[] {
   const money = (value: number | null, row: CostSheetPreviewRow) =>
-    value === null ? <span className="text-slate-400">—</span> : formatMoney(value, row.currency ?? currency);
-  const text = (value: string | null) => value ?? <span className="text-slate-400">—</span>;
+    value === null ? <span className="text-slate-400">-</span> : formatMoney(value, row.currency ?? currency);
+  const text = (value: string | null) => value ?? <span className="text-slate-400">-</span>;
   return [
     { key: "item", header: "Item", render: (r) => <span className="font-medium text-slate-900 dark:text-zinc-100">{text(r.item)}</span> },
     {
@@ -41,7 +41,7 @@ function columnsFor(currency: string): ImportPreviewColumn<CostSheetPreviewRow>[
     { key: "actual", header: "Actual", className: "text-right tabular-nums", render: (r) => money(r.actual, r) },
     { key: "stage", header: "Stage", render: (r) => text(r.status_value) },
     { key: "invoice", header: "Invoice / receipt #", className: "font-mono text-xs", render: (r) => text(r.invoice_ref) },
-    { key: "date", header: "Date", className: "whitespace-nowrap", render: (r) => formatDate(r.date) ?? <span className="text-slate-400">—</span> },
+    { key: "date", header: "Date", className: "whitespace-nowrap", render: (r) => formatDate(r.date) ?? <span className="text-slate-400">-</span> },
   ];
 }
 
@@ -101,7 +101,7 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
       onSuccess: (result) => {
         toast.success(`Imported ${plural(result.imported_rows, NOUN)}`, {
           description: result.skipped
-            ? `${plural(result.skipped, ["row was", "rows were"])} skipped — the invoice was recorded since the preview.`
+            ? `${plural(result.skipped, ["row was", "rows were"])} skipped because an invoice was recorded after you checked the file.`
             : undefined,
           action: {
             label: "Undo",
@@ -176,7 +176,7 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
                 <p>
                   <span className="font-medium text-slate-900 dark:text-zinc-100">Columns we read:</span> {COLUMNS_WE_READ}.
                 </p>
-                <p>Leave travel out — it comes from the travel management system.</p>
+                <p>Leave travel out. It comes from the travel management system.</p>
                 <Button type="button" variant="link" className="h-auto w-fit gap-1.5 p-0" onClick={() => void template()} disabled={downloading}>
                   {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   Download template

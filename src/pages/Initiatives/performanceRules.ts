@@ -21,7 +21,7 @@ export const EARLY_LABELS: Record<RatingCode, string> = {
 
 /** A KPI value in its own unit: "$1,000", "1.5%", "120,000" */
 export function formatKpiValue(value: number | null, unit: KpiUnit | null, currency: string) {
-  if (value === null) return "—";
+  if (value === null) return "-";
   if (unit === "MONEY") return formatMoney(value, currency);
   if (unit === "PERCENT") return `${Number.isInteger(value) ? value : value.toFixed(1)}%`;
   return value.toLocaleString();
@@ -38,16 +38,16 @@ export function verdictSentence(p: Performance): string | null {
   const outcome: MoneyOutcome = p.money_outcome;
   if (outcome === "NO_REVENUE") {
     return p.rating.code === "TEST"
-      ? `${spent} No revenue recorded yet — it usually arrives within the maturity window.`
+      ? `${spent} No revenue recorded yet. It usually comes in before the waiting period ends.`
       : `${spent} No revenue was recorded.`;
   }
   const revenue = formatMoney(p.revenue ?? 0, p.currency);
   const customers = p.totals.CUSTOMERS;
   const cameBack = customers ? `${formatCount(customers)} ${customers === 1 ? "customer" : "customers"} brought in ${revenue}` : `${revenue} of revenue came in`;
-  if (outcome === "BROKE_EVEN") return `${spent} ${cameBack} — it broke even, which doesn't count as a success.`;
-  if (outcome === "LOST_MONEY") return `${spent} ${cameBack} — it lost money (ROI ${p.roi_percent}%).`;
+  if (outcome === "BROKE_EVEN") return `${spent} ${cameBack}. It broke even, which doesn't count as a success.`;
+  if (outcome === "LOST_MONEY") return `${spent} ${cameBack}. It lost money (ROI ${p.roi_percent}%).`;
   const perDollar = ((p.roi_percent ?? 0) / 100 + 1).toFixed(2);
-  return `${spent} ${cameBack} — every ${formatMoney(1, p.currency)} spent brought back ${formatMoney(Number(perDollar), p.currency)} (ROI ${p.roi_percent}%).`;
+  return `${spent} ${cameBack}. Every ${formatMoney(1, p.currency)} spent brought back ${formatMoney(Number(perDollar), p.currency)} (ROI ${p.roi_percent}%).`;
 }
 
 /** First day of a month as "YYYY-MM-01", from a date like "2026-11-04" */

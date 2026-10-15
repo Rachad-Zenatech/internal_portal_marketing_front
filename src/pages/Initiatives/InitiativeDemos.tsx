@@ -8,7 +8,6 @@ export default function InitiativeDemos() {
       title="Demos"
       path="demos"
       icon={Presentation}
-      tone="bg-violet-50 text-violet-600 dark:bg-violet-950/50 dark:text-violet-400"
       description="Every demo given at this event, what came of it, and what each one cost."
     >
       {(initiative) => <DemoLog initiative={initiative} />}

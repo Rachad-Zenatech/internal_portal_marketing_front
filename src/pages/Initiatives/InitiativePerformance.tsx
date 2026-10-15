@@ -49,8 +49,7 @@ export default function InitiativePerformance() {
       title="Performance"
       path="performance"
       icon={TrendingUp}
-      tone="bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400"
-      description="Was it worth it? What each outcome cost, the results behind it, and where costs land against the budget."
+      description="Was it worth it? See what each outcome cost, the results behind it, and how costs compare with the budget."
     >
       {(initiative) => <PerformanceContent initiative={initiative} />}
     </InitiativeSubPage>

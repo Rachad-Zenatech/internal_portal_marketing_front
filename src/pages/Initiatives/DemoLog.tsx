@@ -41,7 +41,7 @@ function outcomeTone(code: string, rank: number) {
   return "text-slate-500 dark:text-zinc-400";
 }
 
-const percent = (value: number | null) => (value === null ? "—" : `${Number.isInteger(value) ? value : value.toFixed(1)}%`);
+const percent = (value: number | null) => (value === null ? "-" : `${Number.isInteger(value) ? value : value.toFixed(1)}%`);
 
 function formatWhen(value: string) {
   return new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -62,7 +62,7 @@ function Funnel({ summary }: { summary: DemoSummary }) {
   const { funnel } = summary;
   const steps = [
     { label: "Demos", value: funnel.demos, tone: "bg-violet-500 dark:bg-violet-400" },
-    { label: "Follow-up or further", value: funnel.follow_ups, tone: "bg-sky-500 dark:bg-sky-400" },
+    { label: "Reached follow-up", value: funnel.follow_ups, tone: "bg-sky-500 dark:bg-sky-400" },
     { label: "Deal opened", value: funnel.deals, tone: "bg-blue-600 dark:bg-blue-400" },
     { label: "Became a customer", value: funnel.customers, tone: "bg-emerald-600 dark:bg-emerald-400" },
   ];
@@ -80,7 +80,7 @@ function Funnel({ summary }: { summary: DemoSummary }) {
       ))}
       <p className={`text-xs ${MUTED}`}>
         {funnel.demos - funnel.with_outcome > 0 && `${funnel.demos - funnel.with_outcome} without an outcome yet. `}
-        {summary.follow_up_rate !== null && `${percent(summary.follow_up_rate)} of demos with a known outcome led to a follow-up or further.`}
+        {summary.follow_up_rate !== null && `${percent(summary.follow_up_rate)} of demos with a known outcome reached follow-up or beyond.`}
       </p>
     </div>
   );
@@ -92,7 +92,7 @@ function Breakdown({ title, counts }: { title: string; counts: DemoCount[] }) {
     <div className="flex flex-col gap-2">
       <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">{title}</h4>
       {counts.length === 0 ? (
-        <p className={`text-sm ${MUTED}`}>—</p>
+        <p className={`text-sm ${MUTED}`}>-</p>
       ) : (
         counts.slice(0, 6).map((c) => (
           <div key={c.key || c.name} className="grid grid-cols-[minmax(0,10rem)_1fr_2.5rem] items-center gap-3 text-sm">
@@ -217,7 +217,7 @@ function CostStory({ summary }: { summary: DemoSummary }) {
             <span className={strong}>{money(summary.cost_per_customer)} per customer</span>.
           </>
         ) : (
-          "None has become a customer through a demo yet."
+          "No demo has led to a customer yet."
         )}
       </p>
       {/* After the event, or once invoices arrive, the same figures on what has actually been invoiced or paid */}
@@ -290,7 +290,7 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
 
   const s = summary.data;
   const list = demos.data ?? [];
-  const money = (value: number | null) => (value === null ? "—" : formatMoney(value, s.currency));
+  const money = (value: number | null) => (value === null ? "-" : formatMoney(value, s.currency));
   const typeLine = s.by_type.map((t) => `${t.count} ${t.name.replace(" demo", "").toLowerCase()}`).join(" · ");
 
   return (
@@ -298,7 +298,7 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
       <Section title="Demos" icon={Presentation} action={action}>
         {list.length === 0 ? (
           <p className={`text-sm ${MUTED}`}>
-            No demos logged yet. Log each demo as it happens — the count, cost per demo and how many became customers fill in automatically.
+            No demos logged yet. Log each demo as it happens. The count, cost per demo and number of customers update automatically.
           </p>
         ) : (
           <div className="flex flex-col gap-6">
@@ -315,12 +315,12 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
                 value={s.funnel.customers}
                 hint={s.customer_rate === null ? undefined : `${percent(s.customer_rate)} of demos given`}
               />
-              <Figure label="Cost per customer via demos" value={money(s.cost_per_customer)} hint="Not every customer the event won" />
+              <Figure label="Cost per customer via demos" value={money(s.cost_per_customer)} hint="Only customers who came through a demo" />
             </div>
 
             {(s.upcoming > 0 || s.no_shows > 0) && (
               <p className={`text-sm ${MUTED}`}>
-                {s.upcoming > 0 && `${s.upcoming} booked for later — ${s.upcoming === 1 ? "it counts" : "they count"} once ${s.upcoming === 1 ? "it happens" : "they happen"}.`}
+                {s.upcoming > 0 && `${s.upcoming} booked for later. ${s.upcoming === 1 ? "It counts" : "They count"} once ${s.upcoming === 1 ? "it happens" : "they happen"}.`}
                 {s.upcoming > 0 && s.no_shows > 0 && " "}
                 {s.no_shows > 0 && `${s.no_shows} ${s.no_shows === 1 ? "no-show isn't" : "no-shows aren't"} counted.`}
               </p>
@@ -388,10 +388,10 @@ export default function DemoLog({ initiative }: { initiative: InitiativeListItem
                         {d.note && <div className={`truncate text-xs ${MUTED}`}>{d.note}</div>}
                       </TableCell>
                       <TableCell className="max-w-[14rem]">
-                        <div className="truncate text-slate-700 dark:text-zinc-300">{d.product_note ?? d.brand_name ?? "—"}</div>
+                        <div className="truncate text-slate-700 dark:text-zinc-300">{d.product_note ?? d.brand_name ?? "-"}</div>
                         {d.product_note && d.brand_name && <div className={`text-xs ${MUTED}`}>{d.brand_name}</div>}
                       </TableCell>
-                      <TableCell className="whitespace-nowrap text-slate-700 dark:text-zinc-300">{d.given_by_name ?? "—"}</TableCell>
+                      <TableCell className="whitespace-nowrap text-slate-700 dark:text-zinc-300">{d.given_by_name ?? "-"}</TableCell>
                       <TableCell>
                         <OutcomeCell initiative={initiative} demo={d} editable={canEdit} />
                       </TableCell>

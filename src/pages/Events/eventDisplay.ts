@@ -8,12 +8,12 @@ export const TIMING_LABELS: Record<EventTiming, string> = {
   UNSCHEDULED: "Not scheduled",
 };
 
-/** The date tile on each card, coloured by when the event is */
-export const TIMING_TILE: Record<EventTiming, string> = {
-  NOW: "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950",
-  UPCOMING: "bg-violet-600 text-white dark:bg-violet-500 dark:text-violet-950",
-  PAST: "bg-slate-200 text-slate-700 dark:bg-zinc-700 dark:text-zinc-200",
-  UNSCHEDULED: "bg-slate-100 text-slate-500 dark:bg-zinc-800 dark:text-zinc-400",
+/** A small status dot for when the event is: the only colour on an event card that isn't a warning */
+export const TIMING_DOT: Record<EventTiming, string> = {
+  NOW: "bg-emerald-500",
+  UPCOMING: "bg-blue-500",
+  PAST: "bg-zinc-400",
+  UNSCHEDULED: "bg-amber-500",
 };
 
 export const ROLE_LABELS: Record<StaffRole, string> = {
@@ -37,7 +37,7 @@ export const READINESS: Record<TravelReadiness, { label: string; tone: string }>
 };
 
 export function dateTile(start: string | null) {
-  if (!start) return { month: "TBC", day: "—" };
+  if (!start) return { month: "TBC", day: "-" };
   const d = new Date(`${start}T00:00:00`);
   return { month: d.toLocaleDateString(undefined, { month: "short" }).toUpperCase(), day: String(d.getDate()) };
 }
