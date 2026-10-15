@@ -18,7 +18,7 @@ import { Field } from "./SpendLineDialog";
 // The picked option in a segmented control, so it stands out in light and dark
 const SELECTED = "data-[state=on]:bg-slate-900 data-[state=on]:text-white dark:data-[state=on]:bg-zinc-100 dark:data-[state=on]:text-zinc-900";
 
-export const COMPANY_HELP = "Company only — keep people's names and contact details in HubSpot.";
+export const COMPANY_HELP = "Company name only. Keep people's names and contact details in HubSpot.";
 
 interface FormState {
   typeId: string;
@@ -177,13 +177,13 @@ function DemoForm({ initiative, demo, onDone }: DemoFormProps) {
         <DialogTitle>{demo ? "Edit demo" : "Log a demo"}</DialogTitle>
         <DialogDescription>
           {demo
-            ? "Update this demo — for example, record what came of it after the event."
-            : `A demo given at ${initiative.name}. The demo count, cost per demo and customers won fill in automatically.`}
+            ? "Update this demo, for example to record what came of it after the event."
+            : `A demo given at ${initiative.name}. The demo count, cost per demo and customers won update automatically.`}
         </DialogDescription>
       </DialogHeader>
 
       <form id="demo-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Kind of demo" htmlFor="demo-type" error={errors.typeId} className="sm:col-span-2">
+        <Field label="Kind of demo" htmlFor="demo-type" required error={errors.typeId} className="sm:col-span-2">
           <ToggleGroup
             id="demo-type"
             type="single"
@@ -201,7 +201,7 @@ function DemoForm({ initiative, demo, onDone }: DemoFormProps) {
           </ToggleGroup>
         </Field>
 
-        <Field label="When" htmlFor="demo-when" error={errors.when}>
+        <Field label="When" htmlFor="demo-when" required error={errors.when}>
           <Input id="demo-when" type="datetime-local" value={form.when} onChange={(e) => set({ when: e.target.value })} {...invalid("when")} />
         </Field>
 

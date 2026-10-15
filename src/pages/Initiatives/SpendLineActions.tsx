@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -21,12 +22,14 @@ import { useDeleteSpendLine, useUpdateSpendLine } from "@/hooks/useSpend";
 import type { PaymentMethod, SpendLine, SpendLineUpdate } from "@/types/spend";
 import { formatMoney, isoToday } from "./format";
 import { INVOICE_HELP, PAYMENT_METHOD_LABELS } from "./spendRules";
+import RequiredMark from "@/components/RequiredMark";
 
-function QuickField({ id, label, error, children }: { id: string; label: string; error?: string | null; children: React.ReactNode }) {
+function QuickField({ id, label, required, error, children }: { id: string; label: string; required?: boolean; error?: string | null; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <Label htmlFor={id} className="text-xs text-slate-700 dark:text-zinc-300">
         {label}
+        {required && <RequiredMark />}
       </Label>
       {children}
       {error && (
@@ -87,10 +90,10 @@ function MarkInvoicedForm({ line, initiativeId, onDone }: QuickFormProps) {
       </QuickField>
       <p className="-mt-1 text-[11px] text-slate-500 dark:text-zinc-400">{INVOICE_HELP}</p>
       <div className="grid grid-cols-2 gap-2">
-        <QuickField id={`invoiced-date-${line.id}`} label="Invoice date">
-          <Input id={`invoiced-date-${line.id}`} type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        <QuickField id={`invoiced-date-${line.id}`} label="Invoice date" required>
+          <DatePicker id={`invoiced-date-${line.id}`} value={date} onChange={setDate} />
         </QuickField>
-        <QuickField id={`invoiced-amount-${line.id}`} label={`Actual (${line.currency})`} error={error?.field === "amount" ? error.message : null}>
+        <QuickField id={`invoiced-amount-${line.id}`} label={`Actual (${line.currency})`} required error={error?.field === "amount" ? error.message : null}>
           <Input id={`invoiced-amount-${line.id}`} type="number" inputMode="decimal" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </QuickField>
       </div>
@@ -132,8 +135,8 @@ function MarkPaidForm({ line, initiativeId, onDone }: QuickFormProps) {
   return (
     <form onSubmit={submit} className="flex flex-col gap-3">
       <p className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Mark paid</p>
-      <QuickField id={`paid-on-${line.id}`} label="Paid on" error={error}>
-        <Input id={`paid-on-${line.id}`} type="date" value={paidOn} onChange={(e) => setPaidOn(e.target.value)} autoFocus />
+      <QuickField id={`paid-on-${line.id}`} label="Paid on" required error={error}>
+        <DatePicker id={`paid-on-${line.id}`} value={paidOn} onChange={setPaidOn} autoFocus />
       </QuickField>
       <QuickField id={`paid-method-${line.id}`} label="Payment method">
         <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>

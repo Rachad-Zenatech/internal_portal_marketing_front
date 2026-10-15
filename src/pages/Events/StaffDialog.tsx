@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,7 +77,7 @@ const NEEDS: { key: "needsFlight" | "needsHotel" | "needsGround" | "needsStipend
   { key: "needsFlight", label: "Flight", hint: "Return flight" },
   { key: "needsHotel", label: "Hotel", hint: "For the nights away" },
   { key: "needsGround", label: "Ground transport", hint: "Uber, taxi or car" },
-  { key: "needsStipend", label: "Stipend", hint: "Per diem for meals" },
+  { key: "needsStipend", label: "Stipend", hint: "Daily allowance for meals" },
 ];
 
 function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?: StaffAssignment; onDone: () => void }) {
@@ -126,19 +127,19 @@ function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?
       <DialogHeader>
         <DialogTitle>{staff ? `${staff.full_name || staff.email}'s trip` : "Add someone to the team"}</DialogTitle>
         <DialogDescription>
-          The travel team books flights, hotels, transport and stipends in the travel management system from these details.
+          The travel team uses these details to book flights, hotels, transport and stipends in the travel management system.
         </DialogDescription>
       </DialogHeader>
 
       <form id="staff-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Who's going" htmlFor="staff-person">
+        <Field label="Who's going" htmlFor="staff-person" required={!staff}>
           {staff ? (
             <p className="flex h-9 items-center text-sm font-medium text-slate-900 dark:text-zinc-100">{staff.full_name || staff.email}</p>
           ) : (
             <OwnerPicker id="staff-person" value={form.person} onChange={(person) => set({ person })} />
           )}
         </Field>
-        <Field label="Role at the event" htmlFor="staff-role">
+        <Field label="Role at the event" htmlFor="staff-role" required>
           <Select value={form.role} onValueChange={(v) => set({ role: v as StaffRole })}>
             <SelectTrigger id="staff-role" className="w-full">
               <SelectValue />
@@ -157,7 +158,7 @@ function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?
           <Checkbox id="staff-travel" checked={form.travelNeeded} onCheckedChange={(v) => set({ travelNeeded: v === true })} className="mt-0.5" />
           <span>
             <span className="block text-sm font-medium text-slate-900 dark:text-zinc-100">Needs travel</span>
-            <span className="block text-xs text-slate-500 dark:text-zinc-400">Untick for people who are local or join online — nothing gets booked for them.</span>
+            <span className="block text-xs text-slate-500 dark:text-zinc-400">Untick for people who are local or joining online. Nothing gets booked for them.</span>
           </span>
         </label>
 
@@ -167,10 +168,10 @@ function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?
               <Input id="staff-from" value={form.departsFrom} onChange={(e) => set({ departsFrom: e.target.value })} placeholder="Toronto (YYZ)" maxLength={120} />
             </Field>
             <Field label="Arrives" htmlFor="staff-arrive" hint="Usually the day before, to set up">
-              <Input id="staff-arrive" type="date" value={form.arriveOn} onChange={(e) => set({ arriveOn: e.target.value })} />
+              <DatePicker id="staff-arrive" value={form.arriveOn} onChange={(v) => set({ arriveOn: v })} clearable />
             </Field>
             <Field label="Leaves" htmlFor="staff-depart">
-              <Input id="staff-depart" type="date" value={form.departOn} onChange={(e) => set({ departOn: e.target.value })} />
+              <DatePicker id="staff-depart" value={form.departOn} min={form.arriveOn || undefined} onChange={(v) => set({ departOn: v })} clearable />
             </Field>
             <fieldset className="flex flex-col gap-2 sm:col-span-2">
               <legend className="mb-1 text-sm font-medium text-slate-700 dark:text-zinc-300">What they need</legend>
@@ -181,7 +182,7 @@ function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?
                     htmlFor={`staff-${n.key}`}
                     className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 transition-colors ${
                       form[n.key]
-                        ? "border-violet-300 bg-violet-50 dark:border-violet-800 dark:bg-violet-950/40"
+                        ? "border-foreground/40 bg-muted"
                         : "border-slate-200 dark:border-zinc-800"
                     }`}
                   >
@@ -197,7 +198,7 @@ function StaffForm({ event, staff, onDone }: { event: InitiativeListItem; staff?
           </>
         )}
 
-        <Field label="Cargo travelling with them (optional)" htmlFor="staff-cargo" hint="Gear or materials to ship, e.g. 2 demo drones in Pelican cases" className="sm:col-span-2">
+        <Field label="Cargo to ship (optional)" htmlFor="staff-cargo" hint="Gear or materials, e.g. 2 demo drones in Pelican cases" className="sm:col-span-2">
           <Input id="staff-cargo" value={form.cargoNote} onChange={(e) => set({ cargoNote: e.target.value })} maxLength={255} />
         </Field>
         <Field label="Notes for the travel team (optional)" htmlFor="staff-notes" className="sm:col-span-2">

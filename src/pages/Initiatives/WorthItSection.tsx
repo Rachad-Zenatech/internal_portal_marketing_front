@@ -16,10 +16,11 @@ import { Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { formatMoney } from "./format";
 import { EARLY_LABELS, formatDateLong, formatKpiValue, RATING_STYLES, verdictSentence } from "./performanceRules";
+import RequiredMark from "@/components/RequiredMark";
 
 const RATING_TEXT: Record<string, string> = {
   HIGH: "Worth it",
-  MEDIUM: "Works, needs optimising",
+  MEDIUM: "Works, but needs improving",
   LOW: "Not worth it as it stands",
   TEST: "Too early to say",
 };
@@ -34,7 +35,7 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
   const [error, setError] = useState<string | null>(null);
 
   const unitLabel = kpi?.unit === "MONEY" ? currency : kpi?.unit === "PERCENT" ? "%" : null;
-  const directionHint = kpi?.direction === "lower" ? "Lower is better — the most it should cost." : kpi?.direction === "higher" ? "Higher is better — the least you'd accept." : null;
+  const directionHint = kpi?.direction === "lower" ? "Lower is better. Enter the highest value you'd accept." : kpi?.direction === "higher" ? "Higher is better. Enter the lowest value you'd accept." : null;
   const dirty = target !== (evaluation.target_value === null ? "" : String(evaluation.target_value)) || days !== String(evaluation.maturity_days);
 
   const handleSave = (event: React.FormEvent) => {
@@ -43,7 +44,7 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
     // Number("") is 0, so an empty window must be caught before converting
     const maturity = days.trim() === "" ? NaN : Number(days);
     if (targetValue !== null && (Number.isNaN(targetValue) || targetValue < 0)) return setError("Enter a target of 0 or more.");
-    if (!Number.isInteger(maturity) || maturity < 0 || maturity > 730) return setError("The maturity window is 0 to 730 days.");
+    if (!Number.isInteger(maturity) || maturity < 0 || maturity > 730) return setError("The waiting period must be 0 to 730 days.");
     setError(null);
     saveEvaluation.mutate(
       { target_value: targetValue, maturity_days: maturity },
@@ -59,11 +60,11 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
           {kpi ? (
             <>
               Judged on <span className="font-medium text-slate-700 dark:text-zinc-300">{kpi.name}</span>
-              {evaluation.kpi_from_default ? ` (the default for ${initiative.sub_channel_name ?? "this sub-channel"} — change the primary KPI with Edit)` : ""}.
+              {evaluation.kpi_from_default ? ` (the default for ${initiative.sub_channel_name ?? "this type"}). To use a different main KPI, choose Edit on the overview.` : "."}
               {!kpi.supported && " This KPI isn't calculated yet, so there's no rating."}
             </>
           ) : (
-            "No primary KPI yet — set one with Edit on the overview to get a rating."
+            "No main KPI yet. To get a rating, choose one with Edit on the overview."
           )}
         </p>
       </div>
@@ -91,13 +92,14 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="worth-days" className="text-slate-700 dark:text-zinc-300">
-            Maturity window
+            Waiting period
+            <RequiredMark />
           </Label>
           <div className="flex items-center gap-2">
             <Input id="worth-days" type="number" min={0} max={730} step={1} value={days} onChange={(e) => setDays(e.target.value)} disabled={!canEdit} />
             <span className={`text-sm ${MUTED}`}>days</span>
           </div>
-          <p className={`text-xs ${MUTED}`}>How long after it ends before the rating is final — deals close late.</p>
+          <p className={`text-xs ${MUTED}`}>How long to wait after it ends before the final verdict, so deals have time to close.</p>
         </div>
       </div>
       {error && (
@@ -152,7 +154,7 @@ function DecisionPanel({ initiative, performance, canEdit }: { initiative: Initi
       <div>
         <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">Scale or cut?</h4>
         <p className={`mt-0.5 text-xs ${MUTED}`}>
-          The rating suggests <span className="font-medium text-slate-700 dark:text-zinc-300">{suggested?.name ?? "—"}</span>. The decision is Marketing's.
+          The rating suggests <span className="font-medium text-slate-700 dark:text-zinc-300">{suggested?.name ?? "-"}</span>. The decision is Marketing's.
         </p>
       </div>
       {performance.latest_decision && (
@@ -311,7 +313,7 @@ export default function WorthItSection({ initiative, performance }: { initiative
             // The decision belongs to the final verdict; an early one is possible but tucked away
             <details className="rounded-lg border border-dashed border-slate-200 p-4 text-sm dark:border-zinc-700">
               <summary className={`cursor-pointer font-medium ${MUTED}`}>
-                Scale or cut? Decided once the final verdict is in{finalOn ? ` (${finalOn})` : ""}. Record an early decision…
+                Scale or cut? Decide once the final verdict is in{finalOn ? ` (${finalOn})` : ""}. Record an early decision…
               </summary>
               <div className="mt-3">
                 <DecisionPanel initiative={initiative} performance={performance} canEdit={canEdit} />

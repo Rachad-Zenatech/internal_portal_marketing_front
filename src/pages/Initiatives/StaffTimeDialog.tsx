@@ -3,6 +3,7 @@ import { Calculator, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -46,7 +47,7 @@ function validate(form: FormState): Partial<Record<FieldName, string>> {
   const people = Number(form.people);
   if (!Number.isInteger(people) || people < 1 || people > 100) errors.people = "Enter a whole number of people from 1 to 100.";
   const days = Number(form.days);
-  if (form.days.trim() === "" || !(days > 0) || !Number.isInteger(days * 2)) errors.days = "Enter the days each, in half days (e.g. 2.5).";
+  if (form.days.trim() === "" || !(days > 0) || !Number.isInteger(days * 2)) errors.days = "Enter days per person, in half days (e.g. 2.5).";
   if (form.dayRate.trim() === "" || !(Number(form.dayRate) > 0)) errors.dayRate = "Enter a day rate above zero.";
   if (!form.date) errors.date = "Choose a date.";
   return errors;
@@ -130,16 +131,16 @@ function StaffTimeForm({ initiative, onDone }: { initiative: InitiativeListItem;
       </DialogHeader>
 
       <form id="staff-time-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="People" htmlFor="staff-people" error={errors.people}>
+        <Field label="People" htmlFor="staff-people" required error={errors.people}>
           <Input id="staff-people" type="number" inputMode="numeric" min={1} max={100} step={1} value={form.people} onChange={(e) => set({ people: e.target.value })} placeholder="e.g. 3" autoFocus {...invalid("people")} />
         </Field>
-        <Field label="Days each" htmlFor="staff-days" error={errors.days} hint={initiative.start_date && initiative.end_date ? "Defaults to the event's length." : undefined}>
+        <Field label="Days each" htmlFor="staff-days" required error={errors.days} hint={initiative.start_date && initiative.end_date ? "Defaults to the event's length." : undefined}>
           <Input id="staff-days" type="number" inputMode="decimal" min={0.5} step={0.5} value={form.days} onChange={(e) => set({ days: e.target.value })} {...invalid("days")} />
         </Field>
-        <Field label="Day rate" htmlFor="staff-rate" error={errors.dayRate} hint="A blended rate per person per day.">
+        <Field label="Day rate" htmlFor="staff-rate" required error={errors.dayRate} hint="An average cost per person per day.">
           <Input id="staff-rate" type="number" inputMode="decimal" min={0} step="0.01" value={form.dayRate} onChange={(e) => set({ dayRate: e.target.value })} placeholder="e.g. 400" {...invalid("dayRate")} />
         </Field>
-        <Field label="Currency" htmlFor="staff-currency">
+        <Field label="Currency" htmlFor="staff-currency" required>
           <Select value={form.currency} onValueChange={(v) => set({ currency: v })}>
             <SelectTrigger id="staff-currency" className="w-full">
               <SelectValue />
@@ -153,8 +154,8 @@ function StaffTimeForm({ initiative, onDone }: { initiative: InitiativeListItem;
             </SelectContent>
           </Select>
         </Field>
-        <Field label="Date" htmlFor="staff-date" error={errors.date} hint="Decides which month the cost counts in.">
-          <Input id="staff-date" type="date" value={form.date} onChange={(e) => set({ date: e.target.value })} {...invalid("date")} />
+        <Field label="Date" htmlFor="staff-date" required error={errors.date} hint="Decides which month the cost counts in.">
+          <DatePicker id="staff-date" value={form.date} onChange={(v) => set({ date: v })} {...invalid("date")} />
         </Field>
         <Field label="Note (optional)" htmlFor="staff-note" className="sm:col-span-2">
           <Textarea id="staff-note" value={form.note} onChange={(e) => set({ note: e.target.value })} rows={2} placeholder="e.g. Booth staff, setup and teardown" />

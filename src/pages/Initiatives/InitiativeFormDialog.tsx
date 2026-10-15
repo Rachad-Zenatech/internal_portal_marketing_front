@@ -3,6 +3,7 @@ import { CalendarDays, Loader2, MapPin, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,6 +29,7 @@ import {
 } from "./eventRules";
 import OwnerPicker from "./OwnerPicker";
 import { STATUS_LABELS, STATUS_TRANSITIONS } from "./status";
+import RequiredMark from "@/components/RequiredMark";
 
 const CURRENCIES = ["USD", "CAD", "GBP", "AUD", "EUR"];
 const NONE = "none";
@@ -146,7 +148,7 @@ function validate(form: FormState, isEvent: boolean, subChannelCode: string | un
   if (!form.brandId) return "Choose a brand.";
   if (!form.channelId) return "Choose a channel.";
   if (form.startDate && form.endDate && form.endDate < form.startDate) return "End date can't be before the start date.";
-  if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be a positive number.";
+  if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be 0 or more.";
   if (isEvent) {
     const missing = missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
     if (missing) return missing;
@@ -169,11 +171,7 @@ function Field({ label, htmlFor, required, className, children }: FieldProps) {
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <Label htmlFor={htmlFor} className="text-slate-700 dark:text-zinc-300">
         {label}
-        {required && (
-          <span className="text-red-500" aria-hidden="true">
-            *
-          </span>
-        )}
+        {required && <RequiredMark />}
       </Label>
       {children}
     </div>
@@ -399,10 +397,10 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
 
         <FormSection title="Schedule & budget">
           <Field label="Start date" htmlFor="initiative-start">
-            <Input id="initiative-start" type="date" value={form.startDate} onChange={(e) => set({ startDate: e.target.value })} />
+            <DatePicker id="initiative-start" value={form.startDate} onChange={(v) => set({ startDate: v })} clearable />
           </Field>
           <Field label="End date" htmlFor="initiative-end">
-            <Input id="initiative-end" type="date" value={form.endDate} min={form.startDate || undefined} onChange={(e) => set({ endDate: e.target.value })} />
+            <DatePicker id="initiative-end" value={form.endDate} min={form.startDate || undefined} onChange={(v) => set({ endDate: v })} clearable />
           </Field>
           <Field label="Budget" htmlFor="initiative-budget">
             <div className="flex">
@@ -582,7 +580,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
                   <p id="initiative-booth-size-hint" className="text-xs text-slate-500 dark:text-zinc-400">
                     {form.boothSize.trim() && !boothSizeProblem(form.boothSize)
                       ? boothSizeEquivalent(Number(form.boothSize), form.boothUnit)
-                      : "For comparing cost per m² across events, e.g. a 10×20 ft booth = 200 sq ft = 18.6 m²."}
+                      : "Used to compare cost per m² across events. For example, a 10×20 ft booth is 200 sq ft (18.6 m²)."}
                   </p>
                 </Field>
               )}
@@ -604,10 +602,10 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
           </section>
         )}
 
-        <section className="flex flex-col gap-4 rounded-xl border border-violet-100 bg-violet-50/40 p-4 dark:border-violet-900/50 dark:bg-violet-950/20">
+        <section className="flex flex-col gap-4 rounded-xl border border-border bg-muted/40 p-4">
           <div>
             <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-zinc-100">
-              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-100 text-violet-600 dark:bg-violet-900/50 dark:text-violet-400">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-muted-foreground">
                 <Target className="h-4 w-4" />
               </span>
               Goal
@@ -637,7 +635,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
                 disabled={!form.funnelStageId}
               />
             </Field>
-            <Field label="Primary KPI" htmlFor="initiative-kpi">
+            <Field label="Main KPI" htmlFor="initiative-kpi">
               <ReferenceSelect
                 id="initiative-kpi"
                 value={form.primaryKpiId}

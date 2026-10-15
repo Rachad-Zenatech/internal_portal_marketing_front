@@ -3,6 +3,7 @@ import { Loader2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -21,6 +22,7 @@ import {
   SPEND_STATUS_LABELS,
   SPEND_STATUSES,
 } from "./spendRules";
+import RequiredMark from "@/components/RequiredMark";
 
 const CURRENCIES = ["USD", "CAD", "GBP", "AUD", "EUR"];
 
@@ -153,17 +155,20 @@ function focusFirst(errors: Partial<Record<FieldName, string>>) {
 interface FieldProps {
   label: string;
   htmlFor: string;
+  /** Shows a red asterisk: the form can't be saved without it */
+  required?: boolean;
   error?: string;
   hint?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }
 
-export function Field({ label, htmlFor, error, hint, className, children }: FieldProps) {
+export function Field({ label, htmlFor, required, error, hint, className, children }: FieldProps) {
   return (
     <div className={`flex flex-col gap-1.5 ${className ?? ""}`}>
       <Label htmlFor={htmlFor} className="text-slate-700 dark:text-zinc-300">
         {label}
+        {required && <RequiredMark />}
       </Label>
       {children}
       {error ? (
@@ -293,7 +298,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
       )}
 
       <form id="spend-line-form" onSubmit={handleSubmit} noValidate className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Category" htmlFor="cost-category" error={errors.categoryId} hint={category?.help_text} className="sm:col-span-2">
+        <Field label="Category" htmlFor="cost-category" required error={errors.categoryId} hint={category?.help_text} className="sm:col-span-2">
           <Select
             value={form.categoryId || undefined}
             onValueChange={(v) => {
@@ -340,7 +345,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
           </datalist>
         </Field>
 
-        <Field label="Status" htmlFor="cost-status" className="sm:col-span-2">
+        <Field label="Status" htmlFor="cost-status" required className="sm:col-span-2">
           <ToggleGroup
             id="cost-status"
             type="single"
@@ -360,12 +365,12 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
         </Field>
 
         {isEstimate ? (
-          <Field label="Estimate" htmlFor="cost-estimate" error={errors.estimate}>
+          <Field label="Estimate" htmlFor="cost-estimate" required error={errors.estimate}>
             <Input id="cost-estimate" type="number" inputMode="decimal" step="0.01" value={form.estimate} onChange={(e) => set({ estimate: e.target.value })} placeholder="0.00" {...invalid("estimate")} />
           </Field>
         ) : (
           <>
-            <Field label="Amount" htmlFor="cost-amount" error={errors.amount}>
+            <Field label="Amount" htmlFor="cost-amount" required error={errors.amount}>
               <Input
                 id="cost-amount"
                 type="number"
@@ -394,7 +399,7 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
           </>
         )}
 
-        <Field label="Currency" htmlFor="cost-currency" error={errors.currency}>
+        <Field label="Currency" htmlFor="cost-currency" required error={errors.currency}>
           <Select value={form.currency} onValueChange={(v) => set({ currency: v })} disabled={isLocked("currency")}>
             <SelectTrigger id="cost-currency" className="w-full">
               <SelectValue />
@@ -411,10 +416,11 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
         <Field
           label={actual ? "Bill date" : "Expected date"}
           htmlFor="cost-date"
+          required
           error={errors.incurredOn}
           hint={actual ? "The date on the invoice or receipt. Decides which month the cost counts in." : "Decides which month the cost counts in."}
         >
-          <Input id="cost-date" type="date" value={form.incurredOn} onChange={(e) => set({ incurredOn: e.target.value })} disabled={isLocked("incurredOn")} {...invalid("incurredOn")} />
+          <DatePicker id="cost-date" value={form.incurredOn} onChange={(v) => set({ incurredOn: v })} disabled={isLocked("incurredOn")} {...invalid("incurredOn")} />
         </Field>
 
         <Field
@@ -429,8 +435,8 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
 
         {isPaid && (
           <>
-            <Field label="Paid on" htmlFor="cost-paid-on" error={errors.paidOn}>
-              <Input id="cost-paid-on" type="date" value={form.paidOn} onChange={(e) => set({ paidOn: e.target.value })} disabled={isLocked("paidOn")} {...invalid("paidOn")} />
+            <Field label="Paid on" htmlFor="cost-paid-on" required error={errors.paidOn}>
+              <DatePicker id="cost-paid-on" value={form.paidOn} onChange={(v) => set({ paidOn: v })} disabled={isLocked("paidOn")} {...invalid("paidOn")} />
             </Field>
             <Field label="Payment method" htmlFor="cost-payment-method">
               <Select value={form.paymentMethod || undefined} onValueChange={(v) => set({ paymentMethod: v as PaymentMethod })} disabled={isLocked("paymentMethod")}>
