@@ -38,4 +38,12 @@ export const queryKeys = {
   evaluation: (initiativeId: string) => ["evaluation", initiativeId] as const,
   decisions: (initiativeId: string) => ["decisions", initiativeId] as const,
   initiativeImports: (initiativeId: string) => ["initiative-imports", initiativeId] as const,
+
+  // Monthly budgets
+  budgetMonths: () => ["budget-month"] as const,
+  budgetMonth: (month: string) => ["budget-month", month] as const,
+  // Under "budget-month" so anything that refreshes the months refreshes the weeks too
+  budgetWeek: (start: string) => ["budget-month", "week", start] as const,
+  budgets: () => ["budget"] as const,
+  budget: (id: string) => ["budget", id] as const,
 };

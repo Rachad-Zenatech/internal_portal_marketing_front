@@ -4,6 +4,7 @@ import {
   Megaphone,
   ShieldCheck,
   FileClock,
+  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -60,6 +61,13 @@ export const navigation: NavigationItem[] = [
     label: "Event Management",
     path: "/events",
     icon: CalendarDays,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+  },
+  {
+    label: "Monthly Budgets",
+    path: "/budgets",
+    icon: Wallet,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },

@@ -65,6 +65,8 @@ export interface ReferenceData {
   performance_ratings: DescribedReferenceItem[];
   scale_or_cut_options: DescribedReferenceItem[];
   regions: ReferenceItem[];
+  /** Where a budget is spent, e.g. London; initiatives without one count as Unassigned */
+  markets: ReferenceItem[];
   event_types: ReferenceItem[];
   expense_types: ExpenseType[];
   spend_categories: SpendCategory[];

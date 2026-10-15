@@ -54,6 +54,9 @@ export function useUpdateInitiative(id: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.evaluation(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(id) }),
+        // Brand, channel and market decide which monthly budget its costs count against
+        queryClient.invalidateQueries({ queryKey: queryKeys.budgetMonths() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.budgets() }),
       ]);
     },
   });

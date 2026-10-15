@@ -53,6 +53,7 @@ export default function Breadcrumbs() {
       configurations: "Configurations",
       dashboard: "Dashboard",
       events: "Event Management",
+      budgets: "Monthly Budgets",
     };
     const key = name.toLowerCase();
     if (specialNames[key]) {

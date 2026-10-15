@@ -45,6 +45,7 @@ interface FormState {
   funnelStageId: string;
   goalId: string;
   primaryKpiId: string;
+  marketId: string;
   startDate: string;
   endDate: string;
   budget: string;
@@ -72,6 +73,7 @@ const EMPTY_FORM: FormState = {
   funnelStageId: "",
   goalId: "",
   primaryKpiId: "",
+  marketId: "",
   startDate: "",
   endDate: "",
   budget: "",
@@ -127,6 +129,7 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     funnelStageId: idText(item.funnel_stage_id),
     goalId: idText(item.goal_id),
     primaryKpiId: idText(item.primary_kpi_id),
+    marketId: idText(item.market_id),
     startDate: item.start_date ?? "",
     endDate: item.end_date ?? "",
     budget: item.budget_amount === null ? "" : String(item.budget_amount),
@@ -225,17 +228,19 @@ interface ReferenceSelectProps {
   placeholder: string;
   onChange: (value: string) => void;
   allowNone?: boolean;
+  /** Label for the empty option, "None" by default */
+  noneLabel?: string;
   disabled?: boolean;
 }
 
-function ReferenceSelect({ id, value, items, placeholder, onChange, allowNone, disabled }: ReferenceSelectProps) {
+function ReferenceSelect({ id, value, items, placeholder, onChange, allowNone, noneLabel = "None", disabled }: ReferenceSelectProps) {
   return (
     <Select value={value || (allowNone ? NONE : undefined)} onValueChange={(v) => onChange(v === NONE ? "" : v)} disabled={disabled}>
       <SelectTrigger id={id} className="w-full">
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent position="popper" className="max-h-72">
-        {allowNone && <SelectItem value={NONE}>None</SelectItem>}
+        {allowNone && <SelectItem value={NONE}>{noneLabel}</SelectItem>}
         {items.map((item) => (
           <SelectItem key={item.id} value={String(item.id)}>
             {item.name}
@@ -374,6 +379,8 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
       funnel_stage_id: toId(form.funnelStageId),
       goal_id: toId(form.goalId),
       primary_kpi_id: toId(form.primaryKpiId),
+      // A form kept from before markets existed has no market
+      market_id: toId(form.marketId ?? ""),
       owner_user_id: owner?.id ?? null,
       start_date: form.startDate || null,
       end_date: form.endDate || null,
@@ -474,6 +481,17 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
               onChange={(v) => set({ subChannelId: v })}
               allowNone
               disabled={!form.channelId}
+            />
+          </Field>
+          <Field label="Market" htmlFor="initiative-market">
+            <ReferenceSelect
+              id="initiative-market"
+              value={form.marketId ?? ""}
+              items={reference?.markets ?? []}
+              placeholder="Choose a market"
+              onChange={(v) => set({ marketId: v })}
+              allowNone
+              noneLabel="No market"
             />
           </Field>
         </FormSection>

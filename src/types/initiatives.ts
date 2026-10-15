@@ -20,6 +20,9 @@ export interface InitiativeListItem {
   primary_kpi_name: string | null;
   owner_user_id: string | null;
   owner_name: string | null;
+  /** Which monthly budget market its costs count against; null counts as Unassigned */
+  market_id: number | null;
+  market_name: string | null;
   start_date: string | null;
   end_date: string | null;
   budget_amount: number | null;
@@ -70,6 +73,7 @@ export interface InitiativeFilters {
   channel_id?: number;
   sub_channel_id?: number;
   brand_id?: number;
+  market_id?: number;
   status?: InitiativeStatus;
   search?: string;
   limit?: number;
@@ -84,6 +88,7 @@ export interface InitiativeCreate {
   funnel_stage_id?: number | null;
   goal_id?: number | null;
   primary_kpi_id?: number | null;
+  market_id?: number | null;
   /** Defaults to the current user when omitted */
   owner_user_id?: string | null;
   start_date?: string | null;

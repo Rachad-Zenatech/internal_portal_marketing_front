@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, MapPin, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -373,6 +373,12 @@ export default function InitiativeDetail() {
               <Building2 className="h-4 w-4" />
               {initiative.brand_name}
             </span>
+            {initiative.market_name && (
+              <span className="inline-flex items-center gap-1.5" title="Market">
+                <Globe2 className="h-4 w-4" />
+                {initiative.market_name}
+              </span>
+            )}
             <span className="inline-flex items-center gap-1.5">
               <span className={`h-2 w-2 rounded-full ${channel.dot}`} />
               {initiative.channel_name}

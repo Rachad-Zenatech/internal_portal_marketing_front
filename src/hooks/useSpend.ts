@@ -20,7 +20,7 @@ export function useSpendSummary(initiativeId: string | undefined) {
 }
 
 // A cost changes the cost sheet, its totals, the cost totals on the initiative and the list,
-// and the cost-per figures on performance and the demo summary
+// the cost-per figures on performance and the demo summary, and the spend on monthly budgets
 export function useRefreshCosts(initiativeId: string) {
   const queryClient = useQueryClient();
   return () =>
@@ -32,6 +32,8 @@ export function useRefreshCosts(initiativeId: string) {
       queryClient.invalidateQueries({ queryKey: queryKeys.initiative(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
       queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgetMonths() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.budgets() }),
     ]);
 }
 
