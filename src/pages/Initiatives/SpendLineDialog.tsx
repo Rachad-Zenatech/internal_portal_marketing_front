@@ -408,12 +408,17 @@ function SpendLineForm({ initiative, line, vendors, onDone }: SpendLineFormProps
             </SelectContent>
           </Select>
         </Field>
-        <Field label={actual ? "Invoice date" : "Expected date"} htmlFor="cost-date" error={errors.incurredOn} hint="Decides which month the cost counts in.">
+        <Field
+          label={actual ? "Bill date" : "Expected date"}
+          htmlFor="cost-date"
+          error={errors.incurredOn}
+          hint={actual ? "The date on the invoice or receipt. Decides which month the cost counts in." : "Decides which month the cost counts in."}
+        >
           <Input id="cost-date" type="date" value={form.incurredOn} onChange={(e) => set({ incurredOn: e.target.value })} disabled={isLocked("incurredOn")} {...invalid("incurredOn")} />
         </Field>
 
         <Field
-          label={actual ? "Invoice #" : "Invoice # (optional)"}
+          label="Invoice or receipt # (optional)"
           htmlFor="cost-invoice"
           error={errors.invoiceRef}
           hint={INVOICE_HELP}

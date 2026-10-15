@@ -26,7 +26,7 @@ export interface SpendLine {
   variance: number | null;
   currency: string;
   incurred_on: string;
-  /** The supplier's invoice number only; Finance keeps the invoice */
+  /** The number on the supplier's invoice or receipt only; Finance keeps the document */
   invoice_ref: string | null;
   paid_on: string | null;
   payment_method: PaymentMethod | null;

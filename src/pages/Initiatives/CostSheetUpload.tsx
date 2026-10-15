@@ -18,7 +18,7 @@ import { formatDate, formatMoney } from "./format";
 
 const NOUN: [string, string] = ["cost", "costs"];
 const COLUMNS_WE_READ =
-  "Item, Category, Vendor, Estimate, Actual, Status, Invoice #, Date, Paid on, Payment method, Currency, OPEX/CAPEX, Notes";
+  "Item, Category, Vendor, Estimate, Actual, Status, Invoice or receipt #, Date, Paid on, Payment method, Currency, OPEX/CAPEX, Notes";
 
 function columnsFor(currency: string): ImportPreviewColumn<CostSheetPreviewRow>[] {
   const money = (value: number | null, row: CostSheetPreviewRow) =>
@@ -40,7 +40,7 @@ function columnsFor(currency: string): ImportPreviewColumn<CostSheetPreviewRow>[
     { key: "estimate", header: "Estimate", className: "text-right tabular-nums", render: (r) => money(r.estimate, r) },
     { key: "actual", header: "Actual", className: "text-right tabular-nums", render: (r) => money(r.actual, r) },
     { key: "stage", header: "Stage", render: (r) => text(r.status_value) },
-    { key: "invoice", header: "Invoice #", className: "font-mono text-xs", render: (r) => text(r.invoice_ref) },
+    { key: "invoice", header: "Invoice / receipt #", className: "font-mono text-xs", render: (r) => text(r.invoice_ref) },
     { key: "date", header: "Date", className: "whitespace-nowrap", render: (r) => formatDate(r.date) ?? <span className="text-slate-400">—</span> },
   ];
 }

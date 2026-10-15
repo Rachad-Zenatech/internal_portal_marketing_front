@@ -26,7 +26,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 export const INVOICE_HELP =
-  "The supplier's invoice number, so the same invoice can't be entered twice. The invoice itself stays with Finance.";
+  "The number on the supplier's invoice or receipt, so the same one can't be entered twice. The document itself stays with Finance.";
 
 /** "5 people × 3 days × $400/day = $6,000": a staff-time cost's description, so the working stays visible */
 export function staffTimeSentence(people: number, days: number, dayRate: number, currency: string) {

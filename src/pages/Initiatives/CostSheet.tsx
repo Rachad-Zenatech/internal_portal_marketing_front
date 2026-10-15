@@ -209,7 +209,7 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today, renderA
               <TableHead className={`text-right ${COLUMNS.actual}`}>Actual</TableHead>
               <TableHead className={`text-right ${COLUMNS.variance}`}>Variance</TableHead>
               <TableHead className={COLUMNS.status}>Status</TableHead>
-              <TableHead className={COLUMNS.invoice}>Invoice #</TableHead>
+              <TableHead className={COLUMNS.invoice}>Invoice / receipt #</TableHead>
               <TableHead className={COLUMNS.paidOn}>Paid on</TableHead>
               {canEdit && (
                 <TableHead className={COLUMNS.actions}>
