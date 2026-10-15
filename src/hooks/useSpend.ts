@@ -19,13 +19,16 @@ export function useSpendSummary(initiativeId: string | undefined) {
   });
 }
 
-// A cost changes the cost sheet, its totals, and the cost totals on the initiative and the list
+// A cost changes the cost sheet, its totals, the cost totals on the initiative and the list,
+// and the cost-per figures on performance and the demo summary
 export function useRefreshCosts(initiativeId: string) {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: queryKeys.spendLines(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(initiativeId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: queryKeys.initiative(initiativeId) }),
       queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
       queryClient.invalidateQueries({ queryKey: ["event-overview"] }),

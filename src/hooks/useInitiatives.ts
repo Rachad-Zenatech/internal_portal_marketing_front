@@ -31,8 +31,12 @@ export function useCreateInitiative() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: InitiativeCreate) => createInitiative(data),
-    // Every filtered list may now include the new initiative
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+    // Every filtered list may now include the new initiative, and a new event joins the overview
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+      ]),
   });
 }
 
@@ -42,7 +46,15 @@ export function useUpdateInitiative(id: string) {
     mutationFn: (data: InitiativeUpdate) => updateInitiative(id, data),
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.initiative(id), updated);
-      return queryClient.invalidateQueries({ queryKey: ["initiatives"] });
+      // Dates, budget, KPI and currency feed the event overview and every derived figure
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.performance(id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.evaluation(id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(id) }),
+      ]);
     },
   });
 }
