@@ -72,6 +72,8 @@ export type WorkspaceTab = "team" | "costs" | "demos" | "results";
 
 /** The one thing most worth doing next for an event, and the tab where it's done */
 export function nextStep(e: EventOverviewItem): { text: string; tab: WorkspaceTab } {
+  // A draft's page leads with "Finish setting up"
+  if (e.status === "DRAFT") return { text: "Finish setting up this draft", tab: "team" };
   const upcoming = e.timing === "UPCOMING" || e.timing === "UNSCHEDULED";
   if (upcoming && e.staff_count === 0) return { text: "Add the team going", tab: "team" };
   if (e.staff_missing_details > 0) {

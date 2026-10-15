@@ -17,6 +17,7 @@ import DemoLog from "../Initiatives/DemoLog";
 import { InitiativeNotLoaded } from "../Initiatives/detailParts";
 import { CARD, MUTED } from "../Initiatives/detailStyles";
 import { formatMoney } from "../Initiatives/format";
+import DraftBanner from "../Initiatives/DraftBanner";
 import InitiativeFormDialog from "../Initiatives/InitiativeFormDialog";
 import ResultsSection from "../Initiatives/ResultsSection";
 import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
@@ -254,6 +255,10 @@ export default function EventWorkspace() {
           </div>
         </div>
       </PageHeader>
+
+      {initiative.status === "DRAFT" && (
+        <DraftBanner noun="event" onFinish={hasPermission("INITIATIVES_UPDATE") ? () => setEditOpen(true) : undefined} />
+      )}
 
       <Checklist card={card} tab={tab} onSelect={selectTab} />
 

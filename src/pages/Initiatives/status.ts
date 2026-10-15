@@ -1,6 +1,7 @@
 import type { InitiativeStatus } from "@/types/initiatives";
 
 export const STATUS_LABELS: Record<InitiativeStatus, string> = {
+  DRAFT: "Draft",
   PLANNED: "Planned",
   ACTIVE: "Active",
   COMPLETED: "Completed",
@@ -10,6 +11,8 @@ export const STATUS_LABELS: Record<InitiativeStatus, string> = {
 
 // Mirrors STATUS_TRANSITIONS in the backend's initiative_service.py
 export const STATUS_TRANSITIONS: Record<InitiativeStatus, InitiativeStatus[]> = {
+  // A draft can be finished into any status; nothing goes back to being a draft
+  DRAFT: ["PLANNED", "ACTIVE", "COMPLETED", "PAUSED", "CANCELLED"],
   PLANNED: ["ACTIVE", "CANCELLED"],
   ACTIVE: ["PAUSED", "COMPLETED", "CANCELLED"],
   PAUSED: ["ACTIVE", "CANCELLED"],
@@ -18,6 +21,7 @@ export const STATUS_TRANSITIONS: Record<InitiativeStatus, InitiativeStatus[]> = 
 };
 
 export const STATUS_STYLES: Record<InitiativeStatus, string> = {
+  DRAFT: "border-dashed border-slate-300 bg-transparent text-slate-600 dark:border-zinc-600 dark:text-zinc-400",
   PLANNED: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
   ACTIVE: "bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-400 dark:border-green-900",
   COMPLETED: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-400 dark:border-blue-900",

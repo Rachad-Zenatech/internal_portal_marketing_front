@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { CalendarDays, Loader2, MapPin, Target, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarDays, History, Loader2, MapPin, Target, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -11,6 +11,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateInitiative, useUpdateInitiative } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
+import { appStorage } from "@/lib/storage";
 import type { EventDetailsInput, InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import CountryPicker from "./CountryPicker";
@@ -87,6 +88,34 @@ const EMPTY_FORM: FormState = {
   boothUnit: "sqm",
 };
 
+// A new initiative's form is kept in the browser while it's being filled in, so closing it by accident
+// (or a page refresh) loses nothing. It's cleared once the initiative or draft is saved, or on "Start over".
+const unsavedKey = (userId: string | undefined) => `marketing.unsavedInitiative.${userId ?? "anonymous"}`;
+
+interface UnsavedForm {
+  form: FormState;
+  owner: OwnerOption | null;
+}
+
+function readUnsaved(userId: string | undefined): UnsavedForm | null {
+  try {
+    const raw = appStorage.getItem(unsavedKey(userId));
+    return raw ? (JSON.parse(raw) as UnsavedForm) : null;
+  } catch {
+    return null;
+  }
+}
+
+function discardUnsaved(userId: string | undefined) {
+  appStorage.removeItem(unsavedKey(userId));
+}
+
+// Anything typed or picked; a preset channel, the default currency and status don't count
+const UNTYPED_FIELDS = new Set<keyof FormState>(["channelId", "currency", "status", "boothUnit"]);
+function hasContent(form: FormState) {
+  return (Object.keys(form) as (keyof FormState)[]).some((field) => !UNTYPED_FIELDS.has(field) && form[field] !== "");
+}
+
 const idText = (value: number | null) => (value === null ? "" : String(value));
 
 function formFromInitiative(item: InitiativeListItem): FormState {
@@ -102,7 +131,8 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     endDate: item.end_date ?? "",
     budget: item.budget_amount === null ? "" : String(item.budget_amount),
     currency: item.currency,
-    status: item.status,
+    // Finishing a draft picks a real status; Planned to start with
+    status: item.status === "DRAFT" ? "PLANNED" : item.status,
     eventTypeId: idText(item.event_type_id),
     venue: item.venue ?? "",
     city: item.city ?? "",
@@ -142,15 +172,16 @@ function changedEventFields(form: FormState, subChannelCode: string | undefined,
   return Object.keys(changed).length ? changed : undefined;
 }
 
-// Same rules the API enforces, checked first so people get instant feedback
-function validate(form: FormState, isEvent: boolean, subChannelCode: string | undefined): string | null {
-  if (!form.name.trim()) return "Enter a name.";
-  if (!form.brandId) return "Choose a brand.";
-  if (!form.channelId) return "Choose a channel.";
+// Same rules the API enforces, checked first so people get instant feedback. A draft needs only a name,
+// brand and channel; anything filled in still has to be valid.
+function validate(form: FormState, isEvent: boolean, subChannelCode: string | undefined, draft = false): string | null {
+  if (!form.name.trim()) return draft ? "Enter a name to save a draft." : "Enter a name.";
+  if (!form.brandId) return draft ? "Choose a brand to save a draft." : "Choose a brand.";
+  if (!form.channelId) return draft ? "Choose a channel to save a draft." : "Choose a channel.";
   if (form.startDate && form.endDate && form.endDate < form.startDate) return "End date can't be before the start date.";
   if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be 0 or more.";
   if (isEvent) {
-    const missing = missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
+    const missing = draft ? null : missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
     if (missing) return missing;
     if (!IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")) return eventUrlProblem(form.eventUrl);
     return boothSizeProblem(form.boothSize);
@@ -225,6 +256,7 @@ interface InitiativeFormProps {
 // Mounted each time the dialog opens, so the fields always start from the latest values
 function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFormProps) {
   const isEdit = Boolean(initiative);
+  const isDraft = initiative?.status === "DRAFT";
   const { user } = useAuth();
   const { data: reference } = useReferenceData();
   const defaultChannelId = defaultChannelCode ? reference?.channels.find((c) => c.code === defaultChannelCode)?.id : undefined;
@@ -232,7 +264,9 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
   const updateInitiative = useUpdateInitiative(initiative?.id ?? "");
   const mutation = isEdit ? updateInitiative : createInitiative;
 
-  const [form, setForm] = useState<FormState>(initiative ? formFromInitiative(initiative) : EMPTY_FORM);
+  // What was typed into a new form before it was closed, if anything
+  const [restored, setRestored] = useState(() => (initiative ? null : readUnsaved(user?.id)));
+  const [form, setForm] = useState<FormState>(() => (initiative ? formFromInitiative(initiative) : (restored?.form ?? EMPTY_FORM)));
   // A preset channel applies once reference data has loaded, and only while nothing has been chosen
   const [presetApplied, setPresetApplied] = useState(false);
   if (!initiative && !presetApplied && defaultChannelId !== undefined) {
@@ -240,12 +274,34 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
     if (!form.channelId) setForm((prev) => ({ ...prev, channelId: String(defaultChannelId) }));
   }
   const [owner, setOwner] = useState<OwnerOption | null>(() => {
+    if (restored) return restored.owner;
     if (initiative) {
       return initiative.owner_user_id ? { id: initiative.owner_user_id, full_name: initiative.owner_name, email: "" } : null;
     }
     return user ? { id: user.id, full_name: user.full_name, email: user.email } : null;
   });
   const [error, setError] = useState<string | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  // The "kept" message from an earlier close isn't needed once the form is open again
+  useEffect(() => {
+    toast.dismiss("unsaved-initiative");
+  }, []);
+
+  // Keep a new form in the browser as it's filled in
+  useEffect(() => {
+    if (isEdit) return;
+    if (hasContent(form)) appStorage.setItem(unsavedKey(user?.id), JSON.stringify({ form, owner } satisfies UnsavedForm));
+    else discardUnsaved(user?.id);
+  }, [isEdit, form, owner, user?.id]);
+
+  const startOver = () => {
+    discardUnsaved(user?.id);
+    setRestored(null);
+    setError(null);
+    setForm({ ...EMPTY_FORM, channelId: defaultChannelId === undefined ? "" : String(defaultChannelId) });
+    setOwner(user ? { id: user.id, full_name: user.full_name, email: user.email } : null);
+  };
 
   const set = (patch: Partial<FormState>) => {
     setError(null);
@@ -295,14 +351,16 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
     return reference.goals.filter((g) => String(g.funnel_stage_id) === form.funnelStageId);
   }, [reference, form.funnelStageId]);
 
-  // New initiatives can start in any status; existing ones follow the allowed transitions
-  const statusOptions: InitiativeStatus[] = initiative
-    ? [initiative.status, ...STATUS_TRANSITIONS[initiative.status]]
-    : (Object.keys(STATUS_LABELS) as InitiativeStatus[]);
+  // New initiatives can start in any status; existing ones follow the allowed transitions. Draft isn't picked
+  // here: it's what "Save as draft" does.
+  const statusOptions: InitiativeStatus[] = !initiative
+    ? (Object.keys(STATUS_LABELS) as InitiativeStatus[]).filter((s) => s !== "DRAFT")
+    : isDraft
+      ? STATUS_TRANSITIONS.DRAFT
+      : [initiative.status, ...STATUS_TRANSITIONS[initiative.status]];
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    const problem = validate(form, isEvent, subChannelCode);
+  const save = (asDraft: boolean) => {
+    const problem = validate(form, isEvent, subChannelCode, asDraft);
     if (problem) {
       setError(problem);
       return;
@@ -321,7 +379,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
       end_date: form.endDate || null,
       budget_amount: form.budget ? Number(form.budget) : null,
       currency: form.currency,
-      status: form.status,
+      status: asDraft ? "DRAFT" : form.status,
     };
     // Other channels never send event details. Edits send only the event fields that changed.
     if (isEvent) {
@@ -330,25 +388,50 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
     }
 
     // The API ignores top-level fields that didn't change, so editing sends the whole form
+    setSavingDraft(asDraft);
     mutation.mutate(payload, {
       onSuccess: (saved) => {
-        toast.success(isEdit ? `"${saved.name}" saved` : `"${saved.name}" created`);
+        if (!isEdit) discardUnsaved(user?.id);
+        if (asDraft) {
+          toast.success(`"${saved.name}" saved as a draft`, { description: "Open it any time to finish it." });
+        } else {
+          toast.success(isDraft ? `"${saved.name}" is set up` : isEdit ? `"${saved.name}" saved` : `"${saved.name}" created`);
+        }
         onDone();
       },
       onError: (err) => setError(err instanceof Error ? err.message : "Could not save the initiative."),
     });
   };
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    save(false);
+  };
+
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{isEdit ? "Edit initiative" : "New initiative"}</DialogTitle>
+        <DialogTitle>{isDraft ? "Finish draft" : isEdit ? "Edit initiative" : "New initiative"}</DialogTitle>
         <DialogDescription>
-          {isEdit
+          {isDraft
+            ? "Fill in what's missing and choose a status, or save it as a draft again for later."
+            : isEdit
             ? "Update this initiative's details. Every change is recorded in the audit log."
             : "Add a marketing initiative for any channel. You can add budget details and results later."}
         </DialogDescription>
       </DialogHeader>
+
+      {restored && (
+        <div className="-mt-1 flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <History className="h-4 w-4 shrink-0" aria-hidden />
+            Picked up where you left off.
+          </span>
+          <Button type="button" variant="ghost" size="sm" className="h-7 shrink-0" onClick={startOver}>
+            Start over
+          </Button>
+        </div>
+      )}
 
       <form id="initiative-form" onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
         <FormSection title="Basics">
@@ -663,9 +746,15 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
         <Button type="button" variant="outline" onClick={onDone} disabled={mutation.isPending}>
           Cancel
         </Button>
+        {(!isEdit || isDraft) && (
+          <Button type="button" variant="outline" onClick={() => save(true)} disabled={mutation.isPending}>
+            {mutation.isPending && savingDraft && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isDraft ? "Save draft" : "Save as draft"}
+          </Button>
+        )}
         <Button type="submit" form="initiative-form" disabled={mutation.isPending}>
-          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isEdit ? "Save changes" : "Create initiative"}
+          {mutation.isPending && !savingDraft && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isDraft ? "Finish and save" : isEdit ? "Save changes" : "Create initiative"}
         </Button>
       </DialogFooter>
     </>
@@ -682,10 +771,23 @@ interface InitiativeFormDialogProps {
 }
 
 export default function InitiativeFormDialog({ open, onOpenChange, initiative, defaultChannelCode }: InitiativeFormDialogProps) {
+  const { user } = useAuth();
+
+  // Closing a new form that has something in it keeps it (see unsavedKey); say so, with a way to throw it away
+  const handleOpenChange = (next: boolean) => {
+    onOpenChange(next);
+    if (next || initiative || !readUnsaved(user?.id)) return;
+    toast("Your new initiative is kept", {
+      id: "unsaved-initiative",
+      description: "Open the form again to pick up where you left off.",
+      action: { label: "Discard", onClick: () => discardUnsaved(user?.id) },
+    });
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-        <InitiativeForm initiative={initiative} defaultChannelCode={defaultChannelCode} onDone={() => onOpenChange(false)} />
+        <InitiativeForm initiative={initiative} defaultChannelCode={defaultChannelCode} onDone={() => handleOpenChange(false)} />
       </DialogContent>
     </Dialog>
   );

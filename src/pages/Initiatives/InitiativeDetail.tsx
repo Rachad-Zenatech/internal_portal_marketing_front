@@ -17,6 +17,7 @@ import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
 import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
+import DraftBanner from "./DraftBanner";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
 import { EARLY_LABELS, RATING_STYLES } from "./performanceRules";
@@ -380,6 +381,10 @@ export default function InitiativeDetail() {
           </div>
         </div>
       </PageHeader>
+
+      {initiative.status === "DRAFT" && (
+        <DraftBanner noun={initiative.event_code ? "event" : "initiative"} onFinish={hasPermission("INITIATIVES_UPDATE") ? () => setEditOpen(true) : undefined} />
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Stat

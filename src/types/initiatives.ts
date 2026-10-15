@@ -1,6 +1,7 @@
 // Marketing initiatives — mirrors backend models/initiative_model.py
 
-export type InitiativeStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
+/** DRAFT: saved part-way to finish later; event rules (e.g. city and country) apply once it leaves Draft */
+export type InitiativeStatus = "DRAFT" | "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
 
 export interface InitiativeListItem {
   id: string;
