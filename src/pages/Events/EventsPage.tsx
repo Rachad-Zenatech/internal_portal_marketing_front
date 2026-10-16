@@ -12,7 +12,7 @@ import type { EventOverviewItem, EventTiming } from "@/types/eventManagement";
 import { formatMoney } from "../Initiatives/format";
 import InitiativeFormDialog from "../Initiatives/InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
-import { dateRange, dateTile, eventPlace, nextStep, TIMING_DOT, TIMING_LABELS, whenText } from "./eventDisplay";
+import { dateRange, dateTile, eventPlace, nextStep, TIMING_DOT, TIMING_LABELS, travelBudgetTone, whenText } from "./eventDisplay";
 
 /** Which time window the page is showing */
 type View = "ALL" | EventTiming;
@@ -96,6 +96,11 @@ function EventCard({ e }: { e: EventOverviewItem }) {
                 {e.cost_lines === 0 ? "No costs yet" : e.budget_amount ? `${money(e.expected_cost)} of ${money(e.budget_amount)}` : money(e.expected_cost)}
               </Fact>
               <CostBar e={e} />
+              {e.travel_budget_amount !== null && (
+                <p className={`mt-1 truncate text-xs ${travelBudgetTone(e.travel_budget_amount, e.travel_spent) || "text-muted-foreground"}`}>
+                  Travel {money(e.travel_spent)} of {money(e.travel_budget_amount)}
+                </p>
+              )}
             </div>
             {happened && (
               <Fact icon={Presentation}>

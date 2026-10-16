@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { queryKeys } from "@/services/queryKeys";
 import {
   createInitiative,
+  deleteInitiative,
   getInitiative,
   getInitiatives,
   getOwnerOptions,
@@ -55,6 +56,22 @@ export function useUpdateInitiative(id: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.demoSummary(id) }),
         // Brand, channel and market decide which monthly budget its costs count against
+        queryClient.invalidateQueries({ queryKey: queryKeys.budgetMonths() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.budgets() }),
+      ]);
+    },
+  });
+}
+
+export function useDeleteInitiative(id: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => deleteInitiative(id),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: queryKeys.initiative(id) });
+      return Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.budgetMonths() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.budgets() }),
       ]);

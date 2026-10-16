@@ -35,3 +35,8 @@ export function getInitiative(id: string) {
 export function updateInitiative(id: string, data: InitiativeUpdate) {
   return apiClient.patch<InitiativeListItem>(`/api/initiatives/${id}`, data, { actionLabel: "Saving initiative" });
 }
+
+/** Drafts and initiatives outside Events only; an event past Draft is cancelled instead */
+export function deleteInitiative(id: string) {
+  return apiClient.delete<null>(`/api/initiatives/${id}`, { actionLabel: "Deleting initiative" });
+}

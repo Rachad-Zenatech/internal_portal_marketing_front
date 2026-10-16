@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useDemoSummary } from "@/hooks/useDemos";
+import { useEventOverview } from "@/hooks/useEventManagement";
 import { useInitiative } from "@/hooks/useInitiatives";
 import { usePerformance } from "@/hooks/usePerformance";
 import { useReferenceData } from "@/hooks/useReferenceData";
@@ -17,6 +18,8 @@ import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
 import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
+import TravelBudgetUsage from "../Events/TravelBudget";
+import DeleteInitiativeButton from "./DeleteInitiativeButton";
 import DraftBanner from "./DraftBanner";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
@@ -170,6 +173,15 @@ function TimelineSection({ initiative, barColour }: { initiative: InitiativeList
   );
 }
 
+/** The travel budget and what the travel system has spent against it (invoiced and paid, in the event's currency) */
+function TravelBudgetDetail({ initiative }: { initiative: InitiativeListItem }) {
+  // The event card already adds up the travel costs; searching by code returns just this event
+  const { data: events } = useEventOverview(initiative.event_code ?? "");
+  const used = events?.find((e) => e.id === initiative.id)?.travel_spent;
+  if (initiative.travel_budget_amount === null) return <Empty />;
+  return <TravelBudgetUsage budget={initiative.travel_budget_amount} used={used} currency={initiative.currency} />;
+}
+
 function EventSection({ initiative, online }: { initiative: InitiativeListItem; online: boolean }) {
   const location = formatEventLocation(initiative.city, initiative.country_code, false);
   const place = [initiative.venue, location === "-" ? null : location].filter(Boolean).join(" · ");
@@ -213,6 +225,9 @@ function EventSection({ initiative, online }: { initiative: InitiativeListItem; 
         <Detail label="Event type" value={initiative.event_type_name} />
         <Detail label="Region" value={initiative.region_name} />
         {!online && <Detail label="Booth size" value={initiative.booth_size_sqm !== null && formatBoothSize(initiative.booth_size_sqm)} />}
+        <div className="col-span-2 sm:col-span-3">
+          <Detail label="Travel" value={<TravelBudgetDetail initiative={initiative} />} />
+        </div>
       </dl>
     </Section>
   );
@@ -349,12 +364,15 @@ export default function InitiativeDetail() {
         icon={ChannelIcon}
         title={initiative.name}
         actions={
-          hasPermission("INITIATIVES_UPDATE") && (
-            <Button onClick={() => setEditOpen(true)} className="gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit
-            </Button>
-          )
+          <>
+            <DeleteInitiativeButton initiative={initiative} backTo="/initiatives" />
+            {hasPermission("INITIATIVES_UPDATE") && (
+              <Button onClick={() => setEditOpen(true)} className="gap-2">
+                <Pencil className="h-4 w-4" />
+                Edit
+              </Button>
+            )}
+          </>
         }
       >
         <div className="flex flex-col gap-2.5">

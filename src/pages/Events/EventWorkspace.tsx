@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/AuthContext";
 import type { EventOverviewItem, EventTiming } from "@/types/eventManagement";
 import type { InitiativeListItem } from "@/types/initiatives";
 import CostSheet from "../Initiatives/CostSheet";
+import DeleteInitiativeButton from "../Initiatives/DeleteInitiativeButton";
 import DemoLog from "../Initiatives/DemoLog";
 import { InitiativeNotLoaded } from "../Initiatives/detailParts";
 import { CARD, MUTED } from "../Initiatives/detailStyles";
@@ -23,6 +24,7 @@ import ResultsSection from "../Initiatives/ResultsSection";
 import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
 import { dateRange, eventPlace, TIMING_DOT, whenText, type WorkspaceTab } from "./eventDisplay";
 import StaffSection from "./StaffSection";
+import TravelBudgetUsage from "./TravelBudget";
 
 const TABS: WorkspaceTab[] = ["team", "costs", "demos", "results"];
 
@@ -207,6 +209,7 @@ export default function EventWorkspace() {
         }
         actions={
           <>
+            <DeleteInitiativeButton initiative={initiative} backTo="/events" />
             {hasPermission("INITIATIVES_UPDATE") && (
               <Button variant="outline" className="gap-2" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-4 w-4" />
@@ -252,6 +255,9 @@ export default function EventWorkspace() {
               {initiative.brand_name}
               {initiative.sub_channel_name && ` · ${initiative.sub_channel_name}`}
             </span>
+            {initiative.travel_budget_amount !== null && (
+              <TravelBudgetUsage budget={initiative.travel_budget_amount} used={card?.travel_spent} currency={initiative.currency} />
+            )}
           </div>
         </div>
       </PageHeader>

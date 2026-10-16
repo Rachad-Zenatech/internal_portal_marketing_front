@@ -85,3 +85,10 @@ export function nextStep(e: EventOverviewItem): { text: string; tab: WorkspaceTa
   if (!e.has_results) return { text: "Record leads and results", tab: "results" };
   return { text: "Check invoices and update results as deals close", tab: "results" };
 }
+
+/** No colour of its own until 90% of the travel budget is used, amber from there, red once it's over */
+export function travelBudgetTone(budget: number, used: number) {
+  if (used > budget) return "text-red-700 dark:text-red-400";
+  if (budget > 0 && used >= budget * 0.9) return "text-amber-700 dark:text-amber-400";
+  return "";
+}

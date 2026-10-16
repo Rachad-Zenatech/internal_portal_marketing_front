@@ -72,7 +72,7 @@ export const navigation: NavigationItem[] = [
     navigationCode: "INITIATIVES",
   },
   {
-    label: "Initiatives",
+    label: "Marketing Initiatives",
     path: "/initiatives",
     icon: Megaphone,
     section: "MARKETING",

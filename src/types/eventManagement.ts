@@ -74,6 +74,12 @@ export interface EventOverviewItem {
   expected_cost: number;
   actual_cost: number;
   cost_lines: number;
+  /** The part of the budget for travel, and the travel system's costs in the event's currency */
+  travel_budget_amount: number | null;
+  /** Invoiced and paid travel costs */
+  travel_spent: number;
+  /** Every travel cost, including approved ones not yet paid */
+  travel_expected: number;
   staff_count: number;
   staff_ready: number;
   staff_missing_details: number;

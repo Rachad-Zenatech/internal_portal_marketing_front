@@ -63,6 +63,8 @@ interface FormState {
   // In-person events: typed in either unit, always sent in m²
   boothSize: string;
   boothUnit: AreaUnit;
+  // Part of the budget, in the same currency, sent to the travel system
+  travelBudget: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -88,6 +90,7 @@ const EMPTY_FORM: FormState = {
   eventUrl: "",
   boothSize: "",
   boothUnit: "sqm",
+  travelBudget: "",
 };
 
 // A new initiative's form is kept in the browser while it's being filled in, so closing it by accident
@@ -145,6 +148,7 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     eventUrl: item.event_url ?? "",
     boothSize: item.booth_size_sqm === null ? "" : String(item.booth_size_sqm),
     boothUnit: "sqm",
+    travelBudget: item.travel_budget_amount === null ? "" : String(item.travel_budget_amount),
   };
 }
 
@@ -164,6 +168,8 @@ function eventFromForm(form: FormState, subChannelCode: string | undefined): Req
     event_url: inPerson ? null : toText(form.eventUrl),
     // Only in-person events have a booth, so switching away clears it
     booth_size_sqm: inPerson ? boothSizeInSqm(form.boothSize, form.boothUnit) : null,
+    // A form kept from before travel budgets existed has none
+    travel_budget_amount: form.travelBudget ? Number(form.travelBudget) : null,
   };
 }
 
@@ -184,11 +190,23 @@ function validate(form: FormState, isEvent: boolean, subChannelCode: string | un
   if (form.startDate && form.endDate && form.endDate < form.startDate) return "End date can't be before the start date.";
   if (form.budget && (Number.isNaN(Number(form.budget)) || Number(form.budget) < 0)) return "Budget must be 0 or more.";
   if (isEvent) {
+    const travelProblem = travelBudgetProblem(form.budget, form.travelBudget ?? "", draft);
+    if (travelProblem) return travelProblem;
     const missing = draft ? null : missingEventFields(subChannelCode, { city: form.city, country_code: form.countryCode });
     if (missing) return missing;
     if (!IN_PERSON_EVENT_SUB_CHANNELS.has(subChannelCode ?? "")) return eventUrlProblem(form.eventUrl);
     return boothSizeProblem(form.boothSize);
   }
+  return null;
+}
+
+// The travel budget is part of the event budget, so it has to be smaller. A draft can leave the budget empty.
+function travelBudgetProblem(budget: string, travelBudget: string, draft: boolean): string | null {
+  if (!travelBudget) return null;
+  const travel = Number(travelBudget);
+  if (Number.isNaN(travel) || travel < 0) return "Travel budget must be 0 or more.";
+  if (!budget) return draft ? null : "Set the event budget before the travel budget.";
+  if (travel >= Number(budget)) return "The travel budget has to be smaller than the event budget.";
   return null;
 }
 
@@ -544,6 +562,30 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
               </SelectContent>
             </Select>
           </Field>
+          {isEvent && (
+            <Field label="Travel budget" htmlFor="initiative-travel-budget" className="sm:col-span-2">
+              <div className="flex sm:max-w-[calc(50%-0.5rem)]">
+                <span className="flex w-24 shrink-0 items-center rounded-l-md border border-r-0 border-input bg-slate-50 px-3 text-sm text-slate-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                  {form.currency}
+                </span>
+                <Input
+                  id="initiative-travel-budget"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={form.travelBudget ?? ""}
+                  onChange={(e) => set({ travelBudget: e.target.value })}
+                  placeholder="0.00"
+                  className="rounded-l-none tabular-nums"
+                  aria-describedby="initiative-travel-budget-hint"
+                />
+              </div>
+              <p id="initiative-travel-budget-hint" className="text-xs text-slate-500 dark:text-zinc-400">
+                Flights, hotels, ground transport and stipends. Sent to the travel system. Must be less than the event budget.
+              </p>
+            </Field>
+          )}
         </FormSection>
 
         {isEvent && (

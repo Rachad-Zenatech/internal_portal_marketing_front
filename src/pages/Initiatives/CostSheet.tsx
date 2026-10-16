@@ -382,6 +382,9 @@ export default function CostSheet({ initiative }: CostSheetProps) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="@container flex flex-col gap-4">
+        {lines.data.some((line) => line.source === "TRAVEL_FEED") && (
+          <p className={`text-xs ${MUTED}`}>Travel costs come from the travel system and update automatically.</p>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filter costs by status">
             {STATUS_FILTERS.map((value) => {

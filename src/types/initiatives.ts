@@ -42,6 +42,8 @@ export interface InitiativeListItem {
   event_url: string | null;
   /** In-person events only, in square metres */
   booth_size_sqm: number | null;
+  /** Flights, hotels, ground transport and stipends, in the initiative's currency; less than the budget */
+  travel_budget_amount: number | null;
   // Costs in the initiative's currency: everything expected (estimates included), and invoiced + paid
   expected_total: number;
   actual_amount: number;
@@ -60,6 +62,8 @@ export interface EventDetailsInput {
   event_url?: string | null;
   /** In-person events only; always square metres */
   booth_size_sqm?: number | null;
+  /** Part of the event budget (same currency); has to be less than it. Sent to the travel system. */
+  travel_budget_amount?: number | null;
 }
 
 export interface InitiativeListResponse {
