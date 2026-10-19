@@ -268,7 +268,7 @@ export default function Initiatives() {
   };
   const summaryQuery: InitiativeFilters = { ...baseQuery, status: filters.status !== ALL ? (filters.status as InitiativeStatus) : undefined };
   const listQuery: InitiativeFilters = { ...baseQuery, needs_attention: tab === "review" ? true : undefined };
-  const { data, isPending: isLoading, isError, isFetching } = useInitiatives({ ...listQuery, limit: PAGE_SIZE, offset: page * PAGE_SIZE }, channelReady);
+  const { data, isPending: isLoading, isError, isPlaceholderData } = useInitiatives({ ...listQuery, limit: PAGE_SIZE, offset: page * PAGE_SIZE }, channelReady);
   const { data: summary, isPending: summaryLoading, isError: summaryFailed } = useInitiativeSummary(summaryQuery, channelReady);
 
   const total = data?.total ?? 0;
@@ -553,7 +553,8 @@ export default function Initiatives() {
           onToggle={toggle}
           onTogglePage={togglePage}
           placeholder={placeholder}
-          dimmed={isFetching && !isLoading}
+          // Only while the previous page is still on screen; background refreshes don't fade the table
+          dimmed={isPlaceholderData}
           onOpen={setPanelItem}
           onEdit={canEdit ? setEditing : undefined}
           onDelete={canDelete ? setDeleting : undefined}
