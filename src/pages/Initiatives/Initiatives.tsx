@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "@/components/PageHeader";
+import { MAIN_CHANNEL_CODES, OTHER_CHANNELS } from "@/components/AppShell/Navigation";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
 import HelpIcon from "@/components/ui/HelpIcon";
@@ -129,7 +130,7 @@ export default function Initiatives() {
   // The channel lives in the URL (?channel=PAID_SEARCH) so sidebar links and back/forward work
   const [searchParams, setSearchParams] = useSearchParams();
   const channelCode = searchParams.get("channel");
-  const [filters, setFilters] = useState<Omit<InitiativeFilters, "channel_id">>({});
+  const [filters, setFilters] = useState<Omit<InitiativeFilters, "channel_id" | "channel_ids">>({});
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
@@ -152,20 +153,37 @@ export default function Initiatives() {
 
   const { data: reference, isError: referenceFailed, refetch: refetchReference } = useReferenceData();
   const channel = channelCode ? reference?.channels.find((c) => c.code === channelCode) : undefined;
+  // "Other channels" in the sidebar: every channel without its own link
+  const isOtherChannels = channelCode === OTHER_CHANNELS;
+  const otherChannels = useMemo(
+    () => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)),
+    [reference],
+  );
   // A channel in the URL can't be resolved without the channel list, or may not exist at all
   const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
-  const unknownChannel = Boolean(channelCode) && Boolean(reference) && !channel;
-  const query = { ...filters, channel_id: channel?.id, search: search || undefined, limit: PAGE_SIZE, offset: page * PAGE_SIZE };
+  const unknownChannel = Boolean(channelCode) && Boolean(reference) && !channel && !isOtherChannels;
+  const query = {
+    ...filters,
+    channel_id: channel?.id,
+    channel_ids: isOtherChannels ? otherChannels.map((c) => c.id) : undefined,
+    search: search || undefined,
+    limit: PAGE_SIZE,
+    offset: page * PAGE_SIZE,
+  };
   // With a channel in the URL, wait for that channel so the unfiltered list doesn't flash first (or show instead)
-  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(query, !channelCode || Boolean(channel));
+  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(
+    query,
+    !channelCode || Boolean(channel) || (isOtherChannels && otherChannels.length > 0),
+  );
 
-  // Sub-channel options follow the chosen channel
+  // Sub-channel options follow the chosen channel(s)
   const subChannelOptions = useMemo(() => {
     if (!reference) return [];
-    if (!channel) return toOptions(reference.sub_channels);
-    const allowed = new Set(channel.sub_channel_ids);
+    const scope = channel ? [channel] : isOtherChannels ? otherChannels : null;
+    if (!scope) return toOptions(reference.sub_channels);
+    const allowed = new Set(scope.flatMap((c) => c.sub_channel_ids));
     return toOptions(reference.sub_channels.filter((s) => allowed.has(s.id)));
-  }, [reference, channel]);
+  }, [reference, channel, isOtherChannels, otherChannels]);
 
   const setChannel = (id: string | undefined) => {
     const code = reference?.channels.find((c) => String(c.id) === id)?.code;
@@ -212,11 +230,17 @@ export default function Initiatives() {
         icon={HeaderIcon}
         title={
           <span className="inline-flex items-center gap-2">
-            {channel ? `${channel.name} initiatives` : "Initiatives"}
+            {channel ? `${channel.name} initiatives` : isOtherChannels ? "Other channel initiatives" : "Initiatives"}
             <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
           </span>
         }
-        description={channel ? `Initiatives in the ${channel.name} channel, across every brand.` : "All marketing initiatives across every channel and brand."}
+        description={
+          channel
+            ? `Initiatives in the ${channel.name} channel, across every brand.`
+            : isOtherChannels
+              ? `Initiatives in ${otherChannels.map((c) => c.name).join(", ")}.`
+              : "All marketing initiatives across every channel and brand."
+        }
         actions={
           canCreate && (
             <Button onClick={() => setCreateOpen(true)} className="gap-2">
@@ -245,7 +269,7 @@ export default function Initiatives() {
         <FilterSelect
           label="Channels"
           value={channel?.id}
-          options={reference ? toOptions(reference.channels) : []}
+          options={reference ? toOptions(isOtherChannels ? otherChannels : reference.channels) : []}
           onChange={setChannel}
         />
         <FilterSelect

@@ -1,7 +1,6 @@
 import { ChevronDown, ChevronRight, PanelRight } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { navigation, SET_ACTIVE_NAV_EVENT, withChannelSubItems, type NavigationItem } from "./Navigation";
-import { useReferenceData } from "@/hooks/useReferenceData";
+import { navigation, SET_ACTIVE_NAV_EVENT, type NavigationItem } from "./Navigation";
 import { useEffect, useState } from "react";
 import zenatechLogo from "@/assets/zenatech_logo.png";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -17,14 +16,12 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({
-    Initiatives: true,
+    "Marketing Initiatives": true,
     "System & Security": true,
     "Logs & Audit": true,
   });
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: reference } = useReferenceData();
-  const navigationItems = withChannelSubItems(navigation, reference?.channels ?? []);
 
   // A page can ask for a different link to be highlighted, e.g. an initiative's page highlights its channel
   const [activeNav, setActiveNav] = useState<{ path: string; navPath: string } | null>(null);
@@ -59,7 +56,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
     setExpandedItems((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const groupedNavigation = navigationItems.reduce<Record<string, NavigationItem[]>>((acc, item) => {
+  const groupedNavigation = navigation.reduce<Record<string, NavigationItem[]>>((acc, item) => {
     // Pure Role Permission Gating: Check item navigation permission
     if (item.navigationCode) {
       const hasItemAccess =

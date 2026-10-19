@@ -52,8 +52,9 @@ export default function Breadcrumbs() {
       configuration: "Configuration",
       configurations: "Configurations",
       dashboard: "Dashboard",
-      events: "Event Management",
-      budgets: "Monthly Budgets",
+      events: "Events Overview",
+      budgets: "Budgets & Expenses",
+      "paid-ads": "Paid Advertising",
     };
     const key = name.toLowerCase();
     if (specialNames[key]) {

@@ -11,7 +11,10 @@ import type {
 export function getInitiatives(filters: InitiativeFilters = {}) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
-    if (value !== undefined && value !== null && value !== "") {
+    if (Array.isArray(value)) {
+      // e.g. channel_ids=7&channel_ids=8
+      for (const item of value) params.append(key, String(item));
+    } else if (value !== undefined && value !== null && value !== "") {
       params.set(key, String(value));
     }
   }

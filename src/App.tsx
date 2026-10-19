@@ -38,9 +38,9 @@ function NotFoundAlert() {
       <p className="text-sm text-muted-foreground mb-6 max-w-md">
         The page you requested does not exist or you do not have permission to view it.
       </p>
-      <Button onClick={() => (window.location.href = "/dashboard")} variant="outline" className="gap-2 text-xs">
+      <Button onClick={() => (window.location.href = "/")} variant="outline" className="gap-2 text-xs">
         <ArrowLeft className="w-3.5 h-3.5" />
-        <span>Back to Dashboard</span>
+        <span>Back to home</span>
       </Button>
     </div>
   );
@@ -65,7 +65,7 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/" element={<Navigate to="/initiatives" replace />} />
               <Route
                 path="/dashboard"
                 element={

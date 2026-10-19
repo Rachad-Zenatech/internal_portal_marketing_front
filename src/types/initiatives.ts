@@ -75,6 +75,8 @@ export interface InitiativeListResponse {
 
 export interface InitiativeFilters {
   channel_id?: number;
+  /** Several channels at once (the sidebar's "Other channels") */
+  channel_ids?: number[];
   sub_channel_id?: number;
   brand_id?: number;
   market_id?: number;

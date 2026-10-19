@@ -1,6 +1,6 @@
 import {
   CalendarDays,
-  LayoutDashboard,
+  ChartColumn,
   Megaphone,
   ShieldCheck,
   FileClock,
@@ -21,8 +21,6 @@ export interface NavigationItem {
   section?: string;
   navigationCode?: string;
   subItems?: NavigationSubItem[];
-  /** Sub-items built at runtime from reference data (see withChannelSubItems) */
-  subItemsFrom?: "channels";
 }
 
 /**
@@ -31,53 +29,55 @@ export interface NavigationItem {
  */
 export const SET_ACTIVE_NAV_EVENT = "set-active-nav";
 
-/** Fill in sub-items that come from reference data, e.g. one link per marketing channel. */
-export function withChannelSubItems(items: NavigationItem[], channels: { code: string; name: string }[]): NavigationItem[] {
-  return items.map((item) => {
-    if (item.subItemsFrom !== "channels" || !item.path) return item;
-    return {
-      ...item,
-      subItems: [
-        { label: `All ${item.label.toLowerCase()}`, path: item.path, navigationCode: item.navigationCode },
-        ...channels.map((channel) => ({
-          label: channel.name,
-          path: `${item.path}?channel=${channel.code}`,
-          navigationCode: item.navigationCode,
-        })),
-      ],
-    };
-  });
-}
+/** The channels with their own sidebar link; every other channel is under "Other channels" */
+export const MAIN_CHANNEL_CODES = ["PAID_SEARCH", "PAID_SOCIAL", "SEO", "CONTENT_MARKETING", "EMAIL_MARKETING", "EVENTS"];
+/** ?channel= value for every channel not in MAIN_CHANNEL_CODES */
+export const OTHER_CHANNELS = "others";
+
+const initiativesLink = (label: string, channel?: string): NavigationSubItem => ({
+  label,
+  path: channel ? `/initiatives?channel=${channel}` : "/initiatives",
+  navigationCode: "INITIATIVES",
+});
 
 export const navigation: NavigationItem[] = [
-  {
-    label: "Dashboard",
-    path: "/dashboard",
-    icon: LayoutDashboard,
-    section: "MAIN",
-    navigationCode: "DASHBOARD",
-  },
-  {
-    label: "Event Management",
-    path: "/events",
-    icon: CalendarDays,
-    section: "MARKETING",
-    navigationCode: "INITIATIVES",
-  },
-  {
-    label: "Monthly Budgets",
-    path: "/budgets",
-    icon: Wallet,
-    section: "MARKETING",
-    navigationCode: "INITIATIVES",
-  },
   {
     label: "Marketing Initiatives",
     path: "/initiatives",
     icon: Megaphone,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
-    subItemsFrom: "channels",
+    subItems: [
+      initiativesLink("All Initiatives"),
+      initiativesLink("Paid Search", "PAID_SEARCH"),
+      initiativesLink("Paid Social", "PAID_SOCIAL"),
+      initiativesLink("SEO", "SEO"),
+      initiativesLink("Content Marketing", "CONTENT_MARKETING"),
+      initiativesLink("Email Marketing", "EMAIL_MARKETING"),
+      initiativesLink("Events", "EVENTS"),
+      initiativesLink("Other channels", OTHER_CHANNELS),
+    ],
+  },
+  {
+    label: "Events Overview",
+    path: "/events",
+    icon: CalendarDays,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+  },
+  {
+    label: "Budgets & Expenses",
+    path: "/budgets",
+    icon: Wallet,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+  },
+  {
+    label: "Paid Advertising",
+    path: "/paid-ads",
+    icon: ChartColumn,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
   },
   {
     label: "System & Security",

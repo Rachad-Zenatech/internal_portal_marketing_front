@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { SET_ACTIVE_NAV_EVENT } from "@/components/AppShell/Navigation";
+import { MAIN_CHANNEL_CODES, OTHER_CHANNELS, SET_ACTIVE_NAV_EVENT } from "@/components/AppShell/Navigation";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import type { InitiativeListItem } from "@/types/initiatives";
 
@@ -35,8 +35,10 @@ export function useInitiativeNavigation(initiative: InitiativeListItem | undefin
     ];
 
     document.dispatchEvent(new CustomEvent("set-breadcrumb-trail", { detail: { path: pagePath, items } }));
-    if (channelPath) {
-      document.dispatchEvent(new CustomEvent(SET_ACTIVE_NAV_EVENT, { detail: { path: pagePath, navPath: channelPath } }));
+    if (channel && channelPath) {
+      // Channels without their own sidebar link highlight "Other channels"
+      const navPath = MAIN_CHANNEL_CODES.includes(channel.code) ? channelPath : `/initiatives?channel=${OTHER_CHANNELS}`;
+      document.dispatchEvent(new CustomEvent(SET_ACTIVE_NAV_EVENT, { detail: { path: pagePath, navPath } }));
     }
   }, [initiative, channel, subTitle, subPath]);
 }

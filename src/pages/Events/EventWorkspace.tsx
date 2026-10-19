@@ -175,7 +175,7 @@ export default function EventWorkspace() {
     if (!initiative) return;
     document.dispatchEvent(
       new CustomEvent("set-breadcrumb-trail", {
-        detail: { path: `/events/${initiative.id}`, items: [{ title: "Event Management", path: "/events" }, { title: initiative.name }] },
+        detail: { path: `/events/${initiative.id}`, items: [{ title: "Events Overview", path: "/events" }, { title: initiative.name }] },
       }),
     );
   }, [initiative]);
@@ -204,7 +204,7 @@ export default function EventWorkspace() {
         eyebrow={
           <Link to="/events" className={`inline-flex items-center gap-1.5 hover:text-foreground ${MUTED}`}>
             <ArrowLeft className="h-3.5 w-3.5" />
-            Event Management
+            Events Overview
           </Link>
         }
         actions={
