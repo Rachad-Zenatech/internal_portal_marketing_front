@@ -13,12 +13,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useDeleteInitiative } from "@/hooks/useInitiatives";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeListItem } from "@/types/initiatives";
-
-const IN_TRAVEL_SYSTEM = "Cancel it instead. It may already be in the travel system.";
 
 interface DeleteInitiativeButtonProps {
   initiative: InitiativeListItem;
@@ -26,7 +23,7 @@ interface DeleteInitiativeButtonProps {
   backTo: string;
 }
 
-/** Delete for drafts and non-event initiatives. An event past Draft may already be in the travel system, so it's cancelled instead. */
+/** Deletes an initiative or event in any status, after confirming */
 export default function DeleteInitiativeButton({ initiative, backTo }: DeleteInitiativeButtonProps) {
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -36,25 +33,6 @@ export default function DeleteInitiativeButton({ initiative, backTo }: DeleteIni
 
   const isEvent = Boolean(initiative.event_code);
   const noun = isEvent ? "event" : "initiative";
-  if (isEvent && initiative.status !== "DRAFT") {
-    return (
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            {/* A disabled button gets no hover, so the wrapper carries the explanation */}
-            <span tabIndex={0} aria-label={`Delete is not available. ${IN_TRAVEL_SYSTEM}`}>
-              <Button variant="outline" className="pointer-events-none gap-2" disabled>
-                <Trash2 className="h-4 w-4" />
-                Delete
-              </Button>
-            </span>
-          </TooltipTrigger>
-          <TooltipContent>{IN_TRAVEL_SYSTEM}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
   return (
     <>
       <Button variant="outline" className="gap-2 text-red-600 hover:text-red-700 dark:text-red-400" onClick={() => setConfirmOpen(true)}>

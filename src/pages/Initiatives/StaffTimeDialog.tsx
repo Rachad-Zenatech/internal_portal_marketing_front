@@ -126,7 +126,7 @@ function StaffTimeForm({ initiative, onDone }: { initiative: InitiativeListItem;
         <DialogTitle>Add staff time</DialogTitle>
         <DialogDescription>
           The cost of people's time on {initiative.name}, worked out from a day rate. Nobody's salary is stored. Expense claims go
-          through the travel management system instead.
+          through Zoho Expense instead.
         </DialogDescription>
       </DialogHeader>
 

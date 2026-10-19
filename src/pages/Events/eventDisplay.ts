@@ -1,5 +1,5 @@
 import { countryName } from "@/lib/countries";
-import type { EventOverviewItem, EventTiming, StaffRole, TravelReadiness } from "@/types/eventManagement";
+import type { EventOverviewItem, EventTiming, StaffRole } from "@/types/eventManagement";
 
 export const TIMING_LABELS: Record<EventTiming, string> = {
   NOW: "On now",
@@ -26,15 +26,6 @@ export const ROLE_LABELS: Record<StaffRole, string> = {
   OTHER: "Other",
 };
 export const ROLES = Object.keys(ROLE_LABELS) as StaffRole[];
-
-export const READINESS: Record<TravelReadiness, { label: string; tone: string }> = {
-  READY: { label: "Ready for travel booking", tone: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300" },
-  MISSING_DETAILS: { label: "Needs travel details", tone: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300" },
-  NOT_TRAVELLING: { label: "Not travelling", tone: "border-slate-200 bg-slate-50 text-slate-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300" },
-  REQUESTED: { label: "With the travel team", tone: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/50 dark:text-sky-300" },
-  BOOKED: { label: "Travel booked", tone: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-300" },
-  CANCELLED: { label: "Travel cancelled", tone: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" },
-};
 
 export function shortDate(value: string | null) {
   return value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;

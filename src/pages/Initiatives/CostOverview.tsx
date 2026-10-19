@@ -105,7 +105,7 @@ function ExpenseTypeBars({ summary, initiativeId }: { summary: SpendSummary; ini
                 className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-3 rounded-md px-2 py-1.5 hover:bg-slate-50/80 dark:hover:bg-zinc-800/60"
               >
                 <span className="flex items-center gap-1.5 truncate text-sm text-slate-700 dark:text-zinc-300">
-                  {t.source === "TRAVEL_SYSTEM" && <Plane className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-label="From the travel system" />}
+                  {t.source === "TRAVEL_SYSTEM" && <Plane className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-label="Travel" />}
                   {t.name}
                 </span>
                 <span className="h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
@@ -249,7 +249,7 @@ export default function CostOverview({ initiative }: { initiative: InitiativeLis
               )}
               <span>
                 Supplier costs <span className="font-medium text-slate-900 dark:text-zinc-100">{money(summary.by_source.supplier)}</span>
-                {" · "}Travel <span className="font-medium text-slate-900 dark:text-zinc-100">{money(summary.by_source.travel)}</span> (from the travel system)
+                {" · "}Travel <span className="font-medium text-slate-900 dark:text-zinc-100">{money(summary.by_source.travel)}</span> (from Navan)
               </span>
               {summary.mixed_currencies && (
                 <span className="inline-flex items-center gap-1.5">

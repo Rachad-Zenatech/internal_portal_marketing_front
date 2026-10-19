@@ -44,7 +44,6 @@ function varianceClass(value: number) {
 }
 
 function lockMessage(line: SpendLine) {
-  if (line.lock_reason === "TRAVEL_FEED") return "From the travel management system. Updates automatically.";
   if (line.lock_reason === "NAVAN") return "Total of this event's Navan bookings. Updates automatically.";
   if (line.lock_reason === "ADS_IMPORT") return "From an ads import. Updates automatically.";
   if (line.lock_reason === "RECONCILED" && line.reconciled_month) return `Reconciled for ${formatMonth(line.reconciled_month)}`;
@@ -182,7 +181,7 @@ function ExpenseTypeGroup({ name, code, lines, summary, currency, today, renderA
             {code === TRAVEL_TYPE && (
               <Badge variant="outline" className="gap-1 border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950 dark:text-sky-300">
                 <Plane className="h-3 w-3" />
-                Travel system and Navan update automatically
+                Navan updates automatically
               </Badge>
             )}
           </span>
@@ -383,8 +382,8 @@ export default function CostSheet({ initiative }: CostSheetProps) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="@container flex flex-col gap-4">
-        {lines.data.some((line) => line.source === "TRAVEL_FEED" || line.source === "NAVAN") && (
-          <p className={`text-xs ${MUTED}`}>Travel costs come from the travel system and Navan, and update automatically.</p>
+        {lines.data.some((line) => line.source === "NAVAN") && (
+          <p className={`text-xs ${MUTED}`}>Travel costs come from Navan and update automatically.</p>
         )}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2" role="group" aria-label="Filter costs by status">

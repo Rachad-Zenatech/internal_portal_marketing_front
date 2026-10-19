@@ -26,7 +26,7 @@ export function addEventStaff(initiativeId: string, data: StaffAssignmentCreate)
 }
 
 export function updateEventStaff(assignmentId: string, data: StaffAssignmentUpdate) {
-  return apiClient.patch<StaffAssignment>(`/api/event-staff/${assignmentId}`, data, { actionLabel: "Saving travel details" });
+  return apiClient.patch<StaffAssignment>(`/api/event-staff/${assignmentId}`, data, { actionLabel: "Saving team member" });
 }
 
 export function removeEventStaff(assignmentId: string) {

@@ -57,7 +57,7 @@ const INFO = {
   notCommitted: "Budgets that aren't approved yet, e.g. copied from last month.",
   unbudgeted: "Costs this month that don't match any budget.",
   outside:
-    "Flights, hotels, ground transport, per diems and costs from the travel system and Navan. They're an operating expense, so they don't count against marketing budgets. They still count toward each event's total cost and ROI.",
+    "Flights, hotels, ground transport and per diems, including Navan bookings. They're an operating expense, so they don't count against marketing budgets. They still count toward each event's total cost and ROI.",
 };
 
 type Compare = "month" | "year";

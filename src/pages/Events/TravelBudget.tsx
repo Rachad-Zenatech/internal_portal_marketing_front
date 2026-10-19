@@ -3,7 +3,7 @@ import { travelBudgetTone } from "./eventDisplay";
 
 interface TravelBudgetUsageProps {
   budget: number;
-  /** Invoiced and paid travel costs from the travel system, in the event's currency */
+  /** Invoiced and paid travel costs (from Navan), in the event's currency */
   used: number | undefined;
   currency: string;
   className?: string;

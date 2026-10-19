@@ -18,7 +18,6 @@ export default function DraftBanner({ noun, onFinish }: DraftBannerProps) {
           <p className="text-sm font-medium text-foreground">This {noun} is a draft</p>
           <p className="text-sm text-muted-foreground">
             Fill in what's missing and choose a status to finish it.
-            {noun === "event" && " The travel system only sees it once it's finished."}
           </p>
         </div>
       </div>
