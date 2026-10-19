@@ -17,6 +17,7 @@ const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
 const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
 const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
+const SocialMediaPage = lazy(() => import("./pages/SocialMedia/SocialMediaPage"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -24,6 +25,7 @@ const RoleGroupPermissions = lazy(() => import("./pages/Configurations/RoleGroup
 const RoleApiPermissions = lazy(() => import("./pages/Configurations/RoleApiPermissions"));
 const RoleMcpToolPermissions = lazy(() => import("./pages/Configurations/RoleMcpToolPermissions"));
 const OAuthIntegrations = lazy(() => import("./pages/Configurations/OAuthIntegrations"));
+const OAuthCallbackPage = lazy(() => import("./pages/Configurations/OAuthCallbackPage"));
 
 const AuditLog = lazy(() => import("./pages/Log/AuditLog"));
 const SystemLogsPage = lazy(() => import("./pages/Logs/SystemLogsPage"));
@@ -149,6 +151,18 @@ function App() {
                     <PaidAdsPage />
                   </ProtectedRoute>
                 }
+              />
+              <Route
+                path="/socials"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <SocialMediaPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social-media"
+                element={<Navigate to="/socials" replace />}
               />
 
               {/* Configuration Routes */}
@@ -277,6 +291,14 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="CONFIG_ROLES">
                     <OAuthIntegrations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/oauth/callback"
+                element={
+                  <ProtectedRoute navigationCode="CONFIG_ROLES">
+                    <OAuthCallbackPage />
                   </ProtectedRoute>
                 }
               />
