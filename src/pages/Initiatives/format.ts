@@ -37,6 +37,11 @@ export function formatDuration(start: string | null, end: string | null) {
 }
 
 /** Up to two initials for an avatar, e.g. "Jane Doe" -> "JD" */
+/** The owner to show: the person, or "Navan" for an event Navan's sync added and nobody has taken on yet */
+export function ownerName(item: { owner_name: string | null; navan_event_name?: string | null }) {
+  return item.owner_name ?? (item.navan_event_name ? "Navan" : null);
+}
+
 export function initials(name: string | null) {
   if (!name) return "?";
   return name

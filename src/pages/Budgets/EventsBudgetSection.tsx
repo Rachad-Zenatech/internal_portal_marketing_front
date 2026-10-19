@@ -8,7 +8,7 @@ import { useEventOverview } from "@/hooks/useEventManagement";
 import type { EventOverviewItem } from "@/types/eventManagement";
 import { dateRange, TIMING_DOT, TIMING_LABELS } from "../Events/eventDisplay";
 import { formatMoney } from "../Initiatives/format";
-import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
+import { EVENT_STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
 import { usageTone } from "./budgetDisplay";
 
 /** First and last day of a "YYYY-MM" month, as "YYYY-MM-DD" */
@@ -59,7 +59,7 @@ function Status({ e }: { e: EventOverviewItem }) {
   return (
     <div className="flex flex-col items-start gap-1 text-xs">
       <Badge variant="outline" className={STATUS_STYLES[e.status as keyof typeof STATUS_STYLES] ?? ""}>
-        {STATUS_LABELS[e.status as keyof typeof STATUS_LABELS] ?? e.status}
+        {EVENT_STATUS_LABELS[e.status as keyof typeof EVENT_STATUS_LABELS] ?? e.status}
       </Badge>
       <span className="inline-flex items-center gap-1.5 text-muted-foreground">
         <span className={`h-1.5 w-1.5 rounded-full ${TIMING_DOT[e.timing]}`} />

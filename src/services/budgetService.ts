@@ -14,6 +14,8 @@ import type {
   BudgetTransferCreated,
   BudgetTransferCreate,
   BudgetUpdate,
+  BudgetExpenses,
+  BudgetPeriod,
   BudgetWeek,
 } from "@/types/budgets";
 
@@ -23,6 +25,16 @@ export function getBudgetMonth(month: string) {
 }
 
 /** start is the week's Monday, YYYY-MM-DD */
+/** Budgets from one month to another (YYYY-MM-01 each), with spent, committed and remaining */
+export function getBudgetPeriod(from: string, to: string) {
+  return apiClient.get<BudgetPeriod>(`/api/budgets/period?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+}
+
+/** Every cost dated from one day to another (YYYY-MM-DD) */
+export function getBudgetExpenses(from: string, to: string) {
+  return apiClient.get<BudgetExpenses>(`/api/budgets/expenses?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+}
+
 export function getBudgetWeek(start: string) {
   return apiClient.get<BudgetWeek>(`/api/budgets/week?start=${encodeURIComponent(start)}`);
 }

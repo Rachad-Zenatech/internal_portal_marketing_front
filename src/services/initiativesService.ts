@@ -1,14 +1,16 @@
 import { apiClient } from "./apiClient";
 import type {
+  InitiativeActivity,
   InitiativeCreate,
   InitiativeFilters,
   InitiativeListItem,
   InitiativeListResponse,
+  InitiativeSummary,
   InitiativeUpdate,
   OwnerOption,
 } from "@/types/initiatives";
 
-export function getInitiatives(filters: InitiativeFilters = {}) {
+function filterQuery(filters: InitiativeFilters) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (Array.isArray(value)) {
@@ -19,7 +21,21 @@ export function getInitiatives(filters: InitiativeFilters = {}) {
     }
   }
   const query = params.toString();
-  return apiClient.get<InitiativeListResponse>(`/api/initiatives${query ? `?${query}` : ""}`);
+  return query ? `?${query}` : "";
+}
+
+export function getInitiatives(filters: InitiativeFilters = {}) {
+  return apiClient.get<InitiativeListResponse>(`/api/initiatives${filterQuery(filters)}`);
+}
+
+/** The KPI cards: counts and allocated budget for the same filters as the list (paging and needs_attention ignored) */
+export function getInitiativeSummary(filters: InitiativeFilters = {}) {
+  return apiClient.get<InitiativeSummary>(`/api/initiatives/summary${filterQuery(filters)}`, { skipGlobalLoading: true });
+}
+
+/** Newest first, from the audit log */
+export function getInitiativeActivity(id: string, limit = 10) {
+  return apiClient.get<InitiativeActivity[]>(`/api/initiatives/${id}/activity?limit=${limit}`, { skipGlobalLoading: true });
 }
 
 export function createInitiative(data: InitiativeCreate) {

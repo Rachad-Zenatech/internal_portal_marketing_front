@@ -21,7 +21,7 @@ import { formatMoney } from "../Initiatives/format";
 import DraftBanner from "../Initiatives/DraftBanner";
 import InitiativeFormDialog from "../Initiatives/InitiativeFormDialog";
 import ResultsSection from "../Initiatives/ResultsSection";
-import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
+import { EVENT_STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
 import { dateRange, eventPlace, TIMING_DOT, whenText, type WorkspaceTab } from "./eventDisplay";
 import StaffSection from "./StaffSection";
 import CostSources from "./CostSources";
@@ -104,6 +104,14 @@ function ResultsTab({ initiative }: { initiative: InitiativeListItem }) {
   );
 }
 
+/** "3 going", "8 travelling (from Navan)", both, or "No one added yet" */
+function teamStatus(card: EventOverviewItem) {
+  const parts: string[] = [];
+  if (card.staff_count > 0) parts.push(`${card.staff_count} going`);
+  if (card.traveller_count > 0) parts.push(`${card.traveller_count} travelling (from Navan)`);
+  return parts.length ? parts.join(", ") : "No one added yet";
+}
+
 function Checklist({ card, tab, onSelect }: { card: EventOverviewItem | undefined; tab: WorkspaceTab; onSelect: (tab: WorkspaceTab) => void }) {
   if (!card) return null;
   const money = (v: number) => formatMoney(v, card.currency);
@@ -116,9 +124,9 @@ function Checklist({ card, tab, onSelect }: { card: EventOverviewItem | undefine
         title="Team"
         active={tab === "team"}
         onSelect={onSelect}
-        done={card.staff_count > 0}
-        attention={card.staff_count === 0 && !happened}
-        status={card.staff_count === 0 ? "No one added yet" : `${card.staff_count} going`}
+        done={card.staff_count > 0 || card.traveller_count > 0}
+        attention={card.staff_count === 0 && card.traveller_count === 0 && !happened}
+        status={teamStatus(card)}
       />
       <Step
         tab="costs"
@@ -229,7 +237,7 @@ export default function EventWorkspace() {
               </span>
             )}
             <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
-              {STATUS_LABELS[initiative.status]}
+              {EVENT_STATUS_LABELS[initiative.status]}
             </Badge>
             <Badge variant="outline" className="font-mono text-muted-foreground">
               {initiative.event_code}

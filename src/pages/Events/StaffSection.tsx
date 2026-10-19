@@ -23,6 +23,7 @@ import { MUTED } from "../Initiatives/detailStyles";
 import { initials } from "../Initiatives/format";
 import { ROLE_LABELS } from "./eventDisplay";
 import StaffDialog from "./StaffDialog";
+import TravellersList from "./TravellersList";
 
 function StaffRow({ event, person, canEdit }: { event: InitiativeListItem; person: StaffAssignment; canEdit: boolean }) {
   const [editOpen, setEditOpen] = useState(false);
@@ -148,6 +149,9 @@ export default function StaffSection({ event }: { event: InitiativeListItem }) {
             </ul>
           </>
         )}
+        <div className="border-t border-slate-200 pt-4 dark:border-zinc-800">
+          <TravellersList initiativeId={event.id} />
+        </div>
       </div>
       {canEdit && <StaffDialog event={event} open={addOpen} onOpenChange={setAddOpen} />}
     </Section>

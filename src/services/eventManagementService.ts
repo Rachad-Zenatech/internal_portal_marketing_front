@@ -1,5 +1,5 @@
 import { apiClient } from "./apiClient";
-import type { EventOverviewItem, StaffAssignment, StaffAssignmentCreate, StaffAssignmentUpdate } from "@/types/eventManagement";
+import type { EventOverviewItem, EventTraveller, StaffAssignment, StaffAssignmentCreate, StaffAssignmentUpdate } from "@/types/eventManagement";
 import type { EventPerformanceFilters, EventPerformanceResponse } from "@/types/eventPerformance";
 
 export function getEventOverview(search: string) {
@@ -19,6 +19,11 @@ export function getEventPerformance(filters: EventPerformanceFilters = {}) {
 
 export function getEventStaff(initiativeId: string) {
   return apiClient.get<StaffAssignment[]>(`/api/initiatives/${initiativeId}/staff`);
+}
+
+/** The people travelling to an event, from its Navan bookings, by name */
+export function getEventTravellers(initiativeId: string) {
+  return apiClient.get<EventTraveller[]>(`/api/initiatives/${initiativeId}/travellers`);
 }
 
 export function addEventStaff(initiativeId: string, data: StaffAssignmentCreate) {

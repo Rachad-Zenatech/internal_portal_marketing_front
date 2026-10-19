@@ -18,7 +18,7 @@ import { channelStyle, FUNNEL_STAGE_STYLES } from "./channelStyles";
 import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
 import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, timelineProgress } from "./format";
+import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, ownerName, timelineProgress } from "./format";
 import TravelBudgetUsage from "../Events/TravelBudget";
 import DeleteInitiativeButton from "./DeleteInitiativeButton";
 import DraftBanner from "./DraftBanner";
@@ -470,11 +470,11 @@ export default function InitiativeDetail() {
         <Stat
           badge={
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
-              {initials(initiative.owner_name)}
+              {initials(ownerName(initiative))}
             </div>
           }
           label="Owner"
-          value={initiative.owner_name ?? <Empty text="Unassigned" />}
+          value={ownerName(initiative) ?? <Empty text="Unassigned" />}
         />
       </div>
 

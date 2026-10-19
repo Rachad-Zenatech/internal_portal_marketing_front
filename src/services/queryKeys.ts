@@ -25,7 +25,11 @@ export const queryKeys = {
   // Marketing reference data
   referenceData: () => ["reference-data"] as const,
   initiatives: (filters: object = {}) => ["initiatives", filters] as const,
+  // Under "initiatives" so anything that refreshes the list refreshes the cards too
+  initiativeSummary: (filters: object = {}) => ["initiatives", "summary", filters] as const,
   initiative: (id: string) => ["initiative", id] as const,
+  // Under "initiative" so saving an initiative refreshes its activity
+  initiativeActivity: (id: string, limit: number) => ["initiative", id, "activity", limit] as const,
   initiativeOwnerOptions: (search: string) => ["initiative-owner-options", search] as const,
   spendLines: (initiativeId: string) => ["spend-lines", initiativeId] as const,
   navanStatus: () => ["navan-status"] as const,
@@ -36,6 +40,7 @@ export const queryKeys = {
   eventOverview: (search: string) => ["event-overview", search] as const,
   eventPerformance: (filters: object = {}) => ["event-performance", filters] as const,
   eventStaff: (initiativeId: string) => ["event-staff", initiativeId] as const,
+  eventTravellers: (initiativeId: string) => ["event-travellers", initiativeId] as const,
   outcomes: (initiativeId: string) => ["outcomes", initiativeId] as const,
   evaluation: (initiativeId: string) => ["evaluation", initiativeId] as const,
   decisions: (initiativeId: string) => ["decisions", initiativeId] as const,
@@ -46,6 +51,8 @@ export const queryKeys = {
   budgetMonth: (month: string) => ["budget-month", month] as const,
   // Under "budget-month" so anything that refreshes the months refreshes the weeks too
   budgetWeek: (start: string) => ["budget-month", "week", start] as const,
+  budgetPeriod: (from: string, to: string) => ["budget-month", "period", from, to] as const,
+  budgetExpenses: (from: string, to: string) => ["budget-month", "expenses", from, to] as const,
   budgets: () => ["budget"] as const,
   budget: (id: string) => ["budget", id] as const,
 

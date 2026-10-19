@@ -32,7 +32,16 @@ export interface NavigationItem {
 export const SET_ACTIVE_NAV_EVENT = "set-active-nav";
 
 /** The channels with their own sidebar link; every other channel is under "Other channels" */
-export const MAIN_CHANNEL_CODES = ["PAID_SEARCH", "PAID_SOCIAL", "SEO", "CONTENT_MARKETING", "EMAIL_MARKETING", "EVENTS"];
+export const MAIN_CHANNEL_CODES = [
+  "PAID_SEARCH",
+  "PAID_SOCIAL",
+  "ORGANIC_SOCIAL",
+  "SEO",
+  "CONTENT_MARKETING",
+  "EMAIL_MARKETING",
+  "EVENTS",
+  "PARTNERSHIPS",
+];
 /** ?channel= value for every channel not in MAIN_CHANNEL_CODES */
 export const OTHER_CHANNELS = "others";
 
@@ -53,10 +62,12 @@ export const navigation: NavigationItem[] = [
       initiativesLink("All Initiatives"),
       initiativesLink("Paid Search", "PAID_SEARCH"),
       initiativesLink("Paid Social", "PAID_SOCIAL"),
+      initiativesLink("Organic Social", "ORGANIC_SOCIAL"),
       initiativesLink("SEO", "SEO"),
       initiativesLink("Content Marketing", "CONTENT_MARKETING"),
       initiativesLink("Email Marketing", "EMAIL_MARKETING"),
       initiativesLink("Events", "EVENTS"),
+      initiativesLink("Partnerships", "PARTNERSHIPS"),
       initiativesLink("Other channels", OTHER_CHANNELS),
     ],
   },

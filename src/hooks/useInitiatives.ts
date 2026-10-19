@@ -4,7 +4,9 @@ import {
   createInitiative,
   deleteInitiative,
   getInitiative,
+  getInitiativeActivity,
   getInitiatives,
+  getInitiativeSummary,
   getOwnerOptions,
   updateInitiative,
 } from "@/services/initiativesService";
@@ -16,6 +18,24 @@ export function useInitiatives(filters: InitiativeFilters, enabled = true) {
     queryFn: () => getInitiatives(filters),
     enabled,
     // Keep the current rows on screen while a new filter combination loads
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useInitiativeSummary(filters: InitiativeFilters, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.initiativeSummary(filters),
+    queryFn: () => getInitiativeSummary(filters),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useInitiativeActivity(id: string | undefined, limit = 10) {
+  return useQuery({
+    queryKey: queryKeys.initiativeActivity(id ?? "", limit),
+    queryFn: () => getInitiativeActivity(id as string, limit),
+    enabled: Boolean(id),
     placeholderData: keepPreviousData,
   });
 }
@@ -51,6 +71,7 @@ export function useUpdateInitiative(id: string) {
       // Dates, budget and currency feed the event overview and every derived figure
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
+        queryClient.invalidateQueries({ queryKey: [...queryKeys.initiative(id), "activity"] }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
         queryClient.invalidateQueries({ queryKey: ["event-performance"] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.performance(id) }),
