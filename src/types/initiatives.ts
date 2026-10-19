@@ -44,6 +44,8 @@ export interface InitiativeListItem {
   booth_size_sqm: number | null;
   /** Flights, hotels, ground transport and stipends, in the initiative's currency; less than the budget */
   travel_budget_amount: number | null;
+  /** The Navan event its travel bookings come from; null means a Navan event with the same name */
+  navan_event_name: string | null;
   // Costs in the initiative's currency: everything expected (estimates included), and invoiced + paid
   expected_total: number;
   actual_amount: number;
@@ -64,6 +66,8 @@ export interface EventDetailsInput {
   booth_size_sqm?: number | null;
   /** Part of the event budget (same currency); has to be less than it. Sent to the travel system. */
   travel_budget_amount?: number | null;
+  /** The Navan event its bookings come from, as named in Navan. Empty: a Navan event with the same name. */
+  navan_event_name?: string | null;
 }
 
 export interface InitiativeListResponse {

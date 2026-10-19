@@ -28,6 +28,7 @@ export const queryKeys = {
   initiative: (id: string) => ["initiative", id] as const,
   initiativeOwnerOptions: (search: string) => ["initiative-owner-options", search] as const,
   spendLines: (initiativeId: string) => ["spend-lines", initiativeId] as const,
+  navanStatus: () => ["navan-status"] as const,
   spendSummary: (initiativeId: string) => ["spend-summary", initiativeId] as const,
   demos: (initiativeId: string) => ["demos", initiativeId] as const,
   demoSummary: (initiativeId: string) => ["demo-summary", initiativeId] as const,

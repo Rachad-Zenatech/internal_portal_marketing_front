@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useCreateInitiative, useUpdateInitiative } from "@/hooks/useInitiatives";
+import { useNavanStatus } from "@/hooks/useNavan";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import { appStorage } from "@/lib/storage";
 import type { EventDetailsInput, InitiativeCreate, InitiativeListItem, InitiativeStatus, OwnerOption } from "@/types/initiatives";
 import type { ReferenceItem } from "@/types/referenceData";
 import CountryPicker from "./CountryPicker";
-import { boothSizeEquivalent } from "./format";
+import { boothSizeEquivalent, formatMoney } from "./format";
 import {
   EVENT_PLATFORM_SUGGESTIONS,
   EVENTS_CHANNEL_CODE,
@@ -65,6 +66,8 @@ interface FormState {
   boothUnit: AreaUnit;
   // Part of the budget, in the same currency, sent to the travel system
   travelBudget: string;
+  // The Navan event its bookings come from; empty means the Navan event with the same name
+  navanEvent: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -91,6 +94,7 @@ const EMPTY_FORM: FormState = {
   boothSize: "",
   boothUnit: "sqm",
   travelBudget: "",
+  navanEvent: "",
 };
 
 // A new initiative's form is kept in the browser while it's being filled in, so closing it by accident
@@ -149,6 +153,7 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     boothSize: item.booth_size_sqm === null ? "" : String(item.booth_size_sqm),
     boothUnit: "sqm",
     travelBudget: item.travel_budget_amount === null ? "" : String(item.travel_budget_amount),
+    navanEvent: item.navan_event_name ?? "",
   };
 }
 
@@ -170,6 +175,8 @@ function eventFromForm(form: FormState, subChannelCode: string | undefined): Req
     booth_size_sqm: inPerson ? boothSizeInSqm(form.boothSize, form.boothUnit) : null,
     // A form kept from before travel budgets existed has none
     travel_budget_amount: form.travelBudget ? Number(form.travelBudget) : null,
+    // A form kept from before Navan links existed has none
+    navan_event_name: toText(form.navanEvent ?? ""),
   };
 }
 
@@ -358,6 +365,20 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
 
   // The event block appears for the Events channel, with required fields set by the sub-channel
   const isEvent = channelCode === EVENTS_CHANNEL_CODE;
+  // Navan events from the last sync, to pick from; the one in use is the typed name, or else the event's own name
+  const { data: navan } = useNavanStatus(isEvent);
+  const navanEvents = navan?.last_run_summary?.events ?? [];
+  const navanTyped = (form.navanEvent ?? "").trim();
+  const navanName = (navanTyped || form.name.trim()).toLowerCase();
+  const navanMatch = navanName ? navanEvents.find((e) => e.name.toLowerCase() === navanName) : undefined;
+  const navanTaken = navanMatch?.link === "SET" && navanMatch.initiative_id !== (initiative?.id ?? null);
+  const navanHint = navanTaken
+    ? `As of the last Navan sync, that Navan event is linked to ${navanMatch?.initiative_name}.`
+    : navanMatch
+      ? `${navanMatch.bookings} active ${navanMatch.bookings === 1 ? "booking" : "bookings"} in Navan (${navanMatch.totals.map((t) => formatMoney(t.amount, t.currency)).join(", ") || "nothing spent"}). The total is added to this event's travel costs and updates automatically.`
+      : navanTyped
+        ? "No Navan bookings for this event name yet. Use the name exactly as it is in Navan."
+        : "Leave empty to use the Navan event with the same name as this event. Its bookings' total is added to the travel costs.";
   const subChannelCode = reference?.sub_channels.find((s) => String(s.id) === form.subChannelId)?.code;
   const requiredEvent = requiredEventFields(subChannelCode);
   const isOnline = ONLINE_EVENT_SUB_CHANNELS.has(subChannelCode ?? "");
@@ -583,6 +604,28 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
               </div>
               <p id="initiative-travel-budget-hint" className="text-xs text-slate-500 dark:text-zinc-400">
                 Flights, hotels, ground transport and stipends. Sent to the travel system. Must be less than the event budget.
+              </p>
+            </Field>
+          )}
+          {isEvent && (
+            <Field label="Navan event" htmlFor="initiative-navan-event" className="sm:col-span-2">
+              <Input
+                id="initiative-navan-event"
+                list="initiative-navan-events"
+                value={form.navanEvent ?? ""}
+                onChange={(e) => set({ navanEvent: e.target.value })}
+                placeholder={form.name.trim() || "Same as the event name"}
+                maxLength={255}
+                className="sm:max-w-[calc(50%-0.5rem)]"
+                aria-describedby="initiative-navan-event-hint"
+              />
+              <datalist id="initiative-navan-events">
+                {navanEvents.map((e) => (
+                  <option key={e.name} value={e.name} />
+                ))}
+              </datalist>
+              <p id="initiative-navan-event-hint" className="text-xs text-slate-500 dark:text-zinc-400">
+                {navanHint}
               </p>
             </Field>
           )}
