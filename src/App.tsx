@@ -16,6 +16,7 @@ const InitiativeDemos = lazy(() => import("./pages/Initiatives/InitiativeDemos")
 const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
 const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
+const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -137,6 +138,14 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="INITIATIVES">
                     <BudgetsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/paid-ads"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <PaidAdsPage />
                   </ProtectedRoute>
                 }
               />

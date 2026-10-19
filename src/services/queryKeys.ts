@@ -46,4 +46,9 @@ export const queryKeys = {
   budgetWeek: (start: string) => ["budget-month", "week", start] as const,
   budgets: () => ["budget"] as const,
   budget: (id: string) => ["budget", id] as const,
+
+  // Paid ads (Google Ads + Bing Ads); everything under "ads" so one invalidation refreshes them all
+  ads: () => ["ads"] as const,
+  adResults: (filters: object = {}) => ["ads", "results", filters] as const,
+  adCampaigns: (platform: string = "") => ["ads", "campaigns", platform] as const,
 };

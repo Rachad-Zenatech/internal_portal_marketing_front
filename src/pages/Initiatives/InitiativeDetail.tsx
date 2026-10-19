@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, MousePointerClick, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAdResults } from "@/hooks/useAds";
 import { useDemoSummary } from "@/hooks/useDemos";
 import { useEventOverview } from "@/hooks/useEventManagement";
 import { useInitiative } from "@/hooks/useInitiatives";
@@ -313,6 +314,46 @@ function DemosSnapshot({ initiativeId }: { initiativeId: string }) {
   );
 }
 
+/** The latest period's spend against budget, clicks and cost per lead, from the Paid Ads page */
+function AdsSnapshot({ initiativeId }: { initiativeId: string }) {
+  const { data, isLoading } = useAdResults({ initiative_id: initiativeId });
+  if (isLoading) return <>Loading ad results…</>;
+  const results = data?.results ?? [];
+  if (!results.length) return <>No ad results yet. Add each period's spend and results, or upload the PPC spreadsheet.</>;
+  // Results come newest first; add up the campaign and its ad groups for that period
+  const latest = results[0].period_start;
+  const rows = results.filter((r) => r.period_start === latest);
+  const currency = rows[0].currency;
+  const sum = (pick: (r: (typeof rows)[number]) => number | null) =>
+    rows.reduce<number | null>((total, r) => (pick(r) === null ? total : (total ?? 0) + (pick(r) as number)), null);
+  const spend = sum((r) => r.spend);
+  const budget = sum((r) => r.budget_amount);
+  const clicks = sum((r) => r.clicks);
+  const contacts = sum((r) => r.hubspot_contacts);
+  const percent = spend !== null && budget ? Math.round((spend / budget) * 100) : null;
+  const cpl = spend !== null && contacts ? spend / contacts : null;
+  const period = new Date(Number(latest.slice(0, 4)), Number(latest.slice(5, 7)) - 1, Number(latest.slice(8, 10))).toLocaleDateString(undefined, {
+    month: "short",
+    year: "numeric",
+  });
+  return (
+    <>
+      <span className="font-medium text-slate-900 dark:text-zinc-100">{spend === null ? "No spend" : formatMoney(spend, currency)}</span>
+      {budget !== null && <> of {formatMoney(budget, currency)}</>} in {period}
+      {clicks !== null && <> · {clicks.toLocaleString()} clicks</>}
+      {cpl !== null && <> · CPL {formatMoney(Math.round(cpl * 100) / 100, currency)}</>}
+      {percent !== null && (
+        <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800">
+          <span
+            className={`block h-full rounded-full ${percent > 100 ? "bg-red-500" : percent >= 90 ? "bg-amber-500" : "bg-emerald-500"}`}
+            style={{ width: `${Math.min(Math.max(percent, 2), 100)}%` }}
+          />
+        </span>
+      )}
+    </>
+  );
+}
+
 function CostsSnapshot({ initiative }: { initiative: InitiativeListItem }) {
   const { expected_total: expected, actual_amount: actual, budget_amount: budget, currency } = initiative;
   if (expected === 0 && !initiative.has_mixed_currencies) {
@@ -357,6 +398,7 @@ export default function InitiativeDetail() {
   const channel = channelStyle(reference?.channels.find((c) => c.id === initiative.channel_id)?.code);
   const ChannelIcon = channel.icon;
   const hasDates = Boolean(initiative.start_date || initiative.end_date);
+  const isAdCampaign = subChannelCode === "GOOGLE_ADS" || subChannelCode === "BING_ADS";
 
   return (
     <div className="flex w-full flex-1 min-h-0 flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -441,7 +483,7 @@ export default function InitiativeDetail() {
       </div>
 
       {/* Costs, performance and (for events) demos each have their own page, so this one stays an overview */}
-      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${initiative.event_code ? "xl:grid-cols-3" : ""}`}>
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${initiative.event_code || isAdCampaign ? "xl:grid-cols-3" : ""}`}>
         <SubPageLink
           to={`/initiatives/${initiative.id}/costs`}
           title="Costs"
@@ -463,6 +505,11 @@ export default function InitiativeDetail() {
             icon={Presentation}
           >
             <DemosSnapshot initiativeId={initiative.id} />
+          </SubPageLink>
+        )}
+        {isAdCampaign && (
+          <SubPageLink to={`/paid-ads?campaign=${initiative.id}&period=all`} title="Ad results" icon={MousePointerClick}>
+            <AdsSnapshot initiativeId={initiative.id} />
           </SubPageLink>
         )}
       </div>
