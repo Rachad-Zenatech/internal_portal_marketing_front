@@ -36,12 +36,6 @@ export const READINESS: Record<TravelReadiness, { label: string; tone: string }>
   CANCELLED: { label: "Travel cancelled", tone: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300" },
 };
 
-export function dateTile(start: string | null) {
-  if (!start) return { month: "TBC", day: "-" };
-  const d = new Date(`${start}T00:00:00`);
-  return { month: d.toLocaleDateString(undefined, { month: "short" }).toUpperCase(), day: String(d.getDate()) };
-}
-
 export function shortDate(value: string | null) {
   return value ? new Date(`${value}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
 }
@@ -69,22 +63,6 @@ export function whenText(e: Pick<EventOverviewItem, "timing" | "days_away">) {
 }
 
 export type WorkspaceTab = "team" | "costs" | "demos" | "results";
-
-/** The one thing most worth doing next for an event, and the tab where it's done */
-export function nextStep(e: EventOverviewItem): { text: string; tab: WorkspaceTab } {
-  // A draft's page leads with "Finish setting up"
-  if (e.status === "DRAFT") return { text: "Finish setting up this draft", tab: "team" };
-  const upcoming = e.timing === "UPCOMING" || e.timing === "UNSCHEDULED";
-  if (upcoming && e.staff_count === 0) return { text: "Add the team going", tab: "team" };
-  if (e.staff_missing_details > 0) {
-    return { text: `Add travel details for ${e.staff_missing_details} ${e.staff_missing_details === 1 ? "person" : "people"}`, tab: "team" };
-  }
-  if (upcoming && e.cost_lines === 0) return { text: "Add the booth and supplier costs", tab: "costs" };
-  if (upcoming) return { text: "Keep costs up to date as quotes and invoices arrive", tab: "costs" };
-  if (e.timing === "NOW") return { text: "Log demos and leads as they happen", tab: "demos" };
-  if (!e.has_results) return { text: "Record leads and results", tab: "results" };
-  return { text: "Check invoices and update results as deals close", tab: "results" };
-}
 
 /** No colour of its own until 90% of the travel budget is used, amber from there, red once it's over */
 export function travelBudgetTone(budget: number, used: number) {

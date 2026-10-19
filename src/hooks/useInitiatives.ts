@@ -37,6 +37,7 @@ export function useCreateInitiative() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-performance"] }),
       ]),
   });
 }
@@ -51,6 +52,7 @@ export function useUpdateInitiative(id: string) {
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-performance"] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.performance(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.evaluation(id) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.spendSummary(id) }),
@@ -72,6 +74,7 @@ export function useDeleteInitiative(id: string) {
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-performance"] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.budgetMonths() }),
         queryClient.invalidateQueries({ queryKey: queryKeys.budgets() }),
       ]);

@@ -52,6 +52,7 @@ export function useSaveOutcomes(initiativeId: string) {
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.performance(initiativeId) }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-performance"] }),
       ]);
     },
   });

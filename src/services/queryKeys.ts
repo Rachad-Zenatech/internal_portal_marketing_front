@@ -33,6 +33,7 @@ export const queryKeys = {
   demoSummary: (initiativeId: string) => ["demo-summary", initiativeId] as const,
   performance: (initiativeId: string) => ["performance", initiativeId] as const,
   eventOverview: (search: string) => ["event-overview", search] as const,
+  eventPerformance: (filters: object = {}) => ["event-performance", filters] as const,
   eventStaff: (initiativeId: string) => ["event-staff", initiativeId] as const,
   outcomes: (initiativeId: string) => ["outcomes", initiativeId] as const,
   evaluation: (initiativeId: string) => ["evaluation", initiativeId] as const,

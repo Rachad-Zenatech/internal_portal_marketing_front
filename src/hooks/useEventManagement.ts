@@ -1,13 +1,23 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryKeys";
-import { addEventStaff, getEventOverview, getEventStaff, removeEventStaff, updateEventStaff } from "@/services/eventManagementService";
+import { addEventStaff, getEventOverview, getEventPerformance, getEventStaff, removeEventStaff, updateEventStaff } from "@/services/eventManagementService";
 import type { StaffAssignmentCreate, StaffAssignmentUpdate } from "@/types/eventManagement";
+import type { EventPerformanceFilters } from "@/types/eventPerformance";
 
 export function useEventOverview(search: string) {
   return useQuery({
     queryKey: queryKeys.eventOverview(search),
     queryFn: () => getEventOverview(search),
     placeholderData: keepPreviousData,
+  });
+}
+
+export function useEventPerformance(filters: EventPerformanceFilters, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.eventPerformance(filters),
+    queryFn: () => getEventPerformance(filters),
+    placeholderData: keepPreviousData,
+    enabled,
   });
 }
 
