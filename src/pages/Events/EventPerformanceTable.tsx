@@ -1,83 +1,40 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, Download, MapPin, Search, Video } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, ExternalLink, MoreHorizontal, Search, Upload } from "lucide-react";
 import InfoTip from "@/components/dashboard/InfoTip";
 import { downloadCsv } from "@/components/dashboard/csv";
 import { DASH_CARD } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { EventPerformance } from "@/types/eventPerformance";
-import { formatDate } from "../Initiatives/format";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { countryName } from "@/lib/countries";
+import type { CostCategory, EventPerformance } from "@/types/eventPerformance";
 import { fmtCount, fmtMoney, fmtUnitCost } from "../PaidAds/adsDisplay";
-import { dateRange, eventPlace } from "./eventDisplay";
-import { COST_GROUP_LABELS, COST_GROUPS, EVENT_METRIC_INFO, fmtRoi, RESULT_LABELS, RESULT_PILL } from "./eventPerformanceDisplay";
+import { dateRange } from "./eventDisplay";
+import {
+  COST_CATEGORIES,
+  COST_CATEGORY_INFO,
+  COST_CATEGORY_LABELS,
+  displayStatus,
+  EVENT_METRIC_INFO,
+  eventRegion,
+  fmtRoi,
+  STATUS_PILL,
+  statusLabel,
+} from "./eventPerformanceDisplay";
 
 const PAGE_SIZE = 10;
 
-/** Why a result is what it is, for the pill's tooltip */
-function resultHint(e: EventPerformance) {
-  switch (e.result) {
-    case "SUCCESSFUL":
-      return "Made a profit: ROI above 0%.";
-    case "NOT_SUCCESSFUL":
-      return "Broke even or lost money.";
-    case "TOO_EARLY":
-      return e.matures_on ? `Deals are still closing. Judged from ${formatDate(e.matures_on)}.` : "Deals are still closing.";
-    case "AWAITING_REVENUE":
-      return "The time to judge it has passed, but no revenue is recorded yet.";
-    default:
-      return "Hasn't started yet.";
-  }
-}
+// ─── Small pieces ────────────────────────────────────────────────────────────
 
-export function ResultPill({ e }: { e: EventPerformance }) {
+export function StatusPill({ e }: { e: EventPerformance }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0} className={`inline-flex cursor-default items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${RESULT_PILL[e.result]}`}>
-          {RESULT_LABELS[e.result]}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-64 text-xs">{resultHint(e)}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-/** The total cost, with the four groups that make it up on hover */
-function CostCell({ e }: { e: EventPerformance }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0} className="cursor-help font-medium tabular-nums text-foreground underline decoration-dotted decoration-muted-foreground/50 underline-offset-4">
-          {fmtMoney(e.cost, e.currency)}
-        </span>
-      </TooltipTrigger>
-      <TooltipContent className="min-w-48 text-xs">
-        <dl className="flex flex-col gap-1">
-          {COST_GROUPS.map((g) => (
-            <div key={g} className="flex justify-between gap-4">
-              <dt>{COST_GROUP_LABELS[g]}</dt>
-              <dd className="tabular-nums">{fmtMoney(e.cost_breakdown[g] ?? 0, e.currency)}</dd>
-            </div>
-          ))}
-          <div className="flex justify-between gap-4 border-t border-current/20 pt-1 font-semibold">
-            <dt>Total event cost</dt>
-            <dd className="tabular-nums">{fmtMoney(e.cost, e.currency)}</dd>
-          </div>
-        </dl>
-        {e.other_currency_lines > 0 && (
-          <p className="mt-1.5 opacity-80">
-            {e.other_currency_lines} {e.other_currency_lines === 1 ? "cost line is" : "cost lines are"} in another currency and not counted.
-          </p>
-        )}
-      </TooltipContent>
-    </Tooltip>
+    <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_PILL[displayStatus(e)]}`}>{statusLabel(e)}</span>
   );
 }
 
 function EventName({ e }: { e: EventPerformance }) {
-  const place = e.platform && !e.city ? "Online" : (e.city ?? eventPlace(e));
   return (
     <div className="min-w-0">
       <Link
@@ -88,55 +45,153 @@ function EventName({ e }: { e: EventPerformance }) {
         {e.name}
       </Link>
       <p className="truncate text-xs text-muted-foreground">{dateRange(e.start_date, e.end_date)}</p>
-      <p className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
-        {place && (e.platform && !e.city ? <Video className="h-3 w-3 shrink-0" /> : <MapPin className="h-3 w-3 shrink-0" />)}
-        <span className="truncate">{[e.brand_name, place].filter(Boolean).join(" · ")}</span>
-      </p>
     </div>
   );
 }
 
-function Head({ children, info, right, className = "" }: { children: React.ReactNode; info?: string; right?: boolean; className?: string }) {
+/** Actual cost - approved budget: above zero (over budget) in red */
+function VarianceValue({ e }: { e: EventPerformance }) {
+  if (e.variance === null) return <span className="text-muted-foreground">-</span>;
   return (
-    <th className={`whitespace-nowrap px-3 py-2.5 text-xs font-medium text-muted-foreground ${right ? "text-right" : "text-left"} ${className}`}>
-      <span className={`inline-flex items-center gap-1 ${right ? "flex-row-reverse" : ""}`}>
-        {children}
-        {info && <InfoTip text={info} label={String(children)} />}
-      </span>
-    </th>
-  );
-}
-
-function Figure({ label, value, className = "" }: { label: string; value: React.ReactNode; className?: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="truncate text-[11px] text-muted-foreground">{label}</dt>
-      <dd className={`truncate text-sm font-medium tabular-nums ${className || "text-foreground"}`}>{value}</dd>
-    </div>
+    <span className={e.variance > 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}>
+      {e.variance > 0 ? "+" : ""}
+      {fmtMoney(e.variance, e.currency)}
+    </span>
   );
 }
 
 const roiTone = (roi: number | null) => (roi === null ? "" : roi > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400");
 
-interface EventPerformanceTableProps {
-  events: EventPerformance[];
-  /** Shown when there are no events in this tab */
-  emptyText: string;
-  /** For the export's file name, e.g. "past" */
-  exportName: string;
+// ─── Columns ─────────────────────────────────────────────────────────────────
+
+interface Column {
+  key: string;
+  label: string;
+  info?: string;
+  /** Numbers line up on the right */
+  numeric?: boolean;
+  render: (e: EventPerformance) => React.ReactNode;
+  /** The value in the CSV export */
+  csv: (e: EventPerformance) => string | number | null;
 }
 
-/** One row per event (click to open its workspace), with search, export and pages; a card per event on phones */
-export default function EventPerformanceTable({ events, emptyText, exportName }: EventPerformanceTableProps) {
+type Formatted = Pick<Column, "render" | "csv" | "numeric">;
+const money = (pick: (e: EventPerformance) => number | null): Formatted => ({ numeric: true, render: (e) => fmtMoney(pick(e), e.currency), csv: pick });
+const count = (pick: (e: EventPerformance) => number | null): Formatted => ({ numeric: true, render: (e) => fmtCount(pick(e)), csv: pick });
+// An empty category shows "-" so the costs that are there stand out
+const categoryColumn = (c: CostCategory): Column => ({
+  key: `cat_${c}`,
+  label: COST_CATEGORY_LABELS[c],
+  info: COST_CATEGORY_INFO[c],
+  ...money((e) => e.cost_categories?.[c] || null),
+  csv: (e) => e.cost_categories?.[c] ?? 0,
+});
+
+const COLUMNS: Record<string, Column> = Object.fromEntries(
+  (
+    [
+      { key: "brand", label: "Brand", render: (e) => e.brand_name, csv: (e) => e.brand_name },
+      { key: "region", label: "Region", render: (e) => eventRegion(e) ?? "-", csv: (e) => eventRegion(e) },
+      { key: "type", label: "Event Type", render: (e) => e.event_type_name ?? "-", csv: (e) => e.event_type_name },
+      { key: "owner", label: "Owner", render: (e) => e.owner_name ?? "-", csv: (e) => e.owner_name },
+      { key: "budget", label: "Approved Budget", info: EVENT_METRIC_INFO.budget, ...money((e) => e.approved_budget) },
+      { key: "actual", label: "Actual Cost", info: EVENT_METRIC_INFO.actual, ...money((e) => e.actual_cost) },
+      { key: "prior", label: "Prior Year Cost", info: EVENT_METRIC_INFO.priorYearCost, ...money((e) => e.prior_year_cost) },
+      { key: "variance", label: "Variance", info: EVENT_METRIC_INFO.variance, numeric: true, render: (e) => <VarianceValue e={e} />, csv: (e) => e.variance },
+      { key: "attendees", label: "Attendees", info: EVENT_METRIC_INFO.attendees, ...count((e) => e.attendees) },
+      { key: "leads", label: "Leads", info: EVENT_METRIC_INFO.leads, ...count((e) => e.leads) },
+      { key: "qualified", label: "Qualified Leads", info: EVENT_METRIC_INFO.qualifiedLeads, ...count((e) => e.qualified_leads) },
+      { key: "demos", label: "Demos", info: EVENT_METRIC_INFO.demos, ...count((e) => e.demos) },
+      { key: "customers", label: "Customers", info: EVENT_METRIC_INFO.customers, ...count((e) => e.customers) },
+      { key: "cpl", label: "Cost / Lead", info: EVENT_METRIC_INFO.cpl, numeric: true, render: (e) => fmtUnitCost(e.cost_per_lead, e.currency), csv: (e) => e.cost_per_lead },
+      { key: "revenue", label: "Revenue", info: EVENT_METRIC_INFO.revenue, ...money((e) => e.revenue) },
+      {
+        key: "roi",
+        label: "ROI",
+        info: EVENT_METRIC_INFO.roi,
+        numeric: true,
+        render: (e) => <span className={`font-medium ${roiTone(e.roi_percent)}`}>{fmtRoi(e.roi_percent)}</span>,
+        csv: (e) => e.roi_percent,
+      },
+      ...COST_CATEGORIES.map(categoryColumn),
+      { key: "status", label: "Status", info: EVENT_METRIC_INFO.status, render: (e) => <StatusPill e={e} />, csv: (e) => statusLabel(e) },
+    ] satisfies Column[]
+  ).map((c) => [c.key, c]),
+);
+
+export type EventTableView = "overview" | "comparison" | "costs" | "outcomes";
+
+export const TABLE_VIEWS: { value: EventTableView; label: string; columns: string[] }[] = [
+  { value: "overview", label: "Overview", columns: ["brand", "region", "type", "owner", "budget", "actual", "variance", "status"] },
+  {
+    value: "comparison",
+    label: "Event Comparison",
+    columns: ["brand", "region", "budget", "actual", "prior", "variance", "leads", "qualified", "demos", "customers", "cpl", "status"],
+  },
+  { value: "costs", label: "Cost Breakdown", columns: [...COST_CATEGORIES.map((c) => `cat_${c}`), "actual", "status"] },
+  { value: "outcomes", label: "Outcomes", columns: ["attendees", "leads", "qualified", "demos", "customers", "revenue", "cpl", "roi", "status"] },
+];
+
+function Head({ column }: { column: Column }) {
+  return (
+    <th className={`whitespace-nowrap px-3 py-2.5 text-xs font-medium text-muted-foreground ${column.numeric ? "text-right" : "text-left"}`}>
+      <span className={`inline-flex items-center gap-1 ${column.numeric ? "flex-row-reverse" : ""}`}>
+        {column.label}
+        {column.info && <InfoTip text={column.info} label={column.label} />}
+      </span>
+    </th>
+  );
+}
+
+function RowMenu({ e, onImport }: { e: EventPerformance; onImport?: (e: EventPerformance) => void }) {
+  const navigate = useNavigate();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${e.name}`} onClick={(ev) => ev.stopPropagation()}>
+          <MoreHorizontal />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(ev) => ev.stopPropagation()}>
+        <DropdownMenuItem onSelect={() => navigate(`/events/${e.id}`)} className="gap-2">
+          <ExternalLink className="h-4 w-4" />
+          Open event
+        </DropdownMenuItem>
+        {onImport && (
+          <DropdownMenuItem onSelect={() => onImport(e)} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Upload cost sheet
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ─── Table ───────────────────────────────────────────────────────────────────
+
+interface EventPerformanceTableProps {
+  events: EventPerformance[];
+  view: EventTableView;
+  onViewChange: (view: EventTableView) => void;
+  /** Shown when there are no events */
+  emptyText: string;
+  /** Upload a cost sheet for an event (row menu); left out when the person can't */
+  onImport?: (e: EventPerformance) => void;
+}
+
+/** Tabs for the views, then one row per event (click to open it) with the view's columns, search, CSV export of what's shown, and pages; a card per event below lg */
+export default function EventPerformanceTable({ events, view, onViewChange, emptyText, onImport }: EventPerformanceTableProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const columns = (TABLE_VIEWS.find((v) => v.value === view)?.columns ?? []).map((k) => COLUMNS[k]);
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return events;
     return events.filter((e) =>
-      [e.name, e.event_code ?? "", e.brand_name, e.market_name ?? "", e.city ?? "", e.sub_channel_name ?? ""].some((s) => s.toLowerCase().includes(q)),
+      [e.name, e.event_code, e.brand_name, e.market_name, e.city, countryName(e.country_code), e.event_type_name, e.owner_name].some((s) => s?.toLowerCase().includes(q)),
     );
   }, [events, query]);
   const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
@@ -147,71 +202,28 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
 
   const exportCsv = () =>
     downloadCsv(
-      `events-${exportName}.csv`,
-      [
-        "Event",
-        "Code",
-        "Brand",
-        "Market",
-        "Event type",
-        "City",
-        "Start",
-        "End",
-        "Currency",
-        "Total cost",
-        ...COST_GROUPS.map((g) => COST_GROUP_LABELS[g]),
-        "Visitors",
-        "Leads",
-        "Demos",
-        "Follow-ups",
-        "Customers",
-        "Cost per visitor",
-        "CPL",
-        "Cost per demo",
-        "Cost per follow-up",
-        "CAC",
-        "Revenue",
-        "Pipeline",
-        "ROI %",
-        "Result",
-      ],
-      shown.map((e) => [
-        e.name,
-        e.event_code,
-        e.brand_name,
-        e.market_name,
-        e.sub_channel_name,
-        e.city ?? (e.platform ? "Online" : ""),
-        e.start_date,
-        e.end_date,
-        e.currency,
-        e.cost,
-        ...COST_GROUPS.map((g) => e.cost_breakdown[g] ?? 0),
-        e.visitors,
-        e.leads,
-        e.demos,
-        e.follow_ups,
-        e.customers,
-        e.cost_per_visitor,
-        e.cost_per_lead,
-        e.cost_per_demo,
-        e.cost_per_follow_up,
-        e.cost_per_customer,
-        e.revenue,
-        e.pipeline,
-        e.roi_percent,
-        RESULT_LABELS[e.result],
-      ]),
+      `events-${view}.csv`,
+      ["Event", "Code", "Start", "End", "Currency", ...columns.map((c) => c.label)],
+      shown.map((e) => [e.name, e.event_code, e.start_date, e.end_date, e.currency, ...columns.map((c) => c.csv(e))]),
     );
 
   const cell = "px-3 py-3 align-middle";
-  const num = `${cell} text-right tabular-nums text-foreground`;
 
   return (
     <div className={`${DASH_CARD} min-w-0 overflow-hidden`}>
-      <div className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="text-base font-semibold text-foreground">Event performance</h3>
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-3 border-b border-border p-4 xl:flex-row xl:items-center xl:justify-between">
+        <Tabs value={view} onValueChange={(v) => onViewChange(v as EventTableView)} className="min-w-0">
+          <div className="-mx-1 overflow-x-auto px-1 scrollbar-none">
+            <TabsList className="h-9">
+              {TABLE_VIEWS.map((v) => (
+                <TabsTrigger key={v.value} value={v.value} className="px-3">
+                  {v.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+        </Tabs>
+        <div className="flex flex-wrap gap-2">
           <div className="relative min-w-0 flex-1 sm:w-64 sm:flex-none">
             <Search className="pointer-events-none absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -227,7 +239,7 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
           </div>
           <Button variant="outline" className="h-9 gap-2" onClick={exportCsv} disabled={shown.length === 0}>
             <Download className="h-4 w-4" />
-            Export CSV
+            Export
           </Button>
         </div>
       </div>
@@ -236,46 +248,18 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
         <p className="px-4 py-10 text-center text-sm text-muted-foreground">{query ? "No events match your search." : emptyText}</p>
       ) : (
         <>
-          {/* Large screens: a table (scrolls sideways inside the card) */}
+          {/* Large screens: a table (scrolls sideways inside the card when there are many columns) */}
           <div className="hidden overflow-x-auto lg:block">
-            <table className="w-full min-w-[1280px] text-sm">
+            <table className="w-full text-sm" style={{ minWidth: 280 + columns.length * 115 }}>
               <thead className="border-b border-border bg-muted/30">
                 <tr>
-                  <Head>Event</Head>
-                  <Head right info={EVENT_METRIC_INFO.cost}>
-                    Total cost
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.visitors}>
-                    Visitors
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.leads}>
-                    Leads
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.demos}>
-                    Demos
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.followUps}>
-                    Follow-ups
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.customers}>
-                    Customers
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.cpl}>
-                    CPL
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.costPerDemo}>
-                    Cost per demo
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.cac}>
-                    CAC
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.revenue}>
-                    Revenue
-                  </Head>
-                  <Head right info={EVENT_METRIC_INFO.roi}>
-                    ROI
-                  </Head>
-                  <Head info={EVENT_METRIC_INFO.successful}>Result</Head>
+                  <th className="whitespace-nowrap px-3 py-2.5 text-left text-xs font-medium text-muted-foreground">Event</th>
+                  {columns.map((c) => (
+                    <Head key={c.key} column={c} />
+                  ))}
+                  <th className="w-10 px-2 py-2.5">
+                    <span className="sr-only">Actions</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -284,21 +268,13 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
                     <td className={`${cell} max-w-72`}>
                       <EventName e={e} />
                     </td>
-                    <td className={`${cell} text-right`}>
-                      <CostCell e={e} />
-                    </td>
-                    <td className={num}>{fmtCount(e.visitors)}</td>
-                    <td className={num}>{fmtCount(e.leads)}</td>
-                    <td className={num}>{fmtCount(e.demos)}</td>
-                    <td className={num}>{fmtCount(e.follow_ups)}</td>
-                    <td className={num}>{fmtCount(e.customers)}</td>
-                    <td className={num}>{fmtUnitCost(e.cost_per_lead, e.currency)}</td>
-                    <td className={num}>{fmtUnitCost(e.cost_per_demo, e.currency)}</td>
-                    <td className={num}>{fmtUnitCost(e.cost_per_customer, e.currency)}</td>
-                    <td className={num}>{fmtMoney(e.revenue, e.currency)}</td>
-                    <td className={`${num} font-medium ${roiTone(e.roi_percent)}`}>{fmtRoi(e.roi_percent)}</td>
-                    <td className={cell}>
-                      <ResultPill e={e} />
+                    {columns.map((c) => (
+                      <td key={c.key} className={`${cell} ${c.numeric ? "text-right tabular-nums" : ""} whitespace-nowrap text-foreground`}>
+                        {c.render(e)}
+                      </td>
+                    ))}
+                    <td className="px-2 py-3 text-right align-middle">
+                      <RowMenu e={e} onImport={onImport} />
                     </td>
                   </tr>
                 ))}
@@ -306,28 +282,26 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
             </table>
           </div>
 
-          {/* Phones: a card per event */}
+          {/* Phones and tablets: a card per event with the view's figures */}
           <ul className="flex flex-col divide-y divide-border lg:hidden">
             {pageRows.map((e) => (
               <li key={e.id} className="flex flex-col gap-3 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <EventName e={e} />
-                  <ResultPill e={e} />
+                  <div className="flex shrink-0 items-center gap-1">
+                    <StatusPill e={e} />
+                    <RowMenu e={e} onImport={onImport} />
+                  </div>
                 </div>
-                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  Total cost <CostCell e={e} />
-                </p>
-                <dl className="grid grid-cols-3 gap-3">
-                  <Figure label="Visitors" value={fmtCount(e.visitors)} />
-                  <Figure label="Leads" value={fmtCount(e.leads)} />
-                  <Figure label="Demos" value={fmtCount(e.demos)} />
-                  <Figure label="Follow-ups" value={fmtCount(e.follow_ups)} />
-                  <Figure label="Customers" value={fmtCount(e.customers)} />
-                  <Figure label="CPL" value={fmtUnitCost(e.cost_per_lead, e.currency)} />
-                  <Figure label="Cost per demo" value={fmtUnitCost(e.cost_per_demo, e.currency)} />
-                  <Figure label="CAC" value={fmtUnitCost(e.cost_per_customer, e.currency)} />
-                  <Figure label="Revenue" value={fmtMoney(e.revenue, e.currency)} />
-                  <Figure label="ROI" value={fmtRoi(e.roi_percent)} className={roiTone(e.roi_percent)} />
+                <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {columns
+                    .filter((c) => c.key !== "status")
+                    .map((c) => (
+                      <div key={c.key} className="min-w-0">
+                        <dt className="truncate text-[11px] text-muted-foreground">{c.label}</dt>
+                        <dd className="truncate text-sm font-medium tabular-nums text-foreground">{c.render(e)}</dd>
+                      </div>
+                    ))}
                 </dl>
                 <Link
                   to={`/events/${e.id}`}
@@ -342,7 +316,7 @@ export default function EventPerformanceTable({ events, emptyText, exportName }:
 
           <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-3 text-sm text-muted-foreground">
             <span>
-              Showing {first}-{last} of {shown.length} {shown.length === 1 ? "event" : "events"}
+              Showing {first}-{last} of {shown.length} {shown.length === 1 ? "event" : "events"}, each in its own currency
             </span>
             {pages > 1 && (
               <div className="flex items-center gap-1">

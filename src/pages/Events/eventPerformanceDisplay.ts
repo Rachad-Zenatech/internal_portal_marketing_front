@@ -1,5 +1,8 @@
-// Periods, labels and formulas for the Events Overview (event performance) page
-import type { CostGroup, EventPerformanceTiming, EventResult } from "@/types/eventPerformance";
+// Periods, labels and rules for the Events Overview page
+import { countryName } from "@/lib/countries";
+import type { InitiativeStatus } from "@/types/initiatives";
+import type { CostCategory, EventPerformance } from "@/types/eventPerformance";
+import { STATUS_LABELS } from "../Initiatives/status";
 import { isoDate, type DateRange } from "../PaidAds/adsPeriods";
 
 // ─── Periods ─────────────────────────────────────────────────────────────────
@@ -14,7 +17,7 @@ export const EVENT_PERIOD_OPTIONS: { value: EventPeriodKey; label: string }[] = 
   { value: "all", label: "All time" },
 ];
 
-export const DEFAULT_EVENT_PERIOD: EventPeriodKey = "this_year";
+export const DEFAULT_EVENT_PERIOD: EventPeriodKey = "this_quarter";
 
 export function parseEventPeriod(value: string | null): EventPeriodKey {
   return EVENT_PERIOD_OPTIONS.some((o) => o.value === value) ? (value as EventPeriodKey) : DEFAULT_EVENT_PERIOD;
@@ -25,104 +28,129 @@ const range = (a: Date, b: Date): DateRange => ({ from: isoDate(a), to: isoDate(
 const quarter = (y: number, m: number) => range(new Date(y, m, 1), new Date(y, m + 3, 0));
 
 /**
- * The dates for a period and the equal period right before it (none for All time).
- * Quarters and the year are whole, so events later in them (already planned) are counted too.
+ * The dates for a period (none for All time). Quarters and the year are whole, so events later in them
+ * (already planned) are counted too. The API works out the previous period itself.
  */
-export function eventPeriodRanges(period: EventPeriodKey, now = new Date()): { current: DateRange | null; previous: DateRange | null; changeLabel: string } {
+export function eventPeriodRange(period: EventPeriodKey, now = new Date()): DateRange | null {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const y = today.getFullYear();
   const q = Math.floor(today.getMonth() / 3) * 3;
   switch (period) {
     case "this_quarter":
-      return { current: quarter(y, q), previous: quarter(y, q - 3), changeLabel: "vs. previous quarter" };
+      return quarter(y, q);
     case "last_quarter":
-      return { current: quarter(y, q - 3), previous: quarter(y, q - 6), changeLabel: "vs. previous quarter" };
+      return quarter(y, q - 3);
     case "this_year":
-      return { current: range(new Date(y, 0, 1), new Date(y, 11, 31)), previous: range(new Date(y - 1, 0, 1), new Date(y - 1, 11, 31)), changeLabel: "vs. last year" };
-    case "12m": {
-      const start = new Date(y - 1, today.getMonth(), today.getDate() + 1);
-      return {
-        current: range(start, today),
-        previous: range(new Date(y - 2, today.getMonth(), today.getDate() + 1), new Date(y - 1, today.getMonth(), today.getDate())),
-        changeLabel: "vs. previous 12 months",
-      };
-    }
+      return range(new Date(y, 0, 1), new Date(y, 11, 31));
+    case "12m":
+      return range(new Date(y - 1, today.getMonth(), today.getDate() + 1), today);
     default:
-      return { current: null, previous: null, changeLabel: "" };
+      return null;
   }
 }
 
-// ─── Labels ──────────────────────────────────────────────────────────────────
+/** Every month from one "YYYY-MM-DD" to another, as "YYYY-MM" (at most 24, the latest ones) */
+export function monthsBetween(from: string, to: string): string[] {
+  const months: string[] = [];
+  const cursor = new Date(Number(from.slice(0, 4)), Number(from.slice(5, 7)) - 1, 1);
+  const last = new Date(Number(to.slice(0, 4)), Number(to.slice(5, 7)) - 1, 1);
+  while (cursor <= last) {
+    months.push(`${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}`);
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return months.slice(-24);
+}
 
-export const TIMINGS: EventPerformanceTiming[] = ["NOW", "UPCOMING", "PAST"];
+// ─── Cost categories ─────────────────────────────────────────────────────────
 
-export const TIMING_FILTER_LABELS: Record<EventPerformanceTiming, string> = {
-  NOW: "On now",
-  UPCOMING: "Upcoming",
-  PAST: "Past",
-};
+export const COST_CATEGORIES: CostCategory[] = ["BOOTH_SPACE", "TRAVEL", "GROUND_TRANSPORT", "STAFF_TIME", "MEALS_PER_DIEMS", "MATERIALS", "OTHER"];
 
-export const COST_GROUPS: CostGroup[] = ["TRAVEL", "BOOTH", "MATERIALS", "STAFF_OTHER"];
-
-export const COST_GROUP_LABELS: Record<CostGroup, string> = {
+export const COST_CATEGORY_LABELS: Record<CostCategory, string> = {
+  BOOTH_SPACE: "Booth / Space",
   TRAVEL: "Travel",
-  BOOTH: "Booth",
-  MATERIALS: "Materials",
-  STAFF_OTHER: "Staff & other",
+  GROUND_TRANSPORT: "Ground Transport",
+  STAFF_TIME: "Staff Time",
+  MEALS_PER_DIEMS: "Meals / Per Diems",
+  MATERIALS: "Marketing Materials",
+  OTHER: "Other",
 };
 
-/** Fixed colours per group, so a group keeps its colour when another is empty */
-export const COST_GROUP_COLORS: Record<CostGroup, string> = {
-  TRAVEL: "var(--series-1)",
-  BOOTH: "var(--series-2)",
-  MATERIALS: "var(--series-3)",
-  STAFF_OTHER: "var(--series-4)",
+/** Fixed colours per category (similar colours kept apart, checked for colour blindness), so a category keeps its colour when another is empty */
+export const COST_CATEGORY_COLORS: Record<CostCategory, string> = {
+  BOOTH_SPACE: "var(--series-1)",
+  MATERIALS: "var(--series-6)",
+  TRAVEL: "var(--series-4)",
+  GROUND_TRANSPORT: "var(--series-3)",
+  STAFF_TIME: "var(--series-2)",
+  MEALS_PER_DIEMS: "var(--series-5)",
+  OTHER: "var(--series-other)",
 };
 
-export const RESULT_LABELS: Record<EventResult, string> = {
-  SUCCESSFUL: "Successful",
-  NOT_SUCCESSFUL: "Not successful",
-  TOO_EARLY: "Too early",
-  AWAITING_REVENUE: "Awaiting revenue",
-  UPCOMING: "Upcoming",
-};
-
-export const RESULT_PILL: Record<EventResult, string> = {
-  SUCCESSFUL: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
-  NOT_SUCCESSFUL: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",
-  TOO_EARLY: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
-  AWAITING_REVENUE: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
-  UPCOMING: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
+/** What goes in each category and where it comes from */
+export const COST_CATEGORY_INFO: Record<CostCategory, string> = {
+  BOOTH_SPACE: "Booth space, badges, booth build and furniture, show services (electrical, carpet, lighting) and shipping. From cost sheets and Finance.",
+  MATERIALS: "Printing, signage, giveaways, pre-show promotion and ads. From cost sheets and Finance.",
+  TRAVEL: "Flights, hotels and other travel. From Navan and the travel system.",
+  GROUND_TRANSPORT: "Taxis, Uber, transfers and car rentals.",
+  STAFF_TIME: "The cost of staff time on the event, from the staff time calculator.",
+  MEALS_PER_DIEMS: "Meals, per diems and travel allowances.",
+  OTHER: "Sponsorship packages, speaking fees, hospitality, equipment, lead retrieval, agency fees and software.",
 };
 
 // ─── Formulas, for the info tooltips ─────────────────────────────────────────
 
 export const EVENT_METRIC_INFO = {
-  cost: "Total event cost = Travel + Booth + Materials + Staff & other. Every cost line, including estimates, in the event's currency.",
-  visitors: "Visitors: people who came to the booth.",
-  leads: "Leads: contacts captured at the event.",
+  budget: "The budgets approved for the events in this period. Events without a budget aren't included.",
+  actual: "Invoiced and paid costs only. Estimates and commitments without an invoice aren't counted yet.",
+  variance: "Variance = actual spend - approved budget, for the events with a budget. Below zero means under budget.",
+  priorYear: "What the same events (same filters) actually spent in the same period one year earlier.",
+  priorYearCost: "The actual cost of last year's event with the same name.",
+  leads: "Leads: contacts captured at the events.",
+  cpl: "Cost / lead = actual spend ÷ leads.",
+  attendees: "Attendees: people who came to the booth or the event.",
+  qualifiedLeads: "Qualified leads: marketing-qualified leads (MQLs) from the event.",
   demos: "Demos given at or after the event (from the demo log when the event has one).",
-  followUps: "Follow-ups: leads with a follow-up meeting or call.",
   customers: "Customers: new customers won from the event.",
-  costPerVisitor: "Cost per visitor = total event cost ÷ visitors.",
-  cpl: "CPL (cost per lead) = total event cost ÷ leads.",
-  costPerDemo: "Cost per demo = total event cost ÷ demos given.",
-  costPerFollowUp: "Cost per follow-up = total event cost ÷ follow-ups.",
-  cac: "CAC (customer acquisition cost) = total event cost ÷ new customers.",
-  revenue: "Revenue won from the events, from HubSpot results.",
-  roi: "ROI = (revenue - total event cost) ÷ total event cost × 100. Above 0% means the event made a profit.",
-  successful: "Successful means the event made a profit (ROI above 0%). Breaking even or losing money is not successful.",
-  pipeline: "Pipeline: the value of open deals from the events, from HubSpot results.",
+  revenue: "Revenue won from the event, from HubSpot results.",
+  roi: "ROI = (revenue - actual cost) ÷ actual cost × 100.",
+  status: "At Risk: actual plus awaiting costs are above the approved budget, or an active or completed event has no leads.",
 };
 
-/** "ROI 12%", "-100%" */
+/** "248%", "-12.5%" */
 export function fmtRoi(value: number | null | undefined) {
   if (value === null || value === undefined) return "-";
   return `${value.toLocaleString(undefined, { maximumFractionDigits: Math.abs(value) >= 10 ? 0 : 1 })}%`;
 }
 
-/** Conversion from one funnel step to the next, e.g. "10%" */
-export function conversion(current: number | null | undefined, previous: number | null | undefined) {
-  if (current === null || current === undefined || !previous) return null;
-  return (current / previous) * 100;
+/** "Toronto, Canada" */
+export function eventRegion(e: Pick<EventPerformance, "city" | "country_code">) {
+  return [e.city, countryName(e.country_code)].filter(Boolean).join(", ") || null;
 }
+
+// ─── Status ──────────────────────────────────────────────────────────────────
+
+/** Above budget once the invoices still due arrive */
+export const headingOverBudget = (e: EventPerformance) => e.approved_budget !== null && e.actual_cost + e.awaiting_cost > e.approved_budget;
+/** Running or done, with no leads recorded */
+export const missingLeads = (e: EventPerformance) => (e.status === "ACTIVE" || e.status === "COMPLETED") && !e.leads;
+
+export type EventDisplayStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "AT_RISK" | "OTHER";
+
+/** Planned, Active, Completed or At Risk (paused and cancelled events keep their own status) */
+export function displayStatus(e: EventPerformance): EventDisplayStatus {
+  if (e.status !== "PLANNED" && e.status !== "ACTIVE" && e.status !== "COMPLETED") return "OTHER";
+  return headingOverBudget(e) || missingLeads(e) ? "AT_RISK" : e.status;
+}
+
+export function statusLabel(e: EventPerformance) {
+  const s = displayStatus(e);
+  return s === "AT_RISK" ? "At Risk" : (STATUS_LABELS[e.status as InitiativeStatus] ?? e.status);
+}
+
+export const STATUS_PILL: Record<EventDisplayStatus, string> = {
+  PLANNED: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
+  ACTIVE: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
+  COMPLETED: "border-gray-200 bg-gray-100 text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
+  AT_RISK: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",
+  OTHER: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
+};

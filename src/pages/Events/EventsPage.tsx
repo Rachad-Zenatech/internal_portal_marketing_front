@@ -1,116 +1,90 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  AlertTriangle,
-  BadgeDollarSign,
-  CalendarDays,
-  CircleCheck,
-  Footprints,
-  Handshake,
-  Plus,
-  Presentation,
-  Receipt,
-  TrendingUp,
-  Trophy,
-  UserPlus,
-  Users,
-  Wallet,
-  XCircle,
-} from "lucide-react";
+import { CalendarDays, Coins, History, Landmark, Receipt, Scale, Target, Trophy, Upload, UserPlus } from "lucide-react";
 import ChartCard, { ChartEmpty } from "@/components/dashboard/ChartCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DonutChart from "@/components/dashboard/DonutChart";
 import { FilterBar, FilterSelect } from "@/components/dashboard/FilterBar";
-import InfoTip from "@/components/dashboard/InfoTip";
 import InsightCard from "@/components/dashboard/InsightCard";
-import KpiCard, { KpiGrid } from "@/components/dashboard/KpiCard";
+import KpiCard, { KpiGrid, type KpiChange } from "@/components/dashboard/KpiCard";
 import PeriodSelect from "@/components/dashboard/PeriodSelect";
-import { DASH_CARD, TONE_TILE, type Tone } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEventPerformance } from "@/hooks/useEventManagement";
+import { useInitiatives } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
-import type { EventPerformance, EventPerformanceFilters, EventPerformanceResponse, EventPerformanceTiming } from "@/types/eventPerformance";
-import InitiativeFormDialog from "../Initiatives/InitiativeFormDialog";
+import type { EventKeyFigures, EventMonthlyRow, EventPerformance, EventPerformanceFilters, EventPeriod } from "@/types/eventPerformance";
+import type { InitiativeListItem, InitiativeStatus } from "@/types/initiatives";
+import CostSheetUpload from "../Initiatives/CostSheetUpload";
+import NavanSyncStatus from "./NavanSyncStatus";
+import { STATUS_LABELS } from "../Initiatives/status";
 import { fmtCount, fmtMoney, fmtUnitCost } from "../PaidAds/adsDisplay";
-import EventFunnel from "./EventFunnel";
-import EventPerformanceTable from "./EventPerformanceTable";
+import EventBudgetChart, { EventBudgetLegend, type EventBudgetPoint } from "./EventBudgetChart";
+import EventFlags from "./EventFlags";
+import EventFunnel, { funnelIsEmpty } from "./EventFunnel";
+import EventPerformanceTable, { TABLE_VIEWS, type EventTableView } from "./EventPerformanceTable";
+import ImportEventDataDialog from "./ImportEventDataDialog";
 import {
-  COST_GROUP_COLORS,
-  COST_GROUP_LABELS,
-  COST_GROUPS,
+  COST_CATEGORIES,
+  COST_CATEGORY_COLORS,
+  COST_CATEGORY_INFO,
+  COST_CATEGORY_LABELS,
   DEFAULT_EVENT_PERIOD,
   EVENT_METRIC_INFO,
   EVENT_PERIOD_OPTIONS,
-  eventPeriodRanges,
+  eventPeriodRange,
   fmtRoi,
+  monthsBetween,
   parseEventPeriod,
-  TIMING_FILTER_LABELS,
-  TIMINGS,
   type EventPeriodKey,
 } from "./eventPerformanceDisplay";
 
 const ANY = "ANY";
+const STATUSES: InitiativeStatus[] = ["PLANNED", "ACTIVE", "COMPLETED", "PAUSED", "CANCELLED"];
+// Kept in the URL; "region" is the market, "type" the event type
+const FILTER_PARAMS = ["brand", "region", "type", "owner", "status", "currency"];
+const CHANGE_LABEL = "vs. previous period";
 
-const TABS: { value: EventPerformanceTiming; param: string; empty: string }[] = [
-  { value: "NOW", param: "now", empty: "No events are on today." },
-  { value: "UPCOMING", param: "upcoming", empty: "No upcoming events in this period." },
-  { value: "PAST", param: "past", empty: "No past events in this period." },
-];
+type UploadTarget = Pick<InitiativeListItem, "id" | "name" | "currency">;
 
-/** The totals row for one currency */
-const pickTotals = (data: EventPerformanceResponse | undefined, currency: string) => data?.totals.find((t) => t.currency === currency);
-
-/** A smaller key figure for the second row: no comparison, a short hint instead */
-function SmallKpi({ label, value, icon: Icon, tone, info, hint, valueClassName, loading }: {
-  label: string;
-  value: React.ReactNode;
-  icon: React.ElementType;
-  tone: Tone;
-  info?: string;
-  hint?: React.ReactNode;
-  valueClassName?: string;
-  loading?: boolean;
-}) {
-  return (
-    <div className={`${DASH_CARD} flex min-w-0 items-center gap-3 px-4 py-3`}>
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${TONE_TILE[tone]}`}>
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="flex min-w-0 items-center gap-1 text-xs font-medium text-muted-foreground">
-          <span className="truncate">{label}</span>
-          {info && <InfoTip text={info} label={label} />}
-        </p>
-        {loading ? (
-          <Skeleton className="mt-1 h-6 w-20" />
-        ) : (
-          <p className={`truncate text-lg font-semibold tabular-nums ${valueClassName ?? "text-foreground"}`}>{value}</p>
-        )}
-        {hint && !loading && <p className="truncate text-xs text-muted-foreground">{hint}</p>}
-      </div>
-    </div>
-  );
+/** Each month in the period (by the month events start) for one currency; months without events show as empty */
+function monthlyPoints(rows: EventMonthlyRow[], currency: string, period: EventPeriod | null): EventBudgetPoint[] {
+  const byMonth = new Map(rows.filter((r) => r.currency === currency).map((r) => [r.month.slice(0, 7), r]));
+  const keys = period ? monthsBetween(period.from, period.to) : [...byMonth.keys()].sort().slice(-24);
+  return keys.map((key) => {
+    const date = new Date(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1);
+    const row = byMonth.get(key);
+    return {
+      key,
+      label: date.toLocaleDateString(undefined, { month: "short", ...(keys.length > 12 ? { year: "2-digit" } : {}) }),
+      fullLabel: date.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+      budget: row?.approved_budget ?? 0,
+      actual: row?.actual_spend ?? 0,
+      priorYear: row?.prior_year_spend ?? 0,
+    };
+  });
 }
 
 export default function EventsPage() {
   const { hasPermission } = useAuth();
-  const canCreate = hasPermission("INITIATIVES_CREATE");
+  const canImport = hasPermission("INITIATIVES_UPDATE");
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: reference } = useReferenceData();
-  const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [uploadFor, setUploadFor] = useState<UploadTarget | null>(null);
 
   // Everything picked is kept in the URL, so a view can be shared or bookmarked
   const period = parseEventPeriod(searchParams.get("period"));
   const brand = searchParams.get("brand") ?? "";
-  const market = searchParams.get("market") ?? "";
-  const type = searchParams.get("type") ?? "";
-  const timingParam = searchParams.get("timing");
-  const timing: EventPerformanceTiming | null = TIMINGS.includes(timingParam as EventPerformanceTiming) ? (timingParam as EventPerformanceTiming) : null;
+  const region = searchParams.get("region") ?? "";
+  const eventType = searchParams.get("type") ?? "";
+  const owner = searchParams.get("owner") ?? "";
+  const statusParam = searchParams.get("status") ?? "";
+  const status = STATUSES.includes(statusParam as InitiativeStatus) ? statusParam : "";
   const currencyParam = searchParams.get("currency") ?? "";
-  const tabParam = searchParams.get("tab");
+  const viewParam = searchParams.get("view");
+  const view: EventTableView = TABLE_VIEWS.some((v) => v.value === viewParam) ? (viewParam as EventTableView) : "overview";
 
   const setParam = (key: string, value: string | null) => {
     const next = new URLSearchParams(searchParams);
@@ -120,105 +94,97 @@ export default function EventsPage() {
   };
   const clearFilters = () => {
     const next = new URLSearchParams(searchParams);
-    ["brand", "market", "type", "timing", "currency"].forEach((k) => next.delete(k));
+    FILTER_PARAMS.forEach((k) => next.delete(k));
     setSearchParams(next, { replace: true });
   };
 
-  const baseFilters = useMemo<EventPerformanceFilters>(() => {
-    const f: EventPerformanceFilters = {};
+  const filters = useMemo<EventPerformanceFilters>(() => {
+    const f: EventPerformanceFilters = { ...(eventPeriodRange(period) ?? {}) };
     if (brand) f.brand_id = Number(brand);
-    if (market) f.market_id = Number(market);
-    if (type) f.sub_channel_id = Number(type);
-    if (timing) f.timing = timing;
+    if (region) f.market_id = Number(region);
+    if (eventType) f.event_type_id = Number(eventType);
+    if (owner) f.owner_user_id = owner;
+    if (status) f.status = status;
     return f;
-  }, [brand, market, type, timing]);
-  const ranges = useMemo(() => eventPeriodRanges(period), [period]);
-
-  const current = useEventPerformance({ ...baseFilters, ...(ranges.current ?? {}) });
-  const previous = useEventPerformance({ ...baseFilters, ...(ranges.previous ?? {}) }, Boolean(ranges.previous));
+  }, [period, brand, region, eventType, owner, status]);
+  const current = useEventPerformance(filters);
   const data = current.data;
   const loading = current.isLoading;
 
-  // Money is never added across currencies: the figures show one currency at a time (the one with the most cost first)
-  const currencies = useMemo(() => [...(data?.totals ?? [])].sort((a, b) => b.cost - a.cost || b.event_count - a.event_count).map((t) => t.currency), [data]);
-  const currency = currencies.includes(currencyParam) ? currencyParam : (currencies[0] ?? "USD");
+  // Every event, for the owner filter and the event to import data for
+  const eventsChannel = reference?.channels.find((c) => c.code === "EVENTS");
+  const allEvents = useInitiatives({ channel_id: eventsChannel?.id, limit: 200 }, Boolean(eventsChannel));
 
-  const totals = pickTotals(data, currency);
-  const prevTotals = ranges.previous ? pickTotals(previous.data, currency) : undefined;
-  const compare = Boolean(ranges.previous) && !previous.isLoading && !previous.error;
-  const change = (key: "cost" | "cost_per_visitor" | "cost_per_lead" | "cost_per_demo" | "cost_per_follow_up" | "cost_per_customer") =>
-    compare ? { current: totals?.[key] ?? null, previous: prevTotals?.[key] ?? null } : undefined;
+  // Money is never added across currencies: the figures show one currency at a time (the one with the most spend first)
+  const currencies = useMemo(
+    () => [...(data?.totals ?? [])].sort((a, b) => (b.actual_spend ?? 0) - (a.actual_spend ?? 0) || b.event_count - a.event_count).map((t) => t.currency),
+    [data],
+  );
+  const currency = currencies.includes(currencyParam) ? currencyParam : (currencies[0] ?? "USD");
+  const totals = data?.totals.find((t) => t.currency === currency);
+  const compare = Boolean(data?.previous_period);
+  const change = (key: keyof EventKeyFigures): KpiChange | undefined =>
+    compare ? { current: totals?.[key] ?? null, previous: totals?.previous?.[key] ?? null } : undefined;
+  const money = (n: number | null | undefined) => fmtMoney(n ?? null, currency);
+  const unit = (n: number | null | undefined) => fmtUnitCost(n ?? null, currency);
 
   const events = useMemo(() => data?.events ?? [], [data]);
   const currencyEvents = useMemo(() => events.filter((e) => e.currency === currency), [events, currency]);
 
   // ─── Charts ───
-  const donutItems = totals
-    ? COST_GROUPS.filter((g) => (totals.cost_breakdown[g] ?? 0) > 0).map((g) => ({ key: g, label: COST_GROUP_LABELS[g], value: totals.cost_breakdown[g], color: COST_GROUP_COLORS[g] }))
+  const monthly = useMemo(() => monthlyPoints(data?.monthly ?? [], currency, data?.period ?? null), [data, currency]);
+  const breakdown = data?.cost_breakdown.find((b) => b.currency === currency);
+  const donutItems = breakdown
+    ? COST_CATEGORIES.filter((c) => (breakdown[c] ?? 0) > 0).map((c) => ({ key: c, label: COST_CATEGORY_LABELS[c], value: breakdown[c], color: COST_CATEGORY_COLORS[c] }))
     : [];
-  const funnelEmpty = !totals || [totals.visitors, totals.leads, totals.demos, totals.follow_ups, totals.customers].every((n) => !n);
 
-  // ─── Insights (events in the currency shown) ───
-  const byRoi = currencyEvents.filter((e) => e.roi_percent !== null).sort((a, b) => (b.roi_percent ?? 0) - (a.roi_percent ?? 0));
-  const byCac = currencyEvents.filter((e) => e.cost_per_customer !== null).sort((a, b) => (a.cost_per_customer ?? 0) - (b.cost_per_customer ?? 0));
-  const best: EventPerformance | undefined = byRoi[0] ?? byCac[0];
-  const bestByRoi = Boolean(byRoi[0]);
-  const priciest = currencyEvents.filter((e) => e.cost_per_lead !== null).sort((a, b) => (b.cost_per_lead ?? 0) - (a.cost_per_lead ?? 0))[0];
-  const notSuccessful = currencyEvents.filter((e) => e.result === "NOT_SUCCESSFUL");
-  const lossOf = (e: EventPerformance) => e.cost - (e.revenue ?? 0);
-  const biggestLoss = [...notSuccessful].sort((a, b) => lossOf(b) - lossOf(a))[0];
+  // ─── Highlights (events in the currency shown) ───
+  const best = currencyEvents.filter((e) => e.roi_percent !== null).sort((a, b) => (b.roi_percent ?? 0) - (a.roi_percent ?? 0))[0];
+  const priciest = currencyEvents.filter((e) => e.actual_cost > 0).sort((a, b) => b.actual_cost - a.actual_cost)[0];
+  const efficient = currencyEvents.filter((e) => e.cost_per_lead !== null).sort((a, b) => (a.cost_per_lead ?? 0) - (b.cost_per_lead ?? 0))[0];
 
-  // ─── Events table: split by timing ───
-  const byTiming = useMemo(() => {
-    const out: Record<EventPerformanceTiming, EventPerformance[]> = { NOW: [], UPCOMING: [], PAST: [] };
-    for (const e of events) out[e.timing]?.push(e);
-    return out;
-  }, [events]);
-  const tabFromParam = TABS.find((t) => t.param === tabParam)?.value;
-  const defaultTab: EventPerformanceTiming = byTiming.NOW.length ? "NOW" : byTiming.PAST.length ? "PAST" : byTiming.UPCOMING.length ? "UPCOMING" : "NOW";
-  const tab = tabFromParam ?? defaultTab;
-
-  const filtered = Boolean(brand || market || type || timing || currencyParam);
+  // ─── Filters ───
+  const filtered = FILTER_PARAMS.some((k) => searchParams.get(k));
   const nothing = !loading && !current.error && events.length === 0;
   const periodLabel = EVENT_PERIOD_OPTIONS.find((o) => o.value === period)?.label ?? "";
-  const money = (n: number | null | undefined) => fmtMoney(n ?? null, currency);
-  const unit = (n: number | null | undefined) => fmtUnitCost(n ?? null, currency);
-  const started = totals ? totals.successful_count + totals.unsuccessful_count + totals.awaiting_count : 0;
 
-  const eventsChannel = reference?.channels.find((c) => c.code === "EVENTS");
-  const typeOptions = [
-    { value: ANY, label: "All types" },
-    ...(reference?.sub_channels ?? []).filter((s) => eventsChannel?.sub_channel_ids.includes(s.id)).map((s) => ({ value: String(s.id), label: s.name })),
-  ];
   const brandOptions = [{ value: ANY, label: "All brands" }, ...(reference?.brands ?? []).map((b) => ({ value: String(b.id), label: b.name }))];
-  const marketOptions = [{ value: ANY, label: "All markets" }, ...(reference?.markets ?? []).map((m) => ({ value: String(m.id), label: m.name }))];
-  const timingOptions = [{ value: ANY, label: "All" }, ...TIMINGS.map((t) => ({ value: t, label: TIMING_FILTER_LABELS[t] }))];
+  const regionOptions = [{ value: ANY, label: "All regions" }, ...(reference?.markets ?? []).map((m) => ({ value: String(m.id), label: m.name }))];
+  const typeOptions = [{ value: ANY, label: "All types" }, ...(reference?.event_types ?? []).map((t) => ({ value: String(t.id), label: t.name }))];
+  const owners = new Map<string, string>();
+  for (const e of allEvents.data?.items ?? []) if (e.owner_user_id) owners.set(e.owner_user_id, e.owner_name ?? "Unknown");
+  if (owner && !owners.has(owner)) owners.set(owner, "Selected owner");
+  const ownerOptions = [{ value: ANY, label: "All owners" }, ...[...owners].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ value: id, label: name }))];
+  const statusOptions = [{ value: ANY, label: "All statuses" }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))];
 
-  const newEventButton = (
-    <Button onClick={() => setCreateOpen(true)} className="h-9 gap-2">
-      <Plus className="h-4 w-4" />
-      New event
+  const importButton = canImport && (
+    <Button onClick={() => setImportOpen(true)} className="h-9 gap-2">
+      <Upload className="h-4 w-4" />
+      Import Event Data
     </Button>
   );
+  const importFor = (e: EventPerformance) => setUploadFor({ id: e.id, name: e.name, currency: e.currency });
 
   return (
     <div className="flex w-full min-w-0 flex-1 flex-col gap-5 animate-in fade-in duration-300 sm:gap-6">
       <DashboardHeader
         title="Events Overview"
-        subtitle="How events are performing: what they cost and what they brought in."
+        subtitle="Track event budgets, actual costs, outcomes, and ROI across conferences, trade shows, and field events."
         actions={
           <>
+            <NavanSyncStatus />
             <PeriodSelect<EventPeriodKey> value={period} onChange={(p) => setParam("period", p === DEFAULT_EVENT_PERIOD ? null : p)} options={EVENT_PERIOD_OPTIONS} />
-            {canCreate && newEventButton}
+            {importButton}
           </>
         }
       />
 
       <FilterBar onClear={filtered ? clearFilters : undefined}>
         <FilterSelect label="Brand" value={brand || ANY} onChange={(v) => setParam("brand", v === ANY ? null : v)} options={brandOptions} />
-        <FilterSelect label="Market" value={market || ANY} onChange={(v) => setParam("market", v === ANY ? null : v)} options={marketOptions} />
-        <FilterSelect label="Event type" value={type || ANY} onChange={(v) => setParam("type", v === ANY ? null : v)} options={typeOptions} />
-        <FilterSelect label="Timing" value={timing ?? ANY} onChange={(v) => setParam("timing", v === ANY ? null : v)} options={timingOptions} />
+        <FilterSelect label="Region" value={region || ANY} onChange={(v) => setParam("region", v === ANY ? null : v)} options={regionOptions} />
+        <FilterSelect label="Event Type" value={eventType || ANY} onChange={(v) => setParam("type", v === ANY ? null : v)} options={typeOptions} />
+        <FilterSelect label="Owner" value={owner || ANY} onChange={(v) => setParam("owner", v === ANY ? null : v)} options={ownerOptions} />
+        <FilterSelect label="Event Status" value={status || ANY} onChange={(v) => setParam("status", v === ANY ? null : v)} options={statusOptions} />
         {currencies.length > 1 && (
           <FilterSelect label="Currency" value={currency} onChange={(v) => setParam("currency", v === currencies[0] ? null : v)} options={currencies.map((c) => ({ value: c, label: c }))} />
         )}
@@ -238,221 +204,189 @@ export default function EventsPage() {
           <p className="max-w-md text-sm text-muted-foreground">
             Try a longer period{filtered ? " or clear the filters above" : ""}. Events without dates and drafts aren't shown here.
           </p>
-          {canCreate && <div className="mt-2">{newEventButton}</div>}
         </div>
       ) : (
         <>
-          <section aria-label={`Key figures, ${periodLabel}`} className={`flex flex-col gap-3 transition-opacity sm:gap-4 ${current.isPlaceholderData ? "opacity-60" : ""}`}>
+          {/* 1. Key figures, compared with the previous period */}
+          <section aria-label={`Key figures, ${periodLabel}`} className={`transition-opacity ${current.isPlaceholderData ? "opacity-60" : ""}`}>
             <KpiGrid>
               <KpiCard
-                label="Total event cost"
+                label="Approved Event Budget"
+                icon={Landmark}
+                tone="blue"
+                info={EVENT_METRIC_INFO.budget}
+                value={money(totals?.approved_budget)}
+                loading={loading}
+                change={change("approved_budget")}
+                changeLabel={CHANGE_LABEL}
+              />
+              <KpiCard
+                label="Actual Event Spend"
                 icon={Receipt}
                 tone="violet"
-                info={EVENT_METRIC_INFO.cost}
-                value={money(totals?.cost)}
+                info={EVENT_METRIC_INFO.actual}
+                value={money(totals?.actual_spend)}
                 loading={loading}
                 goodWhen="down"
-                change={change("cost")}
-                changeLabel={ranges.changeLabel}
-                hint={`${totals?.event_count ?? 0} ${totals?.event_count === 1 ? "event" : "events"}`}
+                change={change("actual_spend")}
+                changeLabel={CHANGE_LABEL}
               />
               <KpiCard
-                label="Cost per visitor"
-                icon={Footprints}
-                tone="sky"
-                info={EVENT_METRIC_INFO.costPerVisitor}
-                value={unit(totals?.cost_per_visitor)}
+                label="Budget Variance"
+                icon={Scale}
+                tone="green"
+                info={EVENT_METRIC_INFO.variance}
+                value={totals?.budget_variance != null && totals.budget_variance > 0 ? `+${money(totals.budget_variance)}` : money(totals?.budget_variance)}
+                valueClassName={totals?.budget_variance != null && totals.budget_variance > 0 ? "text-red-600 dark:text-red-400" : undefined}
                 loading={loading}
                 goodWhen="down"
-                change={change("cost_per_visitor")}
-                changeLabel={ranges.changeLabel}
+                change={
+                  compare
+                    ? { current: totals?.budget_variance ?? null, previous: totals?.previous?.budget_variance ?? null, mode: "absolute", formatDiff: (d) => money(d) }
+                    : undefined
+                }
+                changeLabel={CHANGE_LABEL}
               />
               <KpiCard
-                label="Cost per lead (CPL)"
+                label="Prior Year Spend"
+                icon={History}
+                tone="amber"
+                info={EVENT_METRIC_INFO.priorYear}
+                value={money(totals?.prior_year_spend)}
+                loading={loading}
+                goodWhen="down"
+                change={change("prior_year_spend")}
+                changeLabel={CHANGE_LABEL}
+              />
+              <KpiCard
+                label="Leads Captured"
                 icon={UserPlus}
                 tone="orange"
+                info={EVENT_METRIC_INFO.leads}
+                value={fmtCount(totals?.leads ?? null)}
+                loading={loading}
+                change={change("leads")}
+                changeLabel={CHANGE_LABEL}
+              />
+              <KpiCard
+                label="Cost / Lead"
+                icon={Target}
+                tone="pink"
                 info={EVENT_METRIC_INFO.cpl}
                 value={unit(totals?.cost_per_lead)}
                 loading={loading}
                 goodWhen="down"
                 change={change("cost_per_lead")}
-                changeLabel={ranges.changeLabel}
-              />
-              <KpiCard
-                label="Cost per demo"
-                icon={Presentation}
-                tone="blue"
-                info={EVENT_METRIC_INFO.costPerDemo}
-                value={unit(totals?.cost_per_demo)}
-                loading={loading}
-                goodWhen="down"
-                change={change("cost_per_demo")}
-                changeLabel={ranges.changeLabel}
-              />
-              <KpiCard
-                label="Cost per follow-up"
-                icon={Handshake}
-                tone="pink"
-                info={EVENT_METRIC_INFO.costPerFollowUp}
-                value={unit(totals?.cost_per_follow_up)}
-                loading={loading}
-                goodWhen="down"
-                change={change("cost_per_follow_up")}
-                changeLabel={ranges.changeLabel}
-              />
-              <KpiCard
-                label="Cost per customer (CAC)"
-                icon={Users}
-                tone="green"
-                info={EVENT_METRIC_INFO.cac}
-                value={unit(totals?.cost_per_customer)}
-                loading={loading}
-                goodWhen="down"
-                change={change("cost_per_customer")}
-                changeLabel={ranges.changeLabel}
+                changeLabel={CHANGE_LABEL}
               />
             </KpiGrid>
-            <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
-              <SmallKpi label="Revenue" icon={BadgeDollarSign} tone="green" info={EVENT_METRIC_INFO.revenue} value={money(totals?.revenue)} loading={loading} />
-              <SmallKpi
-                label="ROI"
-                icon={TrendingUp}
-                tone="blue"
-                info={EVENT_METRIC_INFO.roi}
-                value={fmtRoi(totals?.roi_percent)}
-                valueClassName={
-                  totals?.roi_percent == null ? undefined : totals.roi_percent > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                }
-                hint={totals?.revenue == null ? "No revenue recorded yet" : undefined}
-                loading={loading}
-              />
-              <SmallKpi
-                label="Successful events"
-                icon={CircleCheck}
-                tone="green"
-                info={EVENT_METRIC_INFO.successful}
-                value={`${totals?.successful_count ?? 0} of ${started}`}
-                hint={totals ? `${totals.unsuccessful_count} not successful · ${totals.awaiting_count} too early or awaiting revenue` : undefined}
-                loading={loading}
-              />
-              <SmallKpi label="Pipeline" icon={Wallet} tone="amber" info={EVENT_METRIC_INFO.pipeline} value={money(totals?.pipeline)} loading={loading} />
-            </div>
           </section>
 
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2">
-            <ChartCard title="Total event cost" subtitle={`Travel + Booth + Materials + Staff = Total event cost · ${periodLabel}, ${currency}`} info={EVENT_METRIC_INFO.cost}>
+          {/* 2. Budget against actual over time, the funnel, and where the money went */}
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-2 2xl:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)_minmax(0,1.15fr)]">
+            <ChartCard
+              title="Budget vs Actual vs Prior Year"
+              subtitle={`By the month each event starts · ${periodLabel}, ${currency}`}
+              info="Approved budgets and actual spend (invoiced and paid) of the events starting each month, next to the actual spend of the same month a year earlier."
+              action={<EventBudgetLegend />}
+              className="xl:col-span-2 2xl:col-span-1"
+            >
+              {loading ? (
+                <Skeleton className="h-[240px] w-full rounded-lg" />
+              ) : monthly.every((p) => !p.budget && !p.actual && !p.priorYear) ? (
+                <ChartEmpty text="No budgets or spend in this period." height={240} />
+              ) : (
+                <EventBudgetChart data={monthly} currency={currency} />
+              )}
+            </ChartCard>
+            <ChartCard title="Event Funnel" subtitle={`All events · ${periodLabel}`} info="Qualified leads are MQLs. The % is each step's share of the attendees.">
+              {loading ? (
+                <Skeleton className="h-[240px] w-full rounded-lg" />
+              ) : !data || funnelIsEmpty(data.funnel) ? (
+                <ChartEmpty text="No attendees, leads or demos recorded yet." height={240} />
+              ) : (
+                <EventFunnel funnel={data.funnel} />
+              )}
+            </ChartCard>
+            <ChartCard
+              title="Cost Breakdown"
+              subtitle={`Actual spend · ${periodLabel}, ${currency}`}
+              info={COST_CATEGORIES.map((c) => `${COST_CATEGORY_LABELS[c]}: ${COST_CATEGORY_INFO[c]}`).join(" ")}
+            >
               {loading ? (
                 <Skeleton className="h-[180px] w-full rounded-lg" />
               ) : donutItems.length === 0 ? (
                 <ChartEmpty text="No costs in this period." height={180} />
               ) : (
-                <DonutChart items={donutItems} currency={currency} totalLabel="Total event cost" />
-              )}
-            </ChartCard>
-            <ChartCard
-              title="Event funnel"
-              subtitle={`Cost per step and how many moved on from the step before · ${periodLabel}, ${currency}`}
-              info="Each step's cost = total event cost ÷ that step's count. The % is this step ÷ the step before."
-            >
-              {loading ? (
-                <Skeleton className="h-[200px] w-full rounded-lg" />
-              ) : funnelEmpty || !totals ? (
-                <ChartEmpty text="No visitors, leads or demos recorded yet." height={200} />
-              ) : (
-                <EventFunnel totals={totals} currency={currency} />
+                <DonutChart items={donutItems} currency={currency} totalLabel="Actual spend" />
               )}
             </ChartCard>
           </div>
 
+          {/* 3. The events that stand out */}
           <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-3">
             <InsightCard
               icon={Trophy}
               tone="green"
-              label={bestByRoi ? "Best event (highest ROI)" : "Best event (lowest CAC)"}
+              label="Best Performing Event"
               title={best?.name}
-              stats={
-                best
-                  ? [
-                      bestByRoi ? { label: "ROI", value: fmtRoi(best.roi_percent) } : { label: "CAC", value: unit(best.cost_per_customer) },
-                      { label: "Revenue", value: money(best.revenue) },
-                      { label: "Cost", value: money(best.cost) },
-                    ]
-                  : []
-              }
-              emptyText="No revenue or customers recorded yet"
+              stats={best ? [{ label: "ROI", value: fmtRoi(best.roi_percent) }, { label: "Leads", value: fmtCount(best.leads) }, { label: "Customers", value: fmtCount(best.customers) }] : []}
+              emptyText="Needs revenue recorded on an event"
               to={best ? `/events/${best.id}` : undefined}
             />
             <InsightCard
-              icon={AlertTriangle}
-              tone="amber"
-              warning
-              label="Highest cost per lead"
+              icon={Coins}
+              tone="red"
+              label="Highest Cost Event"
               title={priciest?.name}
               stats={
                 priciest
-                  ? [
-                      { label: "CPL", value: unit(priciest.cost_per_lead) },
-                      { label: "Leads", value: fmtCount(priciest.leads) },
-                      { label: "Cost", value: money(priciest.cost) },
-                    ]
+                  ? [{ label: "Spend", value: money(priciest.actual_cost) }, { label: "Demos", value: fmtCount(priciest.demos) }, { label: "Cost / Lead", value: unit(priciest.cost_per_lead) }]
                   : []
               }
-              emptyText="No leads recorded yet"
+              emptyText="No costs recorded yet"
               to={priciest ? `/events/${priciest.id}` : undefined}
             />
             <InsightCard
-              icon={XCircle}
-              tone="red"
-              warning
-              label="Not successful (broke even or lost money)"
-              title={biggestLoss ? `${notSuccessful.length} ${notSuccessful.length === 1 ? "event" : "events"}` : undefined}
+              icon={Target}
+              tone="amber"
+              label="Most Efficient Event"
+              title={efficient?.name}
               stats={
-                biggestLoss
-                  ? [
-                      { label: "Biggest loss", value: biggestLoss.name },
-                      { label: "Lost", value: money(Math.max(lossOf(biggestLoss), 0)) },
-                      { label: "ROI", value: fmtRoi(biggestLoss.roi_percent) },
-                    ]
+                efficient
+                  ? [{ label: "CPL", value: unit(efficient.cost_per_lead) }, { label: "Leads", value: fmtCount(efficient.leads) }, { label: "ROI", value: fmtRoi(efficient.roi_percent) }]
                   : []
               }
-              emptyText="None so far. Breaking even counts as not successful: an event needs a profit."
-              to={biggestLoss ? `/events/${biggestLoss.id}` : undefined}
+              emptyText="No leads recorded yet"
+              to={efficient ? `/events/${efficient.id}` : undefined}
             />
           </div>
 
-          <section className="flex min-w-0 flex-col gap-3" aria-labelledby="events-table-title">
-            <div>
-              <h2 id="events-table-title" className="text-lg font-semibold text-foreground">
-                Events
-              </h2>
-              <p className="text-sm text-muted-foreground">Events in this period, in their own currency. Click an event to manage its team, costs, demos and results.</p>
-            </div>
+          {/* 4. Every event, in the view that answers the question at hand */}
+          <section className="flex min-w-0 flex-col gap-3" aria-label="Events">
             {loading ? (
               <Skeleton className="h-80 rounded-xl" />
             ) : (
-              <Tabs value={tab} onValueChange={(v) => setParam("tab", TABS.find((t) => t.value === v)?.param ?? null)} className="min-w-0 gap-3">
-                <div className="-mx-1 overflow-x-auto px-1 scrollbar-none">
-                  <TabsList className="h-9">
-                    {TABS.map((t) => (
-                      <TabsTrigger key={t.value} value={t.value} className="gap-1.5 px-3">
-                        {TIMING_FILTER_LABELS[t.value]}
-                        <span className="rounded-full bg-muted px-1.5 text-xs tabular-nums text-muted-foreground">{byTiming[t.value].length}</span>
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </div>
-                {TABS.map((t) => (
-                  <TabsContent key={t.value} value={t.value} className="min-w-0">
-                    <EventPerformanceTable events={byTiming[t.value]} emptyText={t.empty} exportName={t.param} />
-                  </TabsContent>
-                ))}
-              </Tabs>
+              <EventPerformanceTable
+                events={events}
+                view={view}
+                onViewChange={(v) => setParam("view", v === "overview" ? null : v)}
+                emptyText="No events in this period."
+                onImport={canImport ? importFor : undefined}
+              />
             )}
           </section>
+
+          {!loading && <EventFlags events={events} />}
         </>
       )}
 
-      {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} defaultChannelCode="EVENTS" />}
+      {canImport && (
+        <>
+          <ImportEventDataDialog open={importOpen} onOpenChange={setImportOpen} events={allEvents.data?.items ?? []} loading={allEvents.isLoading} onPick={setUploadFor} />
+          {uploadFor && <CostSheetUpload open onOpenChange={(open) => !open && setUploadFor(null)} initiative={uploadFor} />}
+        </>
+      )}
     </div>
   );
 }

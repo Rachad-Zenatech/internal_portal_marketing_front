@@ -1,56 +1,51 @@
-import type { EventPerformanceTotals } from "@/types/eventPerformance";
-import { fmtCount, fmtUnitCost } from "../PaidAds/adsDisplay";
-import { conversion } from "./eventPerformanceDisplay";
+import type { EventFunnelCounts } from "@/types/eventPerformance";
+import { fmtCount } from "../PaidAds/adsDisplay";
 
-interface Step {
-  key: string;
-  label: string;
-  /** "per lead" */
-  unit: string;
-  count: number | null;
-  costPer: number | null;
-}
+const STEPS: { key: keyof EventFunnelCounts; label: string }[] = [
+  { key: "attendees", label: "Attendees" },
+  { key: "leads", label: "Leads" },
+  { key: "qualified_leads", label: "Qualified Leads" },
+  { key: "demos", label: "Demos" },
+  { key: "customers", label: "Customers" },
+];
 
 const fmtPct = (n: number) => `${n.toLocaleString(undefined, { maximumFractionDigits: n >= 10 ? 0 : 1 })}%`;
 
+/** True when no step of the funnel has a number yet */
+export function funnelIsEmpty(funnel: EventFunnelCounts | undefined) {
+  return !funnel || STEPS.every((s) => !funnel[s.key]);
+}
+
 /**
- * Visitors → leads → demos → follow-ups → customers as horizontal bars,
- * with what each step cost and how many made it from the step before.
+ * Attendees, leads, qualified leads, demos and customers as horizontal bars, each with its share of the attendees.
  * Needs CHART_VARS on a wrapper (ChartCard has it).
  */
-export default function EventFunnel({ totals, currency }: { totals: EventPerformanceTotals; currency: string }) {
-  const steps: Step[] = [
-    { key: "visitors", label: "Visitors", unit: "per visitor", count: totals.visitors, costPer: totals.cost_per_visitor },
-    { key: "leads", label: "Leads", unit: "per lead", count: totals.leads, costPer: totals.cost_per_lead },
-    { key: "demos", label: "Demos", unit: "per demo", count: totals.demos, costPer: totals.cost_per_demo },
-    { key: "follow_ups", label: "Follow-ups", unit: "per follow-up", count: totals.follow_ups, costPer: totals.cost_per_follow_up },
-    { key: "customers", label: "Customers", unit: "per customer", count: totals.customers, costPer: totals.cost_per_customer },
-  ];
-  const max = Math.max(1, ...steps.map((s) => s.count ?? 0));
+export default function EventFunnel({ funnel }: { funnel: EventFunnelCounts }) {
+  const attendees = funnel.attendees;
+  const max = Math.max(1, ...STEPS.map((s) => funnel[s.key] ?? 0));
 
   return (
-    <ol className="flex flex-col gap-3.5" aria-label="Event funnel">
-      {steps.map((s, i) => {
-        const prev = i > 0 ? steps[i - 1] : null;
-        const conv = prev ? conversion(s.count, prev.count) : null;
-        const width = s.count ? Math.max((s.count / max) * 100, 1.5) : 0;
+    <ol className="flex flex-col gap-3" aria-label="Event funnel">
+      {STEPS.map((s, i) => {
+        const count = funnel[s.key];
+        const width = count ? Math.max((count / max) * 100, 1.5) : 0;
+        const share = i > 0 && count !== null && attendees ? fmtPct((count / attendees) * 100) : null;
         return (
-          <li key={s.key} className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-x-3 gap-y-1 sm:grid-cols-[104px_minmax(0,1fr)_auto]">
-            <span className="truncate text-sm font-medium text-foreground">{s.label}</span>
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="block h-6 min-w-0 flex-1 overflow-hidden rounded-md bg-muted" aria-hidden="true">
-                <span className="block h-full rounded-md bg-(--series-1)" style={{ width: `${width}%`, opacity: 1 - i * 0.12 }} />
+          <li key={s.key} className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="truncate text-sm font-medium text-foreground">{s.label}</span>
+              <span className="shrink-0 text-sm tabular-nums">
+                <span className="font-semibold text-foreground">{fmtCount(count)}</span>
+                {share && <span className="ml-2 text-xs text-muted-foreground">{share}</span>}
               </span>
-              <span className="w-14 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">{fmtCount(s.count)}</span>
             </div>
-            <span className="col-start-2 truncate text-xs tabular-nums text-muted-foreground sm:col-start-auto sm:w-48 sm:text-right">
-              {[s.costPer !== null ? `${fmtUnitCost(s.costPer, currency)} ${s.unit}` : null, conv !== null && prev ? `${fmtPct(conv)} of ${prev.label.toLowerCase()}` : null]
-                .filter(Boolean)
-                .join(" · ") || "-"}
+            <span className="block h-2.5 w-full overflow-hidden rounded-full bg-muted" aria-hidden="true">
+              <span className="block h-full rounded-full bg-(--series-1)" style={{ width: `${width}%`, opacity: 1 - i * 0.13 }} />
             </span>
           </li>
         );
       })}
+      {attendees ? <li className="text-xs text-muted-foreground">% of attendees</li> : null}
     </ol>
   );
 }

@@ -24,8 +24,8 @@ export const DASH_CARD = "rounded-xl border border-border bg-card shadow-xs";
 export const CHART_VARS =
   "[--chart-budget:#93c5fd] [--chart-spend:#1d4ed8] dark:[--chart-budget:#1e40af] dark:[--chart-spend:#60a5fa] " +
   "[--platform-google:#2563eb] [--platform-bing:#14b8a6] dark:[--platform-google:#3b82f6] dark:[--platform-bing:#0d9488] " +
-  "[--series-1:#2563eb] [--series-2:#14b8a6] [--series-3:#f59e0b] [--series-4:#8b5cf6] [--series-5:#f43f5e] [--series-other:#94a3b8] " +
-  "dark:[--series-1:#3b82f6] dark:[--series-2:#0d9488] dark:[--series-3:#d97706] dark:[--series-4:#8b5cf6] dark:[--series-5:#f43f5e] dark:[--series-other:#64748b]";
+  "[--series-1:#2563eb] [--series-2:#14b8a6] [--series-3:#f59e0b] [--series-4:#8b5cf6] [--series-5:#f43f5e] [--series-6:#65a30d] [--series-other:#94a3b8] " +
+  "dark:[--series-1:#3b82f6] dark:[--series-2:#0d9488] dark:[--series-3:#d97706] dark:[--series-4:#8b5cf6] dark:[--series-5:#f43f5e] dark:[--series-6:#65a30d] dark:[--series-other:#64748b]";
 
 /** Fixed order for categories (never cycled): anything past the fifth folds into "Other" */
 export const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)"];
