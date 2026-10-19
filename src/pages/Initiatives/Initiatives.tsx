@@ -22,7 +22,7 @@ import { getInitiatives } from "@/services/initiativesService";
 import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
 import { DeleteInitiativeDialog } from "./DeleteInitiativeButton";
-import { formatBudget, formatDate, isoToday } from "./format";
+import { formatBudget, formatDate, isoToday, ownerName } from "./format";
 import { ATTENTION_LABELS, formatKpiValue } from "./initiativeFields";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import InitiativePanel from "./InitiativePanel";
@@ -195,7 +195,7 @@ function csvRow(item: InitiativeListItem) {
     item.brand_name,
     item.channel_name,
     item.sub_channel_name,
-    item.owner_name,
+    ownerName(item),
     item.start_date,
     item.end_date,
     item.budget_amount,

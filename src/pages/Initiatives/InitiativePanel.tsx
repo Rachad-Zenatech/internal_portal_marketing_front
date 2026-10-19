@@ -16,7 +16,7 @@ import type { Performance } from "@/types/performance";
 import CostOverview from "./CostOverview";
 import { Empty, Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
-import { formatBudget, formatDate, formatEventLocation, formatMoney } from "./format";
+import { formatBudget, formatDate, formatEventLocation, formatMoney, ownerName } from "./format";
 import { ATTENTION_LABELS, channelFields, choiceName, DATA_SOURCE_LABELS, formatKpiValue, linkSystemName } from "./initiativeFields";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import ResultsSection from "./ResultsSection";
@@ -82,7 +82,7 @@ function KeyDetails({ item, onEdit }: { item: InitiativeListItem; onEdit?: () =>
       <dl className="grid grid-cols-2 gap-x-6 gap-y-3">
         <Detail label="Brand" value={item.brand_name} />
         <Detail label="Channel" value={[item.channel_name, item.sub_channel_name].filter(Boolean).join(" / ")} />
-        <Detail label="Owner" value={item.owner_name} />
+        <Detail label="Owner" value={ownerName(item)} />
         <Detail label="Status" value={STATUS_LABELS[item.status]} />
         <Detail label="Start date" value={formatDate(item.start_date)} />
         <Detail label="End date" value={formatDate(item.end_date)} />
