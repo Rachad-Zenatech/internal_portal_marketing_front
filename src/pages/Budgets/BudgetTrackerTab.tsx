@@ -231,10 +231,17 @@ export default function BudgetTrackerTab({ period, compare, data, compareData, l
   });
   const chartEmpty = chartData.every((p) => !p.budget && !p.actual && !p.compare);
   const compareText = compare ? periodName(compare) : null;
-  const donutItems = foldIntoOther(
-    (data?.channels ?? []).filter((c) => c.currency === currency && c.spent > 0).map((c) => ({ key: c.channel_name, label: c.channel_name, value: c.spent })),
-    6,
-  );
+  const outside = data?.outside_budget.find((o) => o.currency === currency);
+  // Travel (Navan and travel entered here) is outside marketing budgets, so it's not in the channels; shown as its
+  // own slice for now so the chart covers everything spent (to confirm with Marketing)
+  const travelSpent = outside?.spent ?? 0;
+  const donutItems = [
+    ...foldIntoOther(
+      (data?.channels ?? []).filter((c) => c.currency === currency && c.spent > 0).map((c) => ({ key: c.channel_name, label: c.channel_name, value: c.spent })),
+      5,
+    ),
+    ...(travelSpent > 0 ? [{ key: "outside-travel", label: "Event travel (outside budget)", value: travelSpent }] : []),
+  ];
   const channelTotal = donutItems.reduce((s, i) => s + i.value, 0);
 
   // ─── Table ───
@@ -289,7 +296,6 @@ export default function BudgetTrackerTab({ period, compare, data, compareData, l
     ...(items ?? []).map((i) => ({ value: String(i.id), label: i.name })),
   ];
   const unbudgeted = (data?.unbudgeted ?? []).filter((u) => u.currency === currency);
-  const outside = data?.outside_budget.find((o) => o.currency === currency);
   const cell = "px-3 py-2.5 align-middle";
 
   return (
@@ -364,8 +370,8 @@ export default function BudgetTrackerTab({ period, compare, data, compareData, l
         </ChartCard>
         <ChartCard
           title="Spending by channel"
-          subtitle={`${money(channelTotal)} actual spend · ${currency}`}
-          info="All marketing spend in the period by the initiative's channel, with or without a budget. Travel is left out, as it's outside marketing budgets."
+          subtitle={`${money(channelTotal)} actual spend${travelSpent > 0 ? ", travel included" : ""} · ${currency}`}
+          info="All spend in the period by the initiative's channel, with or without a budget. Event travel (Navan and travel entered here) is shown as its own slice: it's outside marketing budgets, so it isn't in the budget figures."
         >
           {loading ? <Skeleton className="h-[180px] w-full rounded-lg" /> : donutItems.length === 0 ? <ChartEmpty text="No spend in this period." height={180} /> : <DonutChart items={donutItems} currency={currency} totalLabel="Total spend" />}
         </ChartCard>
