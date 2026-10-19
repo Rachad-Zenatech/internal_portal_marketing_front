@@ -50,7 +50,8 @@ const plural = (n: number, [one, many]: [string, string]) => `${n} ${n === 1 ? o
 interface CostSheetUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  initiative: InitiativeListItem;
+  /** Only these are needed, so the Events Overview can open it for any event */
+  initiative: Pick<InitiativeListItem, "id" | "name" | "currency">;
 }
 
 /** Upload an event's cost sheet: choose a file, check the preview, import, and undo if needed */
@@ -90,7 +91,11 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
 
   const undoBatch = (batchId: string) =>
     undo.mutateAsync(batchId).then((result) => {
-      toast.success(`Removed ${plural(result.removed_rows, NOUN)}`);
+      toast.success(`Removed ${plural(result.removed_rows, NOUN)}`, {
+        description: result.restored_rows
+          ? `The previous upload's ${plural(result.restored_rows, NOUN)} ${result.restored_rows === 1 ? "is" : "are"} back.`
+          : undefined,
+      });
       return result;
     });
 
@@ -100,9 +105,13 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
     confirm.mutate(preview.batch_id, {
       onSuccess: (result) => {
         toast.success(`Imported ${plural(result.imported_rows, NOUN)}`, {
-          description: result.skipped
-            ? `${plural(result.skipped, ["row was", "rows were"])} skipped because an invoice was recorded after you checked the file.`
-            : undefined,
+          description:
+            [
+              result.replaced_rows ? `Replaced the previous upload's ${plural(result.replaced_rows, NOUN)}.` : null,
+              result.skipped ? `${plural(result.skipped, ["row was", "rows were"])} skipped because an invoice was recorded after you checked the file.` : null,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined,
           action: {
             label: "Undo",
             onClick: () => void undoBatch(result.batch_id).catch((err: Error) => toast.error(err.message)),
@@ -176,7 +185,7 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
                 <p>
                   <span className="font-medium text-slate-900 dark:text-zinc-100">Columns we read:</span> {COLUMNS_WE_READ}.
                 </p>
-                <p>Leave travel out. It comes from the travel management system.</p>
+                <p>Leave out flights, hotels and cars booked in Navan. Navan adds them.</p>
                 <Button type="button" variant="link" className="h-auto w-fit gap-1.5 p-0" onClick={() => void template()} disabled={downloading}>
                   {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                   Download template
@@ -215,6 +224,28 @@ export default function CostSheetUpload({ open, onOpenChange, initiative }: Cost
                 </p>
                 {preview.ignored_columns.length > 0 && (
                   <p className="text-sm text-slate-500 dark:text-zinc-400">Ignored columns: {preview.ignored_columns.join(", ")}</p>
+                )}
+                {preview.replaces && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+                    <p>
+                      <span className="font-medium">This replaces the sheet uploaded {formatDate(preview.replaces.confirmed_at.slice(0, 10))}</span> (v
+                      {preview.replaces.version}, {preview.replaces.filename}). Its {plural(preview.replaces.line_count - preview.replaces.reconciled_count, NOUN)}{" "}
+                      {preview.replaces.line_count - preview.replaces.reconciled_count === 1 ? "is" : "are"} removed and these added instead. Undo brings the previous
+                      version back.
+                    </p>
+                    {preview.replaces.edited_count > 0 && (
+                      <p className="mt-1">
+                        {plural(preview.replaces.edited_count, NOUN)} from that upload {preview.replaces.edited_count === 1 ? "was" : "were"} changed here since. The
+                        sheet replaces those changes, so make sure the file has them too.
+                      </p>
+                    )}
+                    {preview.replaces.reconciled_count > 0 && (
+                      <p className="mt-1">
+                        {plural(preview.replaces.reconciled_count, NOUN)} already reconciled {preview.replaces.reconciled_count === 1 ? "stays" : "stay"} as{" "}
+                        {preview.replaces.reconciled_count === 1 ? "it is" : "they are"}.
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
 

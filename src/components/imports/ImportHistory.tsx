@@ -46,7 +46,10 @@ export default function ImportHistory({ batches, loading, onUndo, noun }: Import
           <div className="flex flex-wrap items-center gap-3">
             <FileSpreadsheet className="h-5 w-5 shrink-0 text-slate-400" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900 dark:text-zinc-100">{batch.filename}</p>
+              <p className="truncate text-sm font-medium text-slate-900 dark:text-zinc-100">
+                {batch.filename}
+                {batch.version ? <span className="ml-1.5 font-normal text-slate-500 dark:text-zinc-400">v{batch.version}</span> : null}
+              </p>
               <p className="text-xs text-slate-500 dark:text-zinc-400">
                 {batch.created_by_name ?? "Someone"} · {when(batch.created_at)} · {batch.total_rows} rows
                 {batch.status === "CONFIRMED" && ` · ${plural(batch.imported_rows)} imported`}

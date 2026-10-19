@@ -1,7 +1,8 @@
 // Spreadsheet uploads — mirrors backend models/import_model.py
 
 export type ImportRowStatus = "READY" | "READY_WITH_WARNINGS" | "DUPLICATE" | "INVALID";
-export type ImportBatchStatus = "PREVIEW" | "CONFIRMED" | "UNDONE" | "EXPIRED";
+/** REPLACED: a cost sheet upload whose costs a newer upload of the same event's sheet took over */
+export type ImportBatchStatus = "PREVIEW" | "CONFIRMED" | "UNDONE" | "EXPIRED" | "REPLACED";
 
 export interface ImportCounts {
   total: number;
@@ -33,6 +34,19 @@ export interface CostSheetPreviewRow extends ImportPreviewRowBase {
   currency: string | null;
 }
 
+/** The event's current cost sheet upload, which confirming a new one replaces */
+export interface ReplacedUpload {
+  batch_id: string;
+  filename: string;
+  confirmed_at: string;
+  version: number;
+  /** Its costs on the event now: removed on confirm, except the reconciled ones, which stay */
+  line_count: number;
+  /** Changed in the portal after the upload; the new sheet replaces those changes */
+  edited_count: number;
+  reconciled_count: number;
+}
+
 export interface CostSheetPreview {
   batch_id: string;
   filename: string;
@@ -42,6 +56,8 @@ export interface CostSheetPreview {
   rows: CostSheetPreviewRow[];
   /** In the initiative's currency */
   totals_preview: { expected_total: number; committed: number; actual: number };
+  /** Set when the event already has a cost sheet upload: this one replaces it */
+  replaces?: ReplacedUpload | null;
 }
 
 export interface ImportConfirmResult {
@@ -50,12 +66,16 @@ export interface ImportConfirmResult {
   imported_rows: number;
   /** Rows whose supplier invoice was recorded by someone else between preview and confirm */
   skipped: number;
+  /** Costs of the previous upload that this one replaced */
+  replaced_rows?: number;
 }
 
 export interface ImportUndoResult {
   batch_id: string;
   status: ImportBatchStatus;
   removed_rows: number;
+  /** Undoing an upload that replaced another puts the previous upload's costs back */
+  restored_rows?: number;
 }
 
 export interface ImportBatchSummary {
@@ -77,4 +97,6 @@ export interface ImportBatchSummary {
   /** Lines from this upload still on the initiative, and how many were edited after the import */
   line_count: number;
   edited_count: number;
+  /** 1 for an event's first confirmed upload, 2 for the next…; null for previews and undone uploads */
+  version?: number | null;
 }

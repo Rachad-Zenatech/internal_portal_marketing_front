@@ -30,6 +30,7 @@ export const BATCH_STATUS_LABELS: Record<ImportBatchStatus, string> = {
   CONFIRMED: "Imported",
   UNDONE: "Undone",
   EXPIRED: "Preview expired",
+  REPLACED: "Replaced",
 };
 
 export const BATCH_STATUS_STYLES: Record<ImportBatchStatus, string> = {
@@ -37,6 +38,7 @@ export const BATCH_STATUS_STYLES: Record<ImportBatchStatus, string> = {
   CONFIRMED: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
   UNDONE: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
   EXPIRED: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
+  REPLACED: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
 };
 
 /** "24 KB", "1.2 MB" */
