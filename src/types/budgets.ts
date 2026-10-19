@@ -85,12 +85,21 @@ export interface UnbudgetedSpend {
   initiative_count: number;
 }
 
+/** Travel, per diems and ground transport in a month: part of event cost, never counted against a marketing budget */
+export interface OutsideBudgetSpend {
+  currency: string;
+  spent: number;
+  expected: number;
+  initiative_count: number;
+}
+
 export interface BudgetMonth {
   /** YYYY-MM-01 */
   month: string;
   budgets: BudgetRow[];
   totals: BudgetTotals[];
   unbudgeted: UnbudgetedSpend[];
+  outside_budget: OutsideBudgetSpend[];
   /** Month-level notes, newest first */
   notes: BudgetComment[];
   previous_month_has_budgets: boolean;
@@ -193,6 +202,8 @@ export interface BudgetWeekLine {
   budget_id: string | null;
   /** e.g. "Oct 2026 · DeskFlex · North America · Paid Search" */
   budget_label: string | null;
+  /** Travel, per diems or ground transport: never counted against a marketing budget */
+  outside_budget: boolean;
 }
 
 /** A month the week falls in: what its budgets have, and what they'd spent by the end of the week */
@@ -213,4 +224,75 @@ export interface BudgetWeek {
   lines: BudgetWeekLine[];
   totals: { currency: string; spent: number; expected: number }[];
   months: BudgetWeekMonth[];
+}
+
+// ─── Budget tracker upload ───────────────────────────────────────────────────
+
+export type BudgetImportRowStatus = "NEW" | "UPDATE" | "UNCHANGED" | "INVALID";
+
+/** One sheet row as it would be imported, with every problem found */
+export interface BudgetImportRow {
+  row_number: number;
+  status: BudgetImportRowStatus;
+  messages: string[];
+  /** YYYY-MM-01 */
+  month: string | null;
+  /** "TBD/All" for no brand */
+  brand: string | null;
+  market: string | null;
+  /** null = all channels */
+  channel: string | null;
+  amount: number | null;
+  currency: string | null;
+  /** What the budget's status will be */
+  budget_status: BudgetStatus | null;
+  /** The sheet's Spend Progress, as typed */
+  sheet_progress: string | null;
+  note: string | null;
+  /** The budget it updates; null for a new one */
+  budget_id: string | null;
+}
+
+export interface BudgetImportCounts {
+  new: number;
+  update: number;
+  unchanged: number;
+  invalid: number;
+}
+
+export interface BudgetImportPreview {
+  batch_id: string;
+  filename: string;
+  rows: BudgetImportRow[];
+  counts: BudgetImportCounts;
+  /** Sheet columns that aren't read, e.g. Actual Spend to Date */
+  ignored_columns: string[];
+}
+
+export interface BudgetImportUpload {
+  file: File;
+  /** For months written without a year, e.g. "Aug" */
+  year: number;
+  /** For amounts without a symbol or code */
+  currency: string;
+}
+
+export interface BudgetImportConfirmResult {
+  batch_id: string;
+  status: string;
+  created: number;
+  updated: number;
+  unchanged: number;
+  notes_added: number;
+  /** Rows whose budget changed since the preview */
+  skipped: number;
+}
+
+export interface BudgetImportUndoResult {
+  batch_id: string;
+  status: string;
+  removed: number;
+  restored: number;
+  notes_removed: number;
+  skipped: number;
 }

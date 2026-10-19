@@ -5,6 +5,10 @@ import type {
   BudgetCopyResult,
   BudgetCreate,
   BudgetDetail,
+  BudgetImportConfirmResult,
+  BudgetImportPreview,
+  BudgetImportUndoResult,
+  BudgetImportUpload,
   BudgetMonth,
   BudgetRow,
   BudgetTransferCreated,
@@ -57,4 +61,25 @@ export function createBudgetComment(data: BudgetCommentCreate) {
 
 export function deleteBudgetComment(commentId: string) {
   return apiClient.delete<null>(`/api/budget-comments/${commentId}`, { actionLabel: "Deleting note" });
+}
+
+/** Check a budget tracker sheet; nothing is saved until the preview is confirmed */
+export function uploadBudgetSheet({ file, year, currency }: BudgetImportUpload) {
+  const body = new FormData();
+  body.append("file", file);
+  body.append("year", String(year));
+  body.append("currency", currency);
+  return apiClient.post<BudgetImportPreview>("/api/budget-imports", body, { actionLabel: "Checking spreadsheet" });
+}
+
+export function confirmBudgetImport(batchId: string) {
+  return apiClient.post<BudgetImportConfirmResult>(`/api/budget-imports/${batchId}/confirm`, undefined, { actionLabel: "Importing budgets" });
+}
+
+export function undoBudgetImport(batchId: string) {
+  return apiClient.post<BudgetImportUndoResult>(`/api/budget-imports/${batchId}/undo`, undefined, { actionLabel: "Undoing import" });
+}
+
+export function downloadBudgetTemplate() {
+  return apiClient.downloadFile("/api/budget-imports/template", "budget-tracker-template.xlsx");
 }

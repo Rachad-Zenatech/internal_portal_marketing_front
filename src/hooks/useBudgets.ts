@@ -1,6 +1,7 @@
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryKeys";
 import {
+  confirmBudgetImport,
   copyBudgets,
   createBudget,
   createBudgetComment,
@@ -11,9 +12,11 @@ import {
   getBudget,
   getBudgetMonth,
   getBudgetWeek,
+  undoBudgetImport,
   updateBudget,
+  uploadBudgetSheet,
 } from "@/services/budgetService";
-import type { BudgetCommentCreate, BudgetCreate, BudgetTransferCreate, BudgetUpdate } from "@/types/budgets";
+import type { BudgetCommentCreate, BudgetCreate, BudgetImportUpload, BudgetTransferCreate, BudgetUpdate } from "@/types/budgets";
 
 /** month is YYYY-MM-01 */
 export function useBudgetMonth(month: string) {
@@ -21,6 +24,18 @@ export function useBudgetMonth(month: string) {
     queryKey: queryKeys.budgetMonth(month),
     queryFn: () => getBudgetMonth(month),
     placeholderData: keepPreviousData,
+  });
+}
+
+/** Several months at once (YYYY-MM-01 each), e.g. for a chart; shares the cache with useBudgetMonth */
+export function useBudgetMonths(months: string[], enabled = true) {
+  return useQueries({
+    queries: months.map((month) => ({
+      queryKey: queryKeys.budgetMonth(month),
+      queryFn: () => getBudgetMonth(month),
+      placeholderData: keepPreviousData,
+      enabled,
+    })),
   });
 }
 
@@ -102,4 +117,19 @@ export function useCreateBudgetComment() {
 export function useDeleteBudgetComment() {
   const refresh = useRefreshBudgets();
   return useMutation({ mutationFn: (commentId: string) => deleteBudgetComment(commentId), onSuccess: refresh });
+}
+
+/** Upload a budget tracker for a preview; nothing changes until it's confirmed */
+export function useUploadBudgetSheet() {
+  return useMutation({ mutationFn: (upload: BudgetImportUpload) => uploadBudgetSheet(upload) });
+}
+
+export function useConfirmBudgetImport() {
+  const refresh = useRefreshBudgets();
+  return useMutation({ mutationFn: (batchId: string) => confirmBudgetImport(batchId), onSuccess: refresh });
+}
+
+export function useUndoBudgetImport() {
+  const refresh = useRefreshBudgets();
+  return useMutation({ mutationFn: (batchId: string) => undoBudgetImport(batchId), onSuccess: refresh });
 }

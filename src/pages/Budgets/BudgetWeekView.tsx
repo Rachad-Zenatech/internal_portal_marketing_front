@@ -183,6 +183,10 @@ function CostItem({ line, onOpenBudget }: { line: BudgetWeekLine; onOpenBudget: 
         >
           {budget}
         </button>
+      ) : line.outside_budget ? (
+        <span className="text-muted-foreground" title="Travel is an operating expense. It counts toward the event's cost, not against a marketing budget.">
+          Travel, outside budget
+        </span>
       ) : (
         <span className="text-amber-700 dark:text-amber-400" title={`No ${line.brand_name} · ${line.market_name} budget covers it`}>
           No budget
