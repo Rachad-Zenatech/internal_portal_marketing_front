@@ -48,7 +48,7 @@ export function useUpdateInitiative(id: string) {
     mutationFn: (data: InitiativeUpdate) => updateInitiative(id, data),
     onSuccess: (updated) => {
       queryClient.setQueryData(queryKeys.initiative(id), updated);
-      // Dates, budget, KPI and currency feed the event overview and every derived figure
+      // Dates, budget and currency feed the event overview and every derived figure
       return Promise.all([
         queryClient.invalidateQueries({ queryKey: ["initiatives"] }),
         queryClient.invalidateQueries({ queryKey: ["event-overview"] }),

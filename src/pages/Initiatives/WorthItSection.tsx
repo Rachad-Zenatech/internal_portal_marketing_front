@@ -15,7 +15,7 @@ import type { Performance } from "@/types/performance";
 import { Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { formatMoney } from "./format";
-import { EARLY_LABELS, formatDateLong, formatKpiValue, RATING_STYLES, verdictSentence } from "./performanceRules";
+import { formatDateLong, RATING_STYLES, verdictSentence } from "./performanceRules";
 import RequiredMark from "@/components/RequiredMark";
 
 const RATING_TEXT: Record<string, string> = {
@@ -25,81 +25,40 @@ const RATING_TEXT: Record<string, string> = {
   TEST: "Too early to say",
 };
 
-/** Target and maturity window for the primary KPI */
+/** How long to wait after it ends before the final verdict */
 function SuccessSettings({ initiative, performance, canEdit }: { initiative: InitiativeListItem; performance: Performance; canEdit: boolean }) {
-  const { evaluation, currency } = performance;
-  const kpi = evaluation.primary_kpi;
+  const { evaluation } = performance;
   const saveEvaluation = useSaveEvaluation(initiative.id);
-  const [target, setTarget] = useState(evaluation.target_value === null ? "" : String(evaluation.target_value));
   const [days, setDays] = useState(String(evaluation.maturity_days));
   const [error, setError] = useState<string | null>(null);
-
-  const unitLabel = kpi?.unit === "MONEY" ? currency : kpi?.unit === "PERCENT" ? "%" : null;
-  const directionHint = kpi?.direction === "lower" ? "Lower is better. Enter the highest value you'd accept." : kpi?.direction === "higher" ? "Higher is better. Enter the lowest value you'd accept." : null;
-  const dirty = target !== (evaluation.target_value === null ? "" : String(evaluation.target_value)) || days !== String(evaluation.maturity_days);
+  const dirty = days !== String(evaluation.maturity_days);
 
   const handleSave = (event: React.FormEvent) => {
     event.preventDefault();
-    const targetValue = target.trim() === "" ? null : Number(target);
     // Number("") is 0, so an empty window must be caught before converting
     const maturity = days.trim() === "" ? NaN : Number(days);
-    if (targetValue !== null && (Number.isNaN(targetValue) || targetValue < 0)) return setError("Enter a target of 0 or more.");
     if (!Number.isInteger(maturity) || maturity < 0 || maturity > 730) return setError("The waiting period must be 0 to 730 days.");
     setError(null);
     saveEvaluation.mutate(
-      { target_value: targetValue, maturity_days: maturity },
-      { onSuccess: () => toast.success("Target saved"), onError: (err) => setError(err.message || "Could not save the target.") },
+      { maturity_days: maturity },
+      { onSuccess: () => toast.success("Waiting period saved"), onError: (err) => setError(err.message || "Could not save the waiting period.") },
     );
   };
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-3 rounded-lg border border-slate-200 p-4 dark:border-zinc-800">
       <div>
-        <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">What counts as success</h4>
-        <p className={`mt-0.5 text-xs ${MUTED}`}>
-          {kpi ? (
-            <>
-              Judged on <span className="font-medium text-slate-700 dark:text-zinc-300">{kpi.name}</span>
-              {evaluation.kpi_from_default ? ` (the default for ${initiative.sub_channel_name ?? "this type"}). To use a different main KPI, choose Edit on the overview.` : "."}
-              {!kpi.supported && " This KPI isn't calculated yet, so there's no rating."}
-            </>
-          ) : (
-            "No main KPI yet. To get a rating, choose one with Edit on the overview."
-          )}
-        </p>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-zinc-100">When to judge it</h4>
+        <p className={`mt-0.5 text-xs ${MUTED}`}>How long to wait after it ends before the final verdict, so deals have time to close.</p>
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="worth-target" className="text-slate-700 dark:text-zinc-300">
-            Target {kpi ? `for ${kpi.name}` : ""}
-          </Label>
-          <div className="flex items-center gap-2">
-            {unitLabel && unitLabel !== "%" && <span className={`text-sm ${MUTED}`}>{unitLabel}</span>}
-            <Input
-              id="worth-target"
-              type="number"
-              min={0}
-              step="any"
-              inputMode="decimal"
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              disabled={!canEdit || !kpi?.supported}
-              placeholder="Not set"
-            />
-            {unitLabel === "%" && <span className={`text-sm ${MUTED}`}>%</span>}
-          </div>
-          {directionHint && <p className={`text-xs ${MUTED}`}>{directionHint}</p>}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="worth-days" className="text-slate-700 dark:text-zinc-300">
-            Waiting period
-            <RequiredMark />
-          </Label>
-          <div className="flex items-center gap-2">
-            <Input id="worth-days" type="number" min={0} max={730} step={1} value={days} onChange={(e) => setDays(e.target.value)} disabled={!canEdit} />
-            <span className={`text-sm ${MUTED}`}>days</span>
-          </div>
-          <p className={`text-xs ${MUTED}`}>How long to wait after it ends before the final verdict, so deals have time to close.</p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="worth-days" className="text-slate-700 dark:text-zinc-300">
+          Waiting period
+          <RequiredMark />
+        </Label>
+        <div className="flex items-center gap-2">
+          <Input id="worth-days" type="number" min={0} max={730} step={1} value={days} onChange={(e) => setDays(e.target.value)} disabled={!canEdit} className="sm:max-w-40" />
+          <span className={`text-sm ${MUTED}`}>days</span>
         </div>
       </div>
       {error && (
@@ -110,7 +69,7 @@ function SuccessSettings({ initiative, performance, canEdit }: { initiative: Ini
       {canEdit && (
         <div className="flex items-center justify-between gap-3">
           <p className={`text-xs ${MUTED}`}>
-            {evaluation.is_default ? "Using the defaults until you save." : evaluation.updated_by_name ? `Last set by ${evaluation.updated_by_name}.` : ""}
+            {evaluation.is_default ? "Using the default until you save." : evaluation.updated_by_name ? `Last set by ${evaluation.updated_by_name}.` : ""}
           </p>
           <Button type="submit" size="sm" variant="outline" disabled={!dirty || saveEvaluation.isPending}>
             {saveEvaluation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -237,7 +196,6 @@ export default function WorthItSection({ initiative, performance }: { initiative
   const { hasPermission } = useAuth();
   const canEdit = hasPermission("INITIATIVES_UPDATE");
   const { rating, evaluation, currency, stage } = performance;
-  const kpi = evaluation.primary_kpi;
   const isEvent = Boolean(initiative.event_code);
   const finalOn = performance.matures_on ? formatDateLong(performance.matures_on) : null;
   const sentence = verdictSentence(performance);
@@ -252,17 +210,17 @@ export default function WorthItSection({ initiative, performance }: { initiative
             badge="Upcoming"
             badgeTone={RATING_STYLES.TEST}
             title={isEvent ? "The verdict comes after the event" : "The verdict comes after it runs"}
-            reason={`Until then, keep the expected cost (${formatMoney(performance.cost, currency)}) within budget. Results and the early read start once it has happened.`}
+            reason={`Until then, keep the expected cost (${formatMoney(performance.cost, currency)}) within budget. Results start once it has happened.`}
           />
         )}
 
-        {stage === "EARLY" && performance.early_read && (
+        {stage === "EARLY" && (
           <StatusLine
-            badge={`Early read: ${EARLY_LABELS[performance.early_read.code]}`}
-            badgeTone={RATING_STYLES[performance.early_read.code]}
-            title={kpi ? `How ${kpi.name} is looking` : "Early read"}
-            reason={performance.early_read.reason}
-            date={finalOn ? `Final verdict on ${finalOn}, once deals have had time to close.` : null}
+            badge="Too early to judge"
+            badgeTone={RATING_STYLES.TEST}
+            title="Waiting for deals to close"
+            reason="The verdict is based on revenue against cost, so it waits until deals from this have had time to close."
+            date={finalOn ? `Final verdict on ${finalOn}.` : null}
           />
         )}
 
@@ -282,27 +240,16 @@ export default function WorthItSection({ initiative, performance }: { initiative
           </p>
         )}
 
-        {evaluation.kpi_note && (
-          <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
-            {evaluation.kpi_note}
+        {stage !== "UPCOMING" && performance.roi_percent !== null && (
+          <p className={`text-sm ${MUTED}`}>
+            ROI <span className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">{performance.roi_percent}%</span>
           </p>
-        )}
-
-        {stage !== "UPCOMING" && kpi?.supported && (
-          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
-            <span className={MUTED}>{kpi.name}</span>
-            <span className="text-lg font-semibold tabular-nums text-slate-900 dark:text-zinc-100">
-              {formatKpiValue(performance.kpi_actual, kpi.unit, currency)}
-            </span>
-            <span className={MUTED}>target {formatKpiValue(evaluation.target_value, kpi.unit, currency)}</span>
-            {performance.roi_percent !== null && <span className={MUTED}>ROI {performance.roi_percent}%</span>}
-          </div>
         )}
 
         <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
           {/* Remount when the saved settings change, so the form starts from them */}
           <SuccessSettings
-            key={`${evaluation.target_value}-${evaluation.maturity_days}-${evaluation.updated_at}`}
+            key={`${evaluation.maturity_days}-${evaluation.updated_at}`}
             initiative={initiative}
             performance={performance}
             canEdit={canEdit}

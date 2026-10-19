@@ -46,7 +46,6 @@ export interface EvaluationDefault {
   sub_channel_id: number;
   funnel_stage_id: number | null;
   goal_id: number | null;
-  primary_kpi_id: number | null;
   maturity_days: number;
 }
 
@@ -61,7 +60,6 @@ export interface ReferenceData {
   sub_channels: ReferenceItem[];
   funnel_stages: ReferenceItem[];
   goals: GoalItem[];
-  primary_kpis: ReferenceItem[];
   performance_ratings: DescribedReferenceItem[];
   scale_or_cut_options: DescribedReferenceItem[];
   regions: ReferenceItem[];
@@ -71,8 +69,6 @@ export interface ReferenceData {
   expense_types: ExpenseType[];
   spend_categories: SpendCategory[];
   outcome_metrics: OutcomeMetric[];
-  /** Channel code → primary KPI codes it can use; channels not listed (only Other) can use any */
-  kpi_choices_by_channel: Record<string, string[]>;
   /** Channel code → result codes it can record, in form order; channels not listed (only Other) can record any */
   result_metrics_by_channel: Record<string, string[]>;
   evaluation_defaults: EvaluationDefault[];

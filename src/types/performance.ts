@@ -26,25 +26,7 @@ export interface OutcomeInput {
   currency?: string | null;
 }
 
-export type KpiUnit = "MONEY" | "PERCENT" | "COUNT";
-
-export interface KpiRef {
-  id: number;
-  code: string;
-  name: string;
-  direction: "lower" | "higher" | null;
-  unit: KpiUnit | null;
-  /** False for KPIs that can't be worked out yet (Conversion Rate, LTV/CAC) */
-  supported: boolean;
-}
-
 export interface Evaluation {
-  /** The initiative's own primary KPI, or its sub-channel's default */
-  primary_kpi: KpiRef | null;
-  kpi_from_default: boolean;
-  /** Set when the initiative's own KPI doesn't apply to its channel and the default is used instead */
-  kpi_note: string | null;
-  target_value: number | null;
   maturity_days: number;
   revenue_basis: "CLOSED_REVENUE";
   /** True until someone saves settings for this initiative */
@@ -54,7 +36,6 @@ export interface Evaluation {
 }
 
 export interface EvaluationInput {
-  target_value: number | null;
   maturity_days: number;
 }
 
@@ -96,7 +77,6 @@ export interface Rating {
   code: RatingCode;
   name: string;
   reason: string;
-  gap_percent: number | null;
 }
 
 export type MoneyOutcome = "PROFIT" | "BROKE_EVEN" | "LOST_MONEY" | "NO_REVENUE";
@@ -122,12 +102,9 @@ export interface Performance {
   has_results: boolean;
   demos_from_log: boolean;
   evaluation: Evaluation;
-  kpi_actual: number | null;
   matures_on: string | null;
   /** UPCOMING before it starts; EARLY until the maturity window ends; FINAL after that */
   stage: VerdictStage;
-  /** Provisional rating on the primary KPI while EARLY */
-  early_read: Rating | null;
   /** The verdict — Test until FINAL */
   rating: Rating;
   /** Code of the scale-or-cut option the system suggests */

@@ -1,4 +1,4 @@
-import type { KpiUnit, MoneyOutcome, Performance, RatingCode } from "@/types/performance";
+import type { MoneyOutcome, Performance, RatingCode } from "@/types/performance";
 import { formatMoney } from "./format";
 
 /** Friendlier labels for events, where "visitors" means people at the booth */
@@ -10,22 +10,6 @@ export const RATING_STYLES: Record<RatingCode, string> = {
   LOW: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300",
   TEST: "border-slate-200 bg-slate-50 text-slate-600 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300",
 };
-
-/** The early read is about the leading KPI only, so its labels speak to the target, not to "worth it" */
-export const EARLY_LABELS: Record<RatingCode, string> = {
-  HIGH: "On track",
-  MEDIUM: "Close to target",
-  LOW: "Behind target",
-  TEST: "Not enough to tell yet",
-};
-
-/** A KPI value in its own unit: "$1,000", "1.5%", "120,000" */
-export function formatKpiValue(value: number | null, unit: KpiUnit | null, currency: string) {
-  if (value === null) return "-";
-  if (unit === "MONEY") return formatMoney(value, currency);
-  if (unit === "PERCENT") return `${Number.isInteger(value) ? value : value.toFixed(1)}%`;
-  return value.toLocaleString();
-}
 
 export function formatCount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 2 });

@@ -24,7 +24,7 @@ import DeleteInitiativeButton from "./DeleteInitiativeButton";
 import DraftBanner from "./DraftBanner";
 import InitiativeFormDialog from "./InitiativeFormDialog";
 import { STATUS_LABELS, STATUS_STYLES } from "./status";
-import { EARLY_LABELS, RATING_STYLES } from "./performanceRules";
+import { RATING_STYLES } from "./performanceRules";
 import { useInitiativeNavigation } from "./useInitiativeNavigation";
 
 function Detail({ label, value }: { label: string; value: React.ReactNode }) {
@@ -113,16 +113,12 @@ function GoalSection({ initiative, stages }: { initiative: InitiativeListItem; s
         })}
       </ol>
 
-      <dl className="mt-5 grid grid-cols-1 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-2 dark:border-zinc-800">
+      <dl className="mt-5 border-t border-slate-100 pt-4 dark:border-zinc-800">
         <div>
           <dt className={`text-xs font-medium ${MUTED}`}>Goal</dt>
           <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-zinc-100">
             {initiative.goal_name ?? <Empty text={initiative.funnel_stage_id ? "No goal yet" : "Choose a funnel stage first"} />}
           </dd>
-        </div>
-        <div>
-          <dt className={`text-xs font-medium ${MUTED}`}>Measured by</dt>
-          <dd className="mt-1 text-sm font-semibold text-slate-900 dark:text-zinc-100">{initiative.primary_kpi_name ?? <Empty text="No KPI yet" />}</dd>
         </div>
       </dl>
     </Section>
@@ -174,7 +170,7 @@ function TimelineSection({ initiative, barColour }: { initiative: InitiativeList
   );
 }
 
-/** The travel budget and what the travel system has spent against it (invoiced and paid, in the event's currency) */
+/** The travel budget (planned travel spend) and what has been spent against it (invoiced and paid, in the event's currency) */
 function TravelBudgetDetail({ initiative }: { initiative: InitiativeListItem }) {
   // The event card already adds up the travel costs; searching by code returns just this event
   const { data: events } = useEventOverview(initiative.event_code ?? "");
@@ -269,13 +265,13 @@ function PerformanceSnapshot({ initiativeId }: { initiativeId: string }) {
   const { data: performance, isLoading } = usePerformance(initiativeId);
   if (isLoading) return <>Loading…</>;
   if (!performance) return <>Was it worth it? See results, cost per outcome and the rating.</>;
-  // Upcoming → early read on the KPI → final verdict, the same stages as the Performance page
-  const { stage, rating, early_read: early } = performance;
+  // Upcoming, then too early to judge, then the final verdict: the same stages as the Performance page
+  const { stage, rating } = performance;
   const shown =
     stage === "UPCOMING"
       ? { badge: "Upcoming", tone: RATING_STYLES.TEST, text: "The verdict comes after it ends." }
-      : stage === "EARLY" && early
-        ? { badge: `Early read: ${EARLY_LABELS[early.code]}`, tone: RATING_STYLES[early.code], text: early.reason }
+      : stage === "EARLY"
+        ? { badge: "Too early to judge", tone: RATING_STYLES.TEST, text: "The verdict waits until deals have had time to close." }
         : { badge: rating.name, tone: RATING_STYLES[rating.code], text: rating.reason };
   return (
     <span className="flex flex-col gap-1">
@@ -467,9 +463,9 @@ export default function InitiativeDetail() {
         />
         <Stat
           badge={<StatIcon icon={Target} />}
-          label="Main KPI"
-          value={initiative.primary_kpi_name ?? <Empty />}
-          hint={initiative.goal_name}
+          label="Goal"
+          value={initiative.goal_name ?? <Empty />}
+          hint={initiative.funnel_stage_name}
         />
         <Stat
           badge={
