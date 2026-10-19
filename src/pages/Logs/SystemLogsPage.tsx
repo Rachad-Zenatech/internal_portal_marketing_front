@@ -14,7 +14,6 @@ import {
   User as UserIcon,
   Activity,
   ShieldAlert,
-  ExternalLink,
   Clock,
   CheckCircle2,
   XCircle,
@@ -22,7 +21,6 @@ import {
   Send,
   Eye,
   FileText,
-  CreditCard,
   Edit3,
   Trash2,
   Copy,
@@ -35,7 +33,6 @@ import {
   ChevronRight,
   Filter,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 interface AuditLogItem {
@@ -106,22 +103,13 @@ export function getActionMeta(action: string) {
       dotColor: "bg-rose-500",
     };
   }
-  if (act.includes("PO_") || act.includes("PURCHASE_ORDER")) {
+  if (act.includes("SYNC") || act.includes("IMPORT")) {
     return {
-      label: "PO Issued",
+      label: "Data Synced",
       color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800",
-      icon: FileText,
+      icon: RefreshCw,
       iconColor: "text-amber-600 dark:text-amber-400",
       dotColor: "bg-amber-500",
-    };
-  }
-  if (act.includes("PAID") || act.includes("INVOICE_PAID") || act.includes("PAYMENT")) {
-    return {
-      label: "Invoice Paid",
-      color: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800",
-      icon: CreditCard,
-      iconColor: "text-indigo-600 dark:text-indigo-400",
-      dotColor: "bg-indigo-500",
     };
   }
   if (act.includes("STATUS_CHANGE") || act.includes("TRANSITION")) {
@@ -236,7 +224,6 @@ function getInitials(name?: string | null) {
 }
 
 export default function SystemLogsPage() {
-  const navigate = useNavigate();
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -481,10 +468,10 @@ export default function SystemLogsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Entity Types</SelectItem>
-                <SelectItem value="PurchaseRequest">📦 Purchase Request</SelectItem>
+                <SelectItem value="Initiative">📢 Initiative</SelectItem>
+                <SelectItem value="Budget">💰 Budget & Spend</SelectItem>
                 <SelectItem value="User">👤 User Account</SelectItem>
                 <SelectItem value="Role">🛡️ Role & Permission</SelectItem>
-                <SelectItem value="Workflow">⚙️ Workflow Assignment</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -610,7 +597,6 @@ export default function SystemLogsPage() {
                   const actionMeta = getActionMeta(log.action);
                   const ActionIcon = actionMeta.icon;
                   const dateInfo = formatLogDate(log.created_at);
-                  const isPurchaseRequest = log.entity_type === "PurchaseRequest";
                   const entityLabel = log.entity_title
                     ? log.entity_title
                     : `${log.entity_type} #${log.entity_id}`;
@@ -676,31 +662,14 @@ export default function SystemLogsPage() {
                       {/* 4. Target Entity */}
                       <TableCell className="py-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          {isPurchaseRequest ? (
-                            <div
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/purchasing/requests/${log.entity_id}`);
-                              }}
-                              className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 hover:underline flex items-center gap-1.5 truncate group/link"
-                              title={`Open Purchase Request #${log.entity_id}`}
-                            >
-                              <span className="p-1 rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono text-[10px] font-bold border border-indigo-100 dark:border-indigo-900">
-                                #{log.entity_id}
-                              </span>
-                              <span className="truncate">{log.entity_title || `Request #${log.entity_id}`}</span>
-                              <ExternalLink className="h-3 w-3 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" />
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1.5 text-xs truncate">
-                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
-                                {log.entity_type}
-                              </Badge>
-                              <span className="font-medium text-slate-800 dark:text-zinc-200 truncate">
-                                {entityLabel}
-                              </span>
-                            </div>
-                          )}
+                          <div className="flex items-center gap-1.5 text-xs truncate">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-mono">
+                              {log.entity_type}
+                            </Badge>
+                            <span className="font-medium text-slate-800 dark:text-zinc-200 truncate">
+                              {entityLabel}
+                            </span>
+                          </div>
                         </div>
                       </TableCell>
 
@@ -862,18 +831,6 @@ export default function SystemLogsPage() {
                     <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300 uppercase tracking-wide">
                       Target Entity
                     </span>
-                    {selectedLog.entity_type === "PurchaseRequest" && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => navigate(`/purchasing/requests/${selectedLog.entity_id}`)}
-                        className="h-7 text-xs gap-1.5 text-indigo-600 bg-white dark:bg-zinc-950 font-medium"
-                      >
-                        <span>Open Request</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 pt-1">

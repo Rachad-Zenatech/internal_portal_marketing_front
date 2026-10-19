@@ -23,6 +23,7 @@ const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAss
 const RoleGroupPermissions = lazy(() => import("./pages/Configurations/RoleGroupPermissions"));
 const RoleApiPermissions = lazy(() => import("./pages/Configurations/RoleApiPermissions"));
 const RoleMcpToolPermissions = lazy(() => import("./pages/Configurations/RoleMcpToolPermissions"));
+const OAuthIntegrations = lazy(() => import("./pages/Configurations/OAuthIntegrations"));
 
 const AuditLog = lazy(() => import("./pages/Log/AuditLog"));
 const SystemLogsPage = lazy(() => import("./pages/Logs/SystemLogsPage"));
@@ -258,6 +259,24 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="CONFIG_ROLE_MCP_TOOL_PERMISSIONS">
                     <RoleMcpToolPermissions />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* OAuth & Integrations */}
+              <Route
+                path="/configuration/integrations"
+                element={
+                  <ProtectedRoute navigationCode="CONFIG_ROLES">
+                    <OAuthIntegrations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/configurations/integrations"
+                element={
+                  <ProtectedRoute navigationCode="CONFIG_ROLES">
+                    <OAuthIntegrations />
                   </ProtectedRoute>
                 }
               />

@@ -10,9 +10,9 @@ export default function PendingAccess() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // If user somehow gets another role, maybe redirect them to home
-    if (!hasRole("PENDING_USER") && hasRole("SUPER_ADMIN")) {
-      navigate("/purchasing/requests");
+    // If user somehow gets another role, redirect them to dashboard
+    if (!hasRole("PENDING_USER")) {
+      navigate("/dashboard");
     }
   }, [hasRole, navigate]);
 

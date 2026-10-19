@@ -101,6 +101,7 @@ export const navigation: NavigationItem[] = [
       { label: "Role Permissions", path: "/configurations/role-group-permissions", navigationCode: "CONFIG_ROLES" },
       { label: "API Permissions", path: "/configurations/role-api-permissions", navigationCode: "CONFIG_ROLE_API_PERMISSIONS" },
       { label: "MCP Tool Permissions", path: "/configurations/role-mcp-tool-permissions", navigationCode: "CONFIG_ROLE_MCP_TOOL_PERMISSIONS" },
+      { label: "OAuth & Integrations", path: "/configurations/integrations", navigationCode: "CONFIG_ROLES" },
     ],
   },
   {
