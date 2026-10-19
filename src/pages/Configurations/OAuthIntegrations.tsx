@@ -1,9 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  Globe,
   Plus,
   RefreshCw,
   Trash2,
@@ -233,9 +232,9 @@ const ALL_PROVIDERS: OAuthProvider[] = [
 
 export default function OAuthIntegrations() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { hasPermission, isSuperAdmin } = useAuth();
+  const { hasPermission, hasRole, user } = useAuth();
+  const isSuperAdmin = Boolean(user?.is_super_admin || hasRole('SUPER_ADMIN'));
   const canManage = isSuperAdmin || hasPermission('CONFIG_ROLES_UPDATE');
 
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');

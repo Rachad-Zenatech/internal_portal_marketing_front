@@ -8,17 +8,13 @@ import {
   ExternalLink,
   RefreshCw,
   Plus,
-  ShieldCheck,
   CheckCircle2,
-  AlertTriangle,
   Building2,
-  Filter,
   Search,
   MessageCircle,
   Heart,
   Repeat2,
   Sparkles,
-  BarChart3,
   Calendar,
 } from "lucide-react";
 import { toast } from "sonner";

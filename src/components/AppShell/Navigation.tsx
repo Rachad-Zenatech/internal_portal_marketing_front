@@ -82,8 +82,6 @@ export const navigation: NavigationItem[] = [
     label: "Budgets & Expenses",
     path: "/budgets",
     icon: Wallet,
-  Share2,
-  Globe,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
@@ -98,7 +96,6 @@ export const navigation: NavigationItem[] = [
     label: "Social Media",
     path: "/socials",
     icon: Share2,
-  Globe,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
     subItems: [
