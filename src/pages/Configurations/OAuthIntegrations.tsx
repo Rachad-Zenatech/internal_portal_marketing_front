@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
+  Globe,
   Plus,
   RefreshCw,
   Trash2,
@@ -16,6 +17,8 @@ import {
   KeyRound,
   Megaphone,
   Share2,
+  ExternalLink,
+  FlaskConical,
 } from 'lucide-react';
 
 import {
@@ -232,9 +235,9 @@ const ALL_PROVIDERS: OAuthProvider[] = [
 
 export default function OAuthIntegrations() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { hasPermission, hasRole, user } = useAuth();
-  const isSuperAdmin = Boolean(user?.is_super_admin || hasRole('SUPER_ADMIN'));
+  const { hasPermission, isSuperAdmin } = useAuth();
   const canManage = isSuperAdmin || hasPermission('CONFIG_ROLES_UPDATE');
 
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
@@ -262,6 +265,7 @@ export default function OAuthIntegrations() {
   const [connectScopeType, setConnectScopeType] = useState<'ORGANIZATION' | 'COMPANY'>('ORGANIZATION');
   const [connectCompanyId, setConnectCompanyId] = useState<string>('');
   const [resolvingProvider, setResolvingProvider] = useState<OAuthProvider | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Queries
   const { data: organizations = [], isLoading: loadingOrgs } = useQuery({
@@ -269,7 +273,8 @@ export default function OAuthIntegrations() {
     queryFn: () => oauthService.getOrganizations(),
   });
 
-  const activeOrgId = selectedOrgId || organizations[0]?.id || '';
+  const fallbackOrgId = organizations[0]?.id || '00000000-0000-0000-0000-000000000001';
+  const activeOrgId = selectedOrgId || fallbackOrgId;
 
   const { data: companies = [] } = useQuery({
     queryKey: ['oauth-companies', activeOrgId],
@@ -283,7 +288,7 @@ export default function OAuthIntegrations() {
     enabled: !!activeOrgId,
   });
 
-  // OAuth 2.0 Connect Mutation
+  // 1. Instant / Test Connection Mutation (with fake/demo data)
   const connectMutation = useMutation({
     mutationFn: ({
       provider,
@@ -302,15 +307,59 @@ export default function OAuthIntegrations() {
     onSuccess: (data, variables) => {
       const meta = PROVIDER_METADATA[variables.provider];
       toast.success(
-        `Successfully authorized and connected ${meta.name} as ${data.connection.account_name} (${data.connection.provider_account_id})!`
+        `Connected test account for ${meta.name} as ${data.connection.account_name} (${data.connection.provider_account_id})!`
       );
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
       setIsConnectOpen(false);
     },
     onError: (err: any) => {
-      toast.error('OAuth connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
+      toast.error('Test connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
     },
   });
+
+  // 2. Real Live OAuth 2.0 Authorization Flow (redirect to provider consent screen)
+  const handleLiveOAuth = async (provider: OAuthProvider) => {
+    setIsRedirecting(true);
+    try {
+      const compId =
+        connectScopeType === 'COMPANY' && connectCompanyId ? connectCompanyId : undefined;
+      const redirectUri = `${window.location.origin}/oauth/callback`;
+
+      const res = await oauthService.getAuthorizationUrl(provider, {
+        organization_id: activeOrgId,
+        company_id: compId,
+        redirect_uri: redirectUri,
+      });
+
+      if (res?.authorization_url) {
+        toast.info(`Redirecting to ${PROVIDER_METADATA[provider].name} sign-in screen...`);
+        window.location.href = res.authorization_url;
+      } else {
+        toast.error('Failed to generate OAuth authorization URL');
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail || err.message || 'OAuth authorization failed');
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
+
+  const handleTestConnect = (provider: OAuthProvider) => {
+    connectMutation.mutate({
+      provider,
+      orgId: activeOrgId,
+      companyId: connectScopeType === 'COMPANY' ? connectCompanyId : null,
+    });
+  };
+
+  const handleCardTestConnect = (provider: OAuthProvider) => {
+    const compId = selectedCompanyId !== 'ALL' ? selectedCompanyId : null;
+    connectMutation.mutate({
+      provider,
+      orgId: activeOrgId,
+      companyId: compId,
+    });
+  };
 
   const refreshMutation = useMutation({
     mutationFn: (id: string) => oauthService.refreshConnection(id),
@@ -344,20 +393,6 @@ export default function OAuthIntegrations() {
       setConnectCompanyId(companies[0]?.id || '');
     }
     setIsConnectOpen(true);
-  };
-
-  const handleOAuthSignIn = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeOrgId) {
-      toast.error('No organization selected');
-      return;
-    }
-
-    connectMutation.mutate({
-      provider: connectProvider,
-      orgId: activeOrgId,
-      companyId: connectScopeType === 'COMPANY' ? connectCompanyId : null,
-    });
   };
 
   const handleTestResolution = async (provider: OAuthProvider) => {
@@ -443,15 +478,15 @@ export default function OAuthIntegrations() {
             <HelpIcon
               text={
                 isPaidAds
-                  ? 'Connect and manage OAuth 2.0 authorization for Google Ads, Microsoft Ads, Meta Ads, and LinkedIn Ads. Tokens and customer accounts are discovered and encrypted automatically.'
+                  ? 'Connect and manage OAuth 2.0 authorization for Google Ads, Microsoft Ads, Meta Ads, and LinkedIn Ads. Supports both live third-party OAuth 2.0 sign-in and simulated sandbox testing with fake data.'
                   : 'Connect and manage OAuth 2.0 authorization for LinkedIn Pages, X (Twitter), Facebook Pages, Instagram, YouTube, and TikTok Business.'
               }
             />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
             {isPaidAds
-              ? 'Multi-entity advertising account authorization. Manage access, MCC customer discovery, and AES-256 encrypted refresh tokens.'
-              : 'Multi-entity organic social profile authorization. Manage publishing permissions, channel discovery, and live telemetry.'}
+              ? 'Multi-entity advertising account authorization. Connect with real OAuth 2.0 or test instantly with simulated sandbox data.'
+              : 'Multi-entity organic social profile authorization. Connect with real OAuth 2.0 or test instantly with simulated sandbox data.'}
           </p>
         </div>
 
@@ -473,20 +508,18 @@ export default function OAuthIntegrations() {
         <div className="flex items-center gap-2">
           <Link
             to="/configurations/integrations?category=PAID_ADS"
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
-              isPaidAds
-                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${isPaidAds
+              ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+              }`}
           >
             <Megaphone className="w-3.5 h-3.5" />
             <span>Paid Advertising</span>
             <span
-              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-                isPaidAds
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
+              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${isPaidAds
+                ? 'bg-primary-foreground/20 text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+                }`}
             >
               {counts.paidCount} / 4
             </span>
@@ -494,20 +527,18 @@ export default function OAuthIntegrations() {
 
           <Link
             to="/configurations/integrations?category=SOCIAL_MEDIA"
-            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
-              !isPaidAds
-                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
-            }`}
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${!isPaidAds
+              ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+              }`}
           >
             <Share2 className="w-3.5 h-3.5" />
             <span>Organic Social Media</span>
             <span
-              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
-                !isPaidAds
-                  ? 'bg-primary-foreground/20 text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
+              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${!isPaidAds
+                ? 'bg-primary-foreground/20 text-primary-foreground'
+                : 'bg-muted text-muted-foreground'
+                }`}
             >
               {counts.socialCount} / 6
             </span>
@@ -696,14 +727,14 @@ export default function OAuthIntegrations() {
                   </div>
                 ) : (
                   <div className="p-3 rounded-md border border-dashed border-border/80 text-center text-xs text-muted-foreground bg-muted/10 space-y-1.5">
-                    <p className="font-medium text-foreground/80">OAuth 2.0 Authorization Required</p>
-                    <p className="text-[11px]">Click Connect to sign in and authorize this channel.</p>
+                    <p className="font-medium text-foreground/80">OAuth 2.0 Authorization Ready</p>
+                    <p className="text-[11px]">Connect using live OAuth 2.0 or test instantly with simulated sandbox data.</p>
                   </div>
                 )}
               </CardContent>
 
-              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5">
+              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
                   {activeConn && canManage && (
                     <Button
                       variant="ghost"
@@ -725,12 +756,12 @@ export default function OAuthIntegrations() {
                     onClick={() => handleTestResolution(provider)}
                   >
                     <ArrowRight className="w-3 h-3" />
-                    {resolvingProvider === provider ? 'Checking...' : 'Test Resolve'}
+                    {resolvingProvider === provider ? 'Checking...' : 'Resolve'}
                   </Button>
                 </div>
 
                 {canManage && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
                     {activeConn ? (
                       <div className="flex items-center gap-1">
                         <Button
@@ -738,7 +769,7 @@ export default function OAuthIntegrations() {
                           size="sm"
                           className="h-8 text-xs gap-1"
                           onClick={() => handleOpenConnect(provider)}
-                          title="Switch or re-authorize account"
+                          title="Switch account or re-authenticate"
                         >
                           <KeyRound className="w-3 h-3 text-muted-foreground" />
                           Reconnect
@@ -758,14 +789,31 @@ export default function OAuthIntegrations() {
                         </Button>
                       </div>
                     ) : (
-                      <Button
-                        size="sm"
-                        className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
-                        onClick={() => handleOpenConnect(provider)}
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Connect
-                      </Button>
+                      <div className="flex items-center gap-1.5">
+                        {/* 1. Test Button with Fake Data */}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                          disabled={connectMutation.isPending}
+                          onClick={() => handleCardTestConnect(provider)}
+                          title="Connect simulated sandbox account with fake data"
+                        >
+                          <FlaskConical className="w-3.5 h-3.5 text-primary" />
+                          Test (Fake Data)
+                        </Button>
+
+                        {/* 2. Live OAuth 2.0 Connect Button */}
+                        <Button
+                          size="sm"
+                          className="h-8 text-xs gap-1 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+                          onClick={() => handleOpenConnect(provider)}
+                          title="Authorize real live account via OAuth 2.0"
+                        >
+                          <Globe className="w-3.5 h-3.5" />
+                          Live OAuth
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
@@ -775,15 +823,14 @@ export default function OAuthIntegrations() {
         })}
       </div>
 
-      {/* OAuth 2.0 Sign-In & Authorization Modal */}
+      {/* OAuth 2.0 Connect Dialog: Dual Options (Fake Data vs Live OAuth 2.0) */}
       <Dialog open={isConnectOpen} onOpenChange={setIsConnectOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[540px]">
           <DialogHeader>
             <div className="flex items-center gap-3">
               <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-xs ${
-                  PROVIDER_METADATA[connectProvider]?.iconBg || 'bg-primary/10 text-primary'
-                }`}
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-xs ${PROVIDER_METADATA[connectProvider]?.iconBg || 'bg-primary/10 text-primary'
+                  }`}
               >
                 {PROVIDER_METADATA[connectProvider]?.iconChar || '•'}
               </div>
@@ -792,14 +839,14 @@ export default function OAuthIntegrations() {
                   Connect {PROVIDER_METADATA[connectProvider]?.name}
                 </DialogTitle>
                 <DialogDescription className="text-xs mt-0.5">
-                  Sign in with your existing account to grant OAuth 2.0 access.
+                  Choose between simulated testing with demo data or live OAuth 2.0 sign-in.
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
 
-          <form onSubmit={handleOAuthSignIn} className="space-y-4 py-2">
-            {/* Entity Target */}
+          <div className="space-y-4 py-2">
+            {/* Entity Target Selection */}
             <div className="p-3.5 rounded-xl border border-border/70 bg-muted/30 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-semibold text-foreground">
@@ -858,13 +905,13 @@ export default function OAuthIntegrations() {
               )}
             </div>
 
-            {/* Requested Permissions & Explanation */}
-            <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2.5">
+            {/* Requested Permissions */}
+            <div className="p-3 rounded-lg border border-border/70 bg-card space-y-2">
               <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span>Requested OAuth 2.0 Scopes:</span>
+                <span>Requested Permissions:</span>
               </div>
-              <ul className="space-y-1.5 text-xs text-muted-foreground pl-1">
+              <ul className="space-y-1 text-xs text-muted-foreground pl-1">
                 {PROVIDER_METADATA[connectProvider]?.authPermissions.map((perm, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
@@ -872,42 +919,98 @@ export default function OAuthIntegrations() {
                   </li>
                 ))}
               </ul>
-              <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
-                Backend automatically discovers ad account IDs and encrypts tokens with AES-256-GCM. No credentials or secret keys are exposed.
-              </p>
             </div>
 
-            <DialogFooter className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2">
+            {/* The 2 Connection Options */}
+            <div className="space-y-3 pt-1">
+              {/* Option 1: Test Button with Fake Data */}
+              <div className="p-3.5 rounded-xl border border-dashed border-primary/40 bg-primary/5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <FlaskConical className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">
+                      Option 1: Test with Fake Data (Sandbox)
+                    </span>
+                    <Badge variant="outline" className="text-[9px] bg-background">Demo Mode</Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Connects simulated accounts instantly with mock tokens. Perfect for UI & workflow testing without developer keys.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={connectMutation.isPending || isRedirecting}
+                  onClick={() => handleTestConnect(connectProvider)}
+                  className="w-full sm:w-auto text-xs shrink-0 border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
+                >
+                  {connectMutation.isPending ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <FlaskConical className="w-3.5 h-3.5" />
+                      Test (Fake Data)
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Option 2: Actual OAuth 2.0 Sign-In */}
+              <div className="p-3.5 rounded-xl border border-border bg-card shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-semibold text-foreground">
+                      Option 2: Live OAuth 2.0 Sign In (Real)
+                    </span>
+                    <Badge variant="outline" className="text-[9px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300">
+                      Live Connect
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Redirects directly to {PROVIDER_METADATA[connectProvider]?.name} sign-in screen to authenticate your real advertising account.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={isRedirecting || connectMutation.isPending}
+                  onClick={() => handleLiveOAuth(connectProvider)}
+                  className="w-full sm:w-auto text-xs shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
+                >
+                  {isRedirecting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Redirecting...
+                    </>
+                  ) : (
+                    <>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Live OAuth 2.0 ↗
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter className="pt-2 flex justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsConnectOpen(false)}
-                className="w-full sm:w-auto text-xs"
+                className="text-xs"
               >
                 Cancel
               </Button>
-
-              <Button
-                type="submit"
-                size="sm"
-                disabled={connectMutation.isPending}
-                className="w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4"
-              >
-                {connectMutation.isPending ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Authorizing with {PROVIDER_METADATA[connectProvider]?.name}...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Sign In & Connect {PROVIDER_METADATA[connectProvider]?.name}
-                  </>
-                )}
-              </Button>
             </DialogFooter>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
