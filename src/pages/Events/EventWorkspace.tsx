@@ -24,6 +24,7 @@ import ResultsSection from "../Initiatives/ResultsSection";
 import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
 import { dateRange, eventPlace, TIMING_DOT, whenText, type WorkspaceTab } from "./eventDisplay";
 import StaffSection from "./StaffSection";
+import CostSources from "./CostSources";
 import TravelBudgetUsage from "./TravelBudget";
 
 const TABS: WorkspaceTab[] = ["team", "costs", "demos", "results"];
@@ -112,18 +113,12 @@ function Checklist({ card, tab, onSelect }: { card: EventOverviewItem | undefine
       <Step
         tab="team"
         icon={Users}
-        title="Team & travel"
+        title="Team"
         active={tab === "team"}
         onSelect={onSelect}
-        done={card.staff_count > 0 && card.staff_missing_details === 0}
-        attention={card.staff_missing_details > 0 || (card.staff_count === 0 && !happened)}
-        status={
-          card.staff_count === 0
-            ? "No one added yet"
-            : card.staff_missing_details > 0
-              ? `${card.staff_missing_details} need travel details`
-              : `${card.staff_count} going${card.staff_booked ? ` · ${card.staff_booked} booked` : ""}`
-        }
+        done={card.staff_count > 0}
+        attention={card.staff_count === 0 && !happened}
+        status={card.staff_count === 0 ? "No one added yet" : `${card.staff_count} going`}
       />
       <Step
         tab="costs"
@@ -271,9 +266,14 @@ export default function EventWorkspace() {
       <section id="event-tab-panel" role="tabpanel" aria-labelledby={`event-tab-${tab}`} className="min-w-0">
         {tab === "team" && <StaffSection event={initiative} />}
         {tab === "costs" && (
-          <Card className={`${CARD} gap-0 p-4 sm:p-5`}>
-            <CostSheet initiative={initiative} />
-          </Card>
+          <div className="flex flex-col gap-4">
+            <Card className={`${CARD} gap-0 p-4 sm:p-5`}>
+              <CostSources initiative={initiative} />
+            </Card>
+            <Card className={`${CARD} gap-0 p-4 sm:p-5`}>
+              <CostSheet initiative={initiative} />
+            </Card>
+          </div>
         )}
         {tab === "demos" && <DemoLog initiative={initiative} />}
         {tab === "results" && <ResultsTab initiative={initiative} />}

@@ -16,8 +16,6 @@ export interface InitiativeListItem {
   funnel_stage_name: string | null;
   goal_id: number | null;
   goal_name: string | null;
-  primary_kpi_id: number | null;
-  primary_kpi_name: string | null;
   owner_user_id: string | null;
   owner_name: string | null;
   /** Which monthly budget market its costs count against; null counts as Unassigned */
@@ -42,10 +40,12 @@ export interface InitiativeListItem {
   event_url: string | null;
   /** In-person events only, in square metres */
   booth_size_sqm: number | null;
-  /** Flights, hotels, ground transport and stipends, in the initiative's currency; less than the budget */
+  /** Planned travel spend (flights, hotels, ground transport, per diems), in the initiative's currency; less than the budget */
   travel_budget_amount: number | null;
   /** The Navan event its travel bookings come from; null means a Navan event with the same name */
   navan_event_name: string | null;
+  /** Navan's estimated travel cost for the event, in its currency: typed in from Navan (its API doesn't share it) */
+  navan_estimate_amount: number | null;
   // Costs in the initiative's currency: everything expected (estimates included), and invoiced + paid
   expected_total: number;
   actual_amount: number;
@@ -64,10 +64,12 @@ export interface EventDetailsInput {
   event_url?: string | null;
   /** In-person events only; always square metres */
   booth_size_sqm?: number | null;
-  /** Part of the event budget (same currency); has to be less than it. Sent to the travel system. */
+  /** Planned travel spend, part of the event budget (same currency); has to be less than it. Navan costs are compared with it. */
   travel_budget_amount?: number | null;
   /** The Navan event its bookings come from, as named in Navan. Empty: a Navan event with the same name. */
   navan_event_name?: string | null;
+  /** Navan's estimated travel cost, from its group event page */
+  navan_estimate_amount?: number | null;
 }
 
 export interface InitiativeListResponse {
@@ -97,7 +99,6 @@ export interface InitiativeCreate {
   sub_channel_id?: number | null;
   funnel_stage_id?: number | null;
   goal_id?: number | null;
-  primary_kpi_id?: number | null;
   market_id?: number | null;
   /** Defaults to the current user when omitted */
   owner_user_id?: string | null;

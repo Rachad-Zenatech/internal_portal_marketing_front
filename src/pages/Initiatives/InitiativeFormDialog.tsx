@@ -45,7 +45,6 @@ interface FormState {
   subChannelId: string;
   funnelStageId: string;
   goalId: string;
-  primaryKpiId: string;
   marketId: string;
   startDate: string;
   endDate: string;
@@ -64,10 +63,12 @@ interface FormState {
   // In-person events: typed in either unit, always sent in m²
   boothSize: string;
   boothUnit: AreaUnit;
-  // Part of the budget, in the same currency, sent to the travel system
+  // Planned travel spend: part of the budget, in the same currency; Navan costs are compared with it
   travelBudget: string;
   // The Navan event its bookings come from; empty means the Navan event with the same name
   navanEvent: string;
+  // Navan's estimated travel cost, copied from its group event page
+  navanEstimate: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -77,7 +78,6 @@ const EMPTY_FORM: FormState = {
   subChannelId: "",
   funnelStageId: "",
   goalId: "",
-  primaryKpiId: "",
   marketId: "",
   startDate: "",
   endDate: "",
@@ -95,6 +95,7 @@ const EMPTY_FORM: FormState = {
   boothUnit: "sqm",
   travelBudget: "",
   navanEvent: "",
+  navanEstimate: "",
 };
 
 // A new initiative's form is kept in the browser while it's being filled in, so closing it by accident
@@ -109,7 +110,12 @@ interface UnsavedForm {
 function readUnsaved(userId: string | undefined): UnsavedForm | null {
   try {
     const raw = appStorage.getItem(unsavedKey(userId));
-    return raw ? (JSON.parse(raw) as UnsavedForm) : null;
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as UnsavedForm;
+    // Only the fields the form has today: an older form may hold ones since removed (e.g. a main KPI)
+    const known = Object.entries(saved.form ?? {}).filter(([field]) => field in EMPTY_FORM);
+    const form = { ...EMPTY_FORM, ...Object.fromEntries(known) } as FormState;
+    return hasContent(form) ? { form, owner: saved.owner ?? null } : null;
   } catch {
     return null;
   }
@@ -135,7 +141,6 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     subChannelId: idText(item.sub_channel_id),
     funnelStageId: idText(item.funnel_stage_id),
     goalId: idText(item.goal_id),
-    primaryKpiId: idText(item.primary_kpi_id),
     marketId: idText(item.market_id),
     startDate: item.start_date ?? "",
     endDate: item.end_date ?? "",
@@ -154,6 +159,7 @@ function formFromInitiative(item: InitiativeListItem): FormState {
     boothUnit: "sqm",
     travelBudget: item.travel_budget_amount === null ? "" : String(item.travel_budget_amount),
     navanEvent: item.navan_event_name ?? "",
+    navanEstimate: item.navan_estimate_amount === null || item.navan_estimate_amount === undefined ? "" : String(item.navan_estimate_amount),
   };
 }
 
@@ -177,6 +183,7 @@ function eventFromForm(form: FormState, subChannelCode: string | undefined): Req
     travel_budget_amount: form.travelBudget ? Number(form.travelBudget) : null,
     // A form kept from before Navan links existed has none
     navan_event_name: toText(form.navanEvent ?? ""),
+    navan_estimate_amount: form.navanEstimate ? Number(form.navanEstimate) : null,
   };
 }
 
@@ -346,22 +353,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
     return reference.sub_channels.filter((s) => allowed.has(s.id));
   }, [reference, form.channelId]);
 
-  // Primary KPIs follow the channel too: no ad measures like CPM on an event. A KPI saved before this rule stays
-  // listed (marked) so the field still shows it; the API only checks it when it changes.
   const channelCode = reference?.channels.find((c) => String(c.id) === form.channelId)?.code;
-  const kpiChoices = useMemo(() => {
-    const all = reference?.primary_kpis ?? [];
-    const allowed = channelCode ? reference?.kpi_choices_by_channel?.[channelCode] : undefined;
-    if (!allowed) return all;
-    return all
-      .filter((k) => allowed.includes(k.code) || String(k.id) === form.primaryKpiId)
-      .map((k) => (allowed.includes(k.code) ? k : { ...k, name: `${k.name} (not used for this channel)` }));
-  }, [reference, channelCode, form.primaryKpiId]);
-  const kpiFitsChannel = (kpiId: string, code: string | undefined) => {
-    const allowed = code ? reference?.kpi_choices_by_channel?.[code] : undefined;
-    const kpiCode = reference?.primary_kpis.find((k) => String(k.id) === kpiId)?.code;
-    return !kpiId || !allowed || (kpiCode !== undefined && allowed.includes(kpiCode));
-  };
 
   // The event block appears for the Events channel, with required fields set by the sub-channel
   const isEvent = channelCode === EVENTS_CHANNEL_CODE;
@@ -417,7 +409,6 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
       sub_channel_id: toId(form.subChannelId),
       funnel_stage_id: toId(form.funnelStageId),
       goal_id: toId(form.goalId),
-      primary_kpi_id: toId(form.primaryKpiId),
       // A form kept from before markets existed has no market
       market_id: toId(form.marketId ?? ""),
       owner_user_id: owner?.id ?? null,
@@ -504,11 +495,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
               items={reference?.channels ?? []}
               placeholder="Choose a channel"
               // A new channel may not include the selected sub-channel
-              onChange={(v) => {
-                // A KPI that doesn't fit the new channel is cleared rather than saved and rejected
-                const newCode = reference?.channels.find((c) => String(c.id) === v)?.code;
-                set({ channelId: v, subChannelId: "", ...(kpiFitsChannel(form.primaryKpiId, newCode) ? {} : { primaryKpiId: "" }) });
-              }}
+              onChange={(v) => set({ channelId: v, subChannelId: "" })}
             />
           </Field>
           <Field label="Sub-channel" htmlFor="initiative-sub-channel">
@@ -603,7 +590,31 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
                 />
               </div>
               <p id="initiative-travel-budget-hint" className="text-xs text-slate-500 dark:text-zinc-400">
-                Flights, hotels, ground transport and stipends. Sent to the travel system. Must be less than the event budget.
+                Flights, hotels, ground transport and per diems you plan to spend. Navan bookings are compared with it. Must be less than the event budget.
+              </p>
+            </Field>
+          )}
+          {isEvent && (
+            <Field label="Navan estimate" htmlFor="initiative-navan-estimate" className="sm:col-span-2">
+              <div className="flex sm:max-w-[calc(50%-0.5rem)]">
+                <span className="flex w-24 shrink-0 items-center rounded-l-md border border-r-0 border-input bg-slate-50 px-3 text-sm text-slate-600 dark:bg-zinc-800/60 dark:text-zinc-300">
+                  {form.currency}
+                </span>
+                <Input
+                  id="initiative-navan-estimate"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={form.navanEstimate ?? ""}
+                  onChange={(e) => set({ navanEstimate: e.target.value })}
+                  placeholder="0.00"
+                  className="rounded-l-none tabular-nums"
+                  aria-describedby="initiative-navan-estimate-hint"
+                />
+              </div>
+              <p id="initiative-navan-estimate-hint" className="text-xs text-slate-500 dark:text-zinc-400">
+                The "estimated" amount on the event's Navan page. Navan doesn't share it through its API yet, so copy it here.
               </p>
             </Field>
           )}
@@ -798,7 +809,7 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
             </h3>
             <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">What this initiative is for, and the number you'll judge it on.</p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Funnel stage" htmlFor="initiative-funnel-stage">
               <ReferenceSelect
                 id="initiative-funnel-stage"
@@ -819,16 +830,6 @@ function InitiativeForm({ initiative, defaultChannelCode, onDone }: InitiativeFo
                 onChange={(v) => set({ goalId: v })}
                 allowNone
                 disabled={!form.funnelStageId}
-              />
-            </Field>
-            <Field label="Main KPI" htmlFor="initiative-kpi">
-              <ReferenceSelect
-                id="initiative-kpi"
-                value={form.primaryKpiId}
-                items={kpiChoices}
-                placeholder="Choose a KPI"
-                onChange={(v) => set({ primaryKpiId: v })}
-                allowNone
               />
             </Field>
           </div>
