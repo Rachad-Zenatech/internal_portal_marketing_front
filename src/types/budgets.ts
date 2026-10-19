@@ -296,3 +296,70 @@ export interface BudgetImportUndoResult {
   notes_removed: number;
   skipped: number;
 }
+
+// ─── A period of months (Budgets & Expenses) ─────────────────────────────────
+
+export interface PeriodBudgetRow extends BudgetRow {
+  /** Committed costs (ordered, no invoice yet) counted against it, in its currency */
+  committed: number;
+}
+
+/** Approved budgets in one currency; budgets awaiting approval are counted apart (pending), cancelled ones not at all */
+export interface PeriodTotals {
+  currency: string;
+  amount: number;
+  available: number;
+  spent: number;
+  committed: number;
+  expected: number;
+  remaining: number;
+  budget_count: number;
+  pending_amount: number;
+  pending_count: number;
+}
+
+export interface PeriodMonth {
+  /** YYYY-MM-01 */
+  month: string;
+  currency: string;
+  available: number;
+  spent: number;
+  committed: number;
+}
+
+/** Marketing spend on one channel (travel left out), whether or not a budget covers it */
+export interface ChannelSpend {
+  channel_name: string;
+  currency: string;
+  spent: number;
+  committed: number;
+}
+
+export interface BudgetPeriod {
+  from_month: string;
+  to_month: string;
+  budgets: PeriodBudgetRow[];
+  totals: PeriodTotals[];
+  months: PeriodMonth[];
+  channels: ChannelSpend[];
+  unbudgeted: UnbudgetedSpend[];
+  outside_budget: OutsideBudgetSpend[];
+}
+
+/** A cost with where it came from, its stage and whether Finance has reconciled it */
+export interface ExpenseLine extends BudgetWeekLine {
+  source: string;
+  invoice_ref: string | null;
+  paid_on: string | null;
+  reconciled_month: string | null;
+  /** The initiative's last day, to spot estimates and commitments left open after it ended */
+  initiative_end_date: string | null;
+}
+
+export interface BudgetExpenses {
+  from_date: string;
+  to_date: string;
+  lines: ExpenseLine[];
+  /** More costs than listed: narrow the period */
+  truncated: boolean;
+}

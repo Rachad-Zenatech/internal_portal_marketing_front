@@ -22,6 +22,25 @@ export interface StaffAssignmentCreate {
 
 export type StaffAssignmentUpdate = Partial<Omit<StaffAssignmentCreate, "user_id">>;
 
+export type NavanBookingType = "FLIGHT" | "HOTEL" | "CAR" | "RAIL" | "OTHER";
+
+/** Someone on the event's active Navan bookings (kept by the Navan sync). Not necessarily a portal user. */
+export interface EventTraveller {
+  name: string;
+  email: string | null;
+  department: string | null;
+  /** The portal user with the same email, if there is one */
+  user_id: string | null;
+  /** What they booked, sorted */
+  booking_types: NavanBookingType[];
+  bookings: number;
+  /** Their share of the bookings in the event's currency (other currencies are left out) */
+  amount: number;
+  currency: string;
+  first_travel: string | null;
+  last_travel: string | null;
+}
+
 /** One event card: what it is, and what still needs doing */
 export interface EventOverviewItem {
   id: string;
@@ -56,6 +75,8 @@ export interface EventOverviewItem {
   /** Every travel cost, including approved ones not yet paid */
   travel_expected: number;
   staff_count: number;
+  /** People on the event's active Navan bookings */
+  traveller_count: number;
   demos_given: number;
   demos_booked: number;
   leads: number | null;

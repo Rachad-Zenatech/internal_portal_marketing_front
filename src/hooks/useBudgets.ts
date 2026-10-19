@@ -10,7 +10,9 @@ import {
   deleteBudgetComment,
   deleteBudgetTransfer,
   getBudget,
+  getBudgetExpenses,
   getBudgetMonth,
+  getBudgetPeriod,
   getBudgetWeek,
   undoBudgetImport,
   updateBudget,
@@ -36,6 +38,26 @@ export function useBudgetMonths(months: string[], enabled = true) {
       placeholderData: keepPreviousData,
       enabled,
     })),
+  });
+}
+
+/** A period of months (YYYY-MM-01 each); refreshed with everything else under the months */
+export function useBudgetPeriod(from: string | null, to: string | null, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.budgetPeriod(from ?? "", to ?? ""),
+    queryFn: () => getBudgetPeriod(from as string, to as string),
+    placeholderData: keepPreviousData,
+    enabled: enabled && Boolean(from && to),
+  });
+}
+
+/** Every cost from one day to another (YYYY-MM-DD) */
+export function useBudgetExpenses(from: string, to: string, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.budgetExpenses(from, to),
+    queryFn: () => getBudgetExpenses(from, to),
+    placeholderData: keepPreviousData,
+    enabled,
   });
 }
 

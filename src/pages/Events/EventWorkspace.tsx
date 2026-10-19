@@ -104,6 +104,14 @@ function ResultsTab({ initiative }: { initiative: InitiativeListItem }) {
   );
 }
 
+/** "3 going", "8 travelling (from Navan)", both, or "No one added yet" */
+function teamStatus(card: EventOverviewItem) {
+  const parts: string[] = [];
+  if (card.staff_count > 0) parts.push(`${card.staff_count} going`);
+  if (card.traveller_count > 0) parts.push(`${card.traveller_count} travelling (from Navan)`);
+  return parts.length ? parts.join(", ") : "No one added yet";
+}
+
 function Checklist({ card, tab, onSelect }: { card: EventOverviewItem | undefined; tab: WorkspaceTab; onSelect: (tab: WorkspaceTab) => void }) {
   if (!card) return null;
   const money = (v: number) => formatMoney(v, card.currency);
@@ -116,9 +124,9 @@ function Checklist({ card, tab, onSelect }: { card: EventOverviewItem | undefine
         title="Team"
         active={tab === "team"}
         onSelect={onSelect}
-        done={card.staff_count > 0}
-        attention={card.staff_count === 0 && !happened}
-        status={card.staff_count === 0 ? "No one added yet" : `${card.staff_count} going`}
+        done={card.staff_count > 0 || card.traveller_count > 0}
+        attention={card.staff_count === 0 && card.traveller_count === 0 && !happened}
+        status={teamStatus(card)}
       />
       <Step
         tab="costs"

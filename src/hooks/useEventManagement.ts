@@ -1,6 +1,14 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryKeys";
-import { addEventStaff, getEventOverview, getEventPerformance, getEventStaff, removeEventStaff, updateEventStaff } from "@/services/eventManagementService";
+import {
+  addEventStaff,
+  getEventOverview,
+  getEventPerformance,
+  getEventStaff,
+  getEventTravellers,
+  removeEventStaff,
+  updateEventStaff,
+} from "@/services/eventManagementService";
 import type { StaffAssignmentCreate, StaffAssignmentUpdate } from "@/types/eventManagement";
 import type { EventPerformanceFilters } from "@/types/eventPerformance";
 
@@ -25,6 +33,15 @@ export function useEventStaff(initiativeId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.eventStaff(initiativeId ?? ""),
     queryFn: () => getEventStaff(initiativeId as string),
+    enabled: Boolean(initiativeId),
+  });
+}
+
+/** The people travelling to an event, from its Navan bookings (the Navan sync keeps them up to date) */
+export function useEventTravellers(initiativeId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.eventTravellers(initiativeId ?? ""),
+    queryFn: () => getEventTravellers(initiativeId as string),
     enabled: Boolean(initiativeId),
   });
 }
