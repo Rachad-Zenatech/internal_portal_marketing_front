@@ -5,6 +5,8 @@ import {
   ShieldCheck,
   FileClock,
   Wallet,
+  Share2,
+  Globe,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -69,6 +71,8 @@ export const navigation: NavigationItem[] = [
     label: "Budgets & Expenses",
     path: "/budgets",
     icon: Wallet,
+  Share2,
+  Globe,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
@@ -78,6 +82,23 @@ export const navigation: NavigationItem[] = [
     icon: ChartColumn,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
+  },
+  {
+    label: "Social Media",
+    path: "/socials",
+    icon: Share2,
+  Globe,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+    subItems: [
+      { label: "All Socials", path: "/socials", navigationCode: "INITIATIVES" },
+      { label: "LinkedIn", path: "/socials?platform=LINKEDIN_PAGE", navigationCode: "INITIATIVES" },
+      { label: "X (Twitter)", path: "/socials?platform=X_TWITTER", navigationCode: "INITIATIVES" },
+      { label: "Instagram", path: "/socials?platform=INSTAGRAM", navigationCode: "INITIATIVES" },
+      { label: "Facebook", path: "/socials?platform=FACEBOOK_PAGE", navigationCode: "INITIATIVES" },
+      { label: "YouTube", path: "/socials?platform=YOUTUBE", navigationCode: "INITIATIVES" },
+      { label: "TikTok", path: "/socials?platform=TIKTOK", navigationCode: "INITIATIVES" },
+    ],
   },
   {
     label: "System & Security",
@@ -90,7 +111,25 @@ export const navigation: NavigationItem[] = [
       { label: "Role Permissions", path: "/configurations/role-group-permissions", navigationCode: "CONFIG_ROLES" },
       { label: "API Permissions", path: "/configurations/role-api-permissions", navigationCode: "CONFIG_ROLE_API_PERMISSIONS" },
       { label: "MCP Tool Permissions", path: "/configurations/role-mcp-tool-permissions", navigationCode: "CONFIG_ROLE_MCP_TOOL_PERMISSIONS" },
-      { label: "OAuth & Integrations", path: "/configurations/integrations", navigationCode: "CONFIG_ROLES" },
+    ],
+  },
+  {
+    label: "OAuth Integrations",
+    path: "/configurations/integrations?category=PAID_ADS",
+    icon: Globe,
+    section: "ADMINISTRATION",
+    navigationCode: "CONFIG_ROLES",
+    subItems: [
+      {
+        label: "Paid Advertising",
+        path: "/configurations/integrations?category=PAID_ADS",
+        navigationCode: "CONFIG_ROLES",
+      },
+      {
+        label: "Organic Social Media",
+        path: "/configurations/integrations?category=SOCIAL_MEDIA",
+        navigationCode: "CONFIG_ROLES",
+      },
     ],
   },
   {

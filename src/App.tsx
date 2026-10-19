@@ -17,6 +17,7 @@ const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
 const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
 const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
+const SocialMediaPage = lazy(() => import("./pages/SocialMedia/SocialMediaPage"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -149,6 +150,18 @@ function App() {
                     <PaidAdsPage />
                   </ProtectedRoute>
                 }
+              />
+              <Route
+                path="/socials"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <SocialMediaPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social-media"
+                element={<Navigate to="/socials" replace />}
               />
 
               {/* Configuration Routes */}

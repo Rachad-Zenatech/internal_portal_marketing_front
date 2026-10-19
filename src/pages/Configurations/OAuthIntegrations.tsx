@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -9,27 +10,27 @@ import {
   CheckCircle2,
   AlertTriangle,
   Building2,
-  Layers,
   ArrowRight,
   ShieldCheck,
   Lock,
+  Sparkles,
+  KeyRound,
+  Megaphone,
+  Share2,
 } from 'lucide-react';
 
 import {
   oauthService,
   type OAuthProvider,
   type OAuthConnection,
-  type OAuthConnectionCreate,
 } from '@/services/oauthService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Card,
   CardHeader,
   CardTitle,
-  CardDescription,
   CardContent,
   CardFooter,
 } from '@/components/ui/card';
@@ -51,174 +52,313 @@ import {
 import HelpIcon from '@/components/ui/HelpIcon';
 import { useAuth } from '@/lib/AuthContext';
 
-const PROVIDER_METADATA: Record<
-  OAuthProvider,
-  { name: string; description: string; defaultScope: string; iconBg: string }
-> = {
+export type IntegrationCategory = 'PAID_ADS' | 'SOCIAL_MEDIA';
+
+interface ProviderMeta {
+  name: string;
+  category: 'PAID_ADS' | 'SOCIAL_MEDIA';
+  description: string;
+  defaultScope: string;
+  iconBg: string;
+  iconChar: string;
+  idLabel: string;
+  idPlaceholder: string;
+  authPermissions: string[];
+}
+
+const PROVIDER_METADATA: Record<OAuthProvider, ProviderMeta> = {
+  // --- Paid Advertising ---
   GOOGLE_ADS: {
     name: 'Google Ads',
+    category: 'PAID_ADS',
     description: 'Search, Display, YouTube, and Performance Max advertising data',
     iconBg: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+    iconChar: 'G',
     defaultScope: 'https://www.googleapis.com/auth/adwords',
+    idLabel: 'Customer / MCC ID',
+    idPlaceholder: 'e.g. 123-456-7890',
+    authPermissions: [
+      'Read ad performance & campaign reporting',
+      'Discover Customer IDs and MCC accounts',
+      'Automatic offline refresh token renewal',
+    ],
   },
   MICROSOFT_ADS: {
     name: 'Microsoft Ads (Bing)',
+    category: 'PAID_ADS',
     description: 'Bing Search, Microsoft Audience Network, and Copilot ads',
     iconBg: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',
-    defaultScope: 'https://ads.microsoft.com/msads.manage',
+    iconChar: 'M',
+    defaultScope: 'https://ads.microsoft.com/msads.manage offline_access',
+    idLabel: 'Account ID',
+    idPlaceholder: 'e.g. MS-1234-567',
+    authPermissions: [
+      'Access Bing Search and Audience Network metrics',
+      'Discover linked Microsoft Advertising accounts',
+      'Manage offline token renewal lifecycle',
+    ],
   },
   META_ADS: {
     name: 'Meta Ads (Facebook & IG)',
+    category: 'PAID_ADS',
     description: 'Facebook, Instagram, Messenger, and Audience Network campaigns',
     iconBg: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    iconChar: 'f',
     defaultScope: 'ads_management,ads_read',
+    idLabel: 'Ad Account ID',
+    idPlaceholder: 'e.g. act_1234567890',
+    authPermissions: [
+      'Read Meta Pixel and Ads Manager conversions',
+      'Access ad sets, reach, and CPM spend telemetry',
+      'Long-lived 60-day token auto-management',
+    ],
   },
   LINKEDIN_ADS: {
     name: 'LinkedIn Ads',
+    category: 'PAID_ADS',
     description: 'B2B sponsored content, lead gen forms, and InMail campaigns',
     iconBg: 'bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400',
+    iconChar: 'in',
     defaultScope: 'r_ads,r_ads_reporting',
+    idLabel: 'Sponsored Account ID',
+    idPlaceholder: 'e.g. 501234567',
+    authPermissions: [
+      'Read sponsored content and lead form metrics',
+      'Access B2B campaign ROI analytics',
+      'Auto-renew access via LinkedIn OAuth 2.0',
+    ],
+  },
+
+  // --- Organic Social Media ---
+  LINKEDIN_PAGE: {
+    name: 'LinkedIn Company Page',
+    category: 'SOCIAL_MEDIA',
+    description: 'Company updates, organic post publishing, analytics, and follower growth',
+    iconBg: 'bg-sky-100 dark:bg-sky-900/40 text-sky-800 dark:text-sky-300',
+    iconChar: 'in',
+    defaultScope: 'w_organization_social,r_organization_social',
+    idLabel: 'Organization URN / Page ID',
+    idPlaceholder: 'e.g. urn:li:organization:1234567',
+    authPermissions: [
+      'Read organic company page updates & impressions',
+      'Sync engagement, comments, and follower metrics',
+      'Offline renewal support',
+    ],
+  },
+  X_TWITTER: {
+    name: 'X (Twitter)',
+    category: 'SOCIAL_MEDIA',
+    description: 'Company tweets, thread publishing, timeline impressions, and engagement',
+    iconBg: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100',
+    iconChar: '𝕏',
+    defaultScope: 'tweet.read,tweet.write,users.read,offline.access',
+    idLabel: 'Handle / User ID',
+    idPlaceholder: 'e.g. @ZenaTechUSA',
+    authPermissions: [
+      'Read company timeline tweets and impressions',
+      'Access profile statistics and engagement rates',
+      'PKCE OAuth 2.0 secure session handling',
+    ],
+  },
+  FACEBOOK_PAGE: {
+    name: 'Facebook Page',
+    category: 'SOCIAL_MEDIA',
+    description: 'Official brand pages, feed posts, community updates, and page metrics',
+    iconBg: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300',
+    iconChar: 'fb',
+    defaultScope: 'pages_manage_posts,pages_read_engagement',
+    idLabel: 'Page ID',
+    idPlaceholder: 'e.g. 109283746501928',
+    authPermissions: [
+      'Read organic page feed posts & reach',
+      'Aggregate reactions, comments, and shares',
+    ],
+  },
+  INSTAGRAM: {
+    name: 'Instagram Business',
+    category: 'SOCIAL_MEDIA',
+    description: 'Feed posts, reels publishing, story insights, and audience demographics',
+    iconBg: 'bg-pink-50 dark:bg-pink-950/40 text-pink-600 dark:text-pink-400',
+    iconChar: 'ig',
+    defaultScope: 'instagram_basic,instagram_content_publish',
+    idLabel: 'IG Business ID / Handle',
+    idPlaceholder: 'e.g. @othership.work',
+    authPermissions: [
+      'Read business account media insights',
+      'Sync audience growth and demographic telemetry',
+    ],
+  },
+  YOUTUBE: {
+    name: 'YouTube Channel',
+    category: 'SOCIAL_MEDIA',
+    description: 'Corporate video uploads, views, watch time, and subscriber telemetry',
+    iconBg: 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400',
+    iconChar: 'yt',
+    defaultScope: 'https://www.googleapis.com/auth/youtube.readonly',
+    idLabel: 'Channel ID',
+    idPlaceholder: 'e.g. UC_x5XG1OV2P6uZZ5FSM9Ttw',
+    authPermissions: [
+      'Read channel watch time, views, and subscribers',
+      'Discover official corporate brand channels',
+    ],
+  },
+  TIKTOK: {
+    name: 'TikTok Business',
+    category: 'SOCIAL_MEDIA',
+    description: 'Organic video publishing, sound insights, and engagement analytics',
+    iconBg: 'bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-stone-100',
+    iconChar: 'tt',
+    defaultScope: 'user.info.basic,video.list',
+    idLabel: 'Open ID / Username',
+    idPlaceholder: 'e.g. @zenatech_official',
+    authPermissions: [
+      'Read video views and profile analytics',
+      'Sync engagement telemetry across video catalog',
+    ],
   },
 };
 
-const PROVIDERS: OAuthProvider[] = ['GOOGLE_ADS', 'MICROSOFT_ADS', 'META_ADS', 'LINKEDIN_ADS'];
+const ALL_PROVIDERS: OAuthProvider[] = [
+  'GOOGLE_ADS',
+  'MICROSOFT_ADS',
+  'META_ADS',
+  'LINKEDIN_ADS',
+  'LINKEDIN_PAGE',
+  'X_TWITTER',
+  'FACEBOOK_PAGE',
+  'INSTAGRAM',
+  'YOUTUBE',
+  'TIKTOK',
+];
 
 export default function OAuthIntegrations() {
   const queryClient = useQueryClient();
-  const { hasRole, user, hasPermission } = useAuth();
-  const canManage = Boolean(hasRole('SUPER_ADMIN') || user?.is_super_admin || hasPermission('CONFIG_ROLES_UPDATE'));
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { hasPermission, isSuperAdmin } = useAuth();
+  const canManage = isSuperAdmin || hasPermission('CONFIG_ROLES_UPDATE');
 
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('ALL');
-  const [isConnectOpen, setIsConnectOpen] = useState(false);
-  const [resolvingProvider, setResolvingProvider] = useState<OAuthProvider | null>(null);
 
-  // Form State
-  const [formData, setFormData] = useState<{
-    provider: OAuthProvider;
-    scopeType: 'ORGANIZATION' | 'COMPANY';
-    companyId: string;
-    accountName: string;
-    providerAccountId: string;
-    accessToken: string;
-    refreshToken: string;
-    scopes: string;
-  }>({
-    provider: 'GOOGLE_ADS',
-    scopeType: 'ORGANIZATION',
-    companyId: '',
-    accountName: '',
-    providerAccountId: '',
-    accessToken: '',
-    refreshToken: '',
-    scopes: PROVIDER_METADATA.GOOGLE_ADS.defaultScope,
-  });
+  // Sub-nav category: defaults to PAID_ADS if not specified or unrecognized
+  const categoryParam = searchParams.get('category');
+  const activeCategory: IntegrationCategory =
+    categoryParam === 'SOCIAL_MEDIA' ? 'SOCIAL_MEDIA' : 'PAID_ADS';
+
+  // Ensure category is reflected in the URL so sidebar sub-nav link highlights
+  useEffect(() => {
+    if (!categoryParam) {
+      const next = new URLSearchParams(searchParams);
+      next.set('category', 'PAID_ADS');
+      setSearchParams(next, { replace: true });
+    }
+  }, [categoryParam, searchParams, setSearchParams]);
+
+  // OAuth Connect Modal State
+  const [isConnectOpen, setIsConnectOpen] = useState(false);
+  const [connectProvider, setConnectProvider] = useState<OAuthProvider>(
+    activeCategory === 'SOCIAL_MEDIA' ? 'LINKEDIN_PAGE' : 'GOOGLE_ADS'
+  );
+  const [connectScopeType, setConnectScopeType] = useState<'ORGANIZATION' | 'COMPANY'>('ORGANIZATION');
+  const [connectCompanyId, setConnectCompanyId] = useState<string>('');
+  const [resolvingProvider, setResolvingProvider] = useState<OAuthProvider | null>(null);
 
   // Queries
   const { data: organizations = [], isLoading: loadingOrgs } = useQuery({
     queryKey: ['oauth-organizations'],
-    queryFn: async () => {
-      const res = await oauthService.getOrganizations();
-      if (res.length > 0 && !selectedOrgId) {
-        setSelectedOrgId(res[0].id);
-      }
-      return res;
-    },
+    queryFn: () => oauthService.getOrganizations(),
   });
 
-  const activeOrgId = selectedOrgId || (organizations[0]?.id ?? '');
+  const activeOrgId = selectedOrgId || organizations[0]?.id || '';
 
-  const { data: companies = [], isLoading: loadingCompanies } = useQuery({
+  const { data: companies = [] } = useQuery({
     queryKey: ['oauth-companies', activeOrgId],
     queryFn: () => oauthService.getCompanies(activeOrgId),
     enabled: !!activeOrgId,
   });
 
-  const { data: connections = [] } = useQuery({
+  const { data: connections = [], isLoading: loadingConnections } = useQuery({
     queryKey: ['oauth-connections', activeOrgId],
     queryFn: () => oauthService.getConnections({ organization_id: activeOrgId }),
     enabled: !!activeOrgId,
   });
 
-  // Mutations
-  const storeMutation = useMutation({
-    mutationFn: (data: OAuthConnectionCreate) => oauthService.storeConnection(data),
-    onSuccess: (conn) => {
-      toast.success(`${conn.provider} connection registered successfully!`);
+  // OAuth 2.0 Connect Mutation
+  const connectMutation = useMutation({
+    mutationFn: ({
+      provider,
+      orgId,
+      companyId,
+    }: {
+      provider: OAuthProvider;
+      orgId: string;
+      companyId?: string | null;
+    }) => {
+      return oauthService.connectInstant(provider, {
+        organization_id: orgId,
+        company_id: companyId || null,
+      });
+    },
+    onSuccess: (data, variables) => {
+      const meta = PROVIDER_METADATA[variables.provider];
+      toast.success(
+        `Successfully authorized and connected ${meta.name} as ${data.connection.account_name} (${data.connection.provider_account_id})!`
+      );
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
       setIsConnectOpen(false);
-      resetForm();
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Failed to save connection');
+      toast.error('OAuth connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
     },
   });
 
   const refreshMutation = useMutation({
-    mutationFn: (connectionId: string) => oauthService.refreshConnection(connectionId),
+    mutationFn: (id: string) => oauthService.refreshConnection(id),
     onSuccess: () => {
-      toast.success('Connection token refreshed successfully');
+      toast.success('OAuth token refreshed successfully');
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Failed to refresh token');
+      toast.error('Token refresh failed: ' + (err?.response?.data?.detail || err.message));
     },
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: (connectionId: string) => oauthService.disconnectConnection(connectionId),
+    mutationFn: (id: string) => oauthService.disconnectConnection(id),
     onSuccess: () => {
-      toast.success('Connection revoked successfully');
+      toast.success('Connection disconnected and credentials purged');
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
     },
     onError: (err: any) => {
-      toast.error(err.message || 'Failed to revoke connection');
+      toast.error('Disconnect failed: ' + (err?.response?.data?.detail || err.message));
     },
   });
 
-  const resetForm = () => {
-    setFormData({
-      provider: 'GOOGLE_ADS',
-      scopeType: 'ORGANIZATION',
-      companyId: companies[0]?.id || '',
-      accountName: '',
-      providerAccountId: '',
-      accessToken: '',
-      refreshToken: '',
-      scopes: PROVIDER_METADATA.GOOGLE_ADS.defaultScope,
-    });
+  const handleOpenConnect = (provider: OAuthProvider) => {
+    setConnectProvider(provider);
+    if (selectedCompanyId !== 'ALL') {
+      setConnectScopeType('COMPANY');
+      setConnectCompanyId(selectedCompanyId);
+    } else {
+      setConnectScopeType('ORGANIZATION');
+      setConnectCompanyId(companies[0]?.id || '');
+    }
+    setIsConnectOpen(true);
   };
 
-  const handleProviderChange = (provider: OAuthProvider) => {
-    setFormData((prev) => ({
-      ...prev,
-      provider,
-      scopes: PROVIDER_METADATA[provider].defaultScope,
-    }));
-  };
-
-  const handleConnectSubmit = (e: React.FormEvent) => {
+  const handleOAuthSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.accessToken.trim()) {
-      toast.error('Access token is required');
+    if (!activeOrgId) {
+      toast.error('No organization selected');
       return;
     }
 
-    const payload: OAuthConnectionCreate = {
-      organization_id: activeOrgId,
-      company_id: formData.scopeType === 'COMPANY' ? formData.companyId : null,
-      provider: formData.provider,
-      account_name: formData.accountName.trim() || undefined,
-      provider_account_id: formData.providerAccountId.trim() || undefined,
-      access_token: formData.accessToken.trim(),
-      refresh_token: formData.refreshToken.trim() || undefined,
-      scopes: formData.scopes
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean),
-    };
-
-    storeMutation.mutate(payload);
+    connectMutation.mutate({
+      provider: connectProvider,
+      orgId: activeOrgId,
+      companyId: connectScopeType === 'COMPANY' ? connectCompanyId : null,
+    });
   };
 
   const handleTestResolution = async (provider: OAuthProvider) => {
@@ -232,26 +372,25 @@ export default function OAuthIntegrations() {
           ? companies.find((c) => c.id === companyId)?.name || 'Selected Entity'
           : 'Organization Fallback';
         toast.success(
-          `${provider} successfully resolved at ${res.scope_level} level for ${entityLabel}!`
+          PROVIDER_METADATA[provider].name + ' resolved at ' + res.scope_level + ' level for ' + entityLabel + '!'
         );
       }
     } catch (err: any) {
-      toast.error(err.message || `No active ${provider} connection found`);
+      toast.error(err?.response?.data?.detail || err.message || 'No active connection found for ' + PROVIDER_METADATA[provider].name);
     } finally {
       setResolvingProvider(null);
     }
   };
 
   const providerConnections = useMemo(() => {
-    const map: Record<OAuthProvider, { direct?: OAuthConnection; fallback?: OAuthConnection }> = {
-      GOOGLE_ADS: {},
-      MICROSOFT_ADS: {},
-      META_ADS: {},
-      LINKEDIN_ADS: {},
-    };
+    const map: Record<string, { direct?: OAuthConnection; fallback?: OAuthConnection }> = {};
+    ALL_PROVIDERS.forEach((p) => {
+      map[p] = {};
+    });
 
     connections.forEach((conn) => {
       if (conn.status === 'REVOKED') return;
+      if (!map[conn.provider]) map[conn.provider] = {};
       if (selectedCompanyId !== 'ALL' && conn.company_id === selectedCompanyId) {
         map[conn.provider].direct = conn;
       }
@@ -263,6 +402,26 @@ export default function OAuthIntegrations() {
     return map;
   }, [connections, selectedCompanyId]);
 
+  // Filter strictly to current sub-nav category
+  const filteredProviders = useMemo(() => {
+    return ALL_PROVIDERS.filter((p) => PROVIDER_METADATA[p].category === activeCategory);
+  }, [activeCategory]);
+
+  const counts = useMemo(() => {
+    let paidCount = 0;
+    let socialCount = 0;
+    ALL_PROVIDERS.forEach((p) => {
+      const info = providerConnections[p];
+      if (info && (info.direct || info.fallback)) {
+        if (PROVIDER_METADATA[p].category === 'PAID_ADS') paidCount++;
+        else socialCount++;
+      }
+    });
+    return { paidCount, socialCount, total: paidCount + socialCount };
+  }, [providerConnections]);
+
+  const isPaidAds = activeCategory === 'PAID_ADS';
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
       {/* Header */}
@@ -270,30 +429,95 @@ export default function OAuthIntegrations() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Globe className="w-6 h-6 text-primary" />
-              OAuth & Entity Integrations
+              {isPaidAds ? (
+                <>
+                  <Megaphone className="w-6 h-6 text-primary" />
+                  Paid Advertising OAuth Integrations
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-6 h-6 text-primary" />
+                  Organic Social Media OAuth Integrations
+                </>
+              )}
             </h1>
-            <HelpIcon text="Manage OAuth connections for multi-entity ad platforms. Companies automatically inherit the Organization-level fallback account unless an entity-specific connection is registered." />
+            <HelpIcon
+              text={
+                isPaidAds
+                  ? 'Connect and manage OAuth 2.0 authorization for Google Ads, Microsoft Ads, Meta Ads, and LinkedIn Ads. Tokens and customer accounts are discovered and encrypted automatically.'
+                  : 'Connect and manage OAuth 2.0 authorization for LinkedIn Pages, X (Twitter), Facebook Pages, Instagram, YouTube, and TikTok Business.'
+              }
+            />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            Configure API credentials and token lifecycles for Google Ads, Microsoft Ads, Meta, and LinkedIn.
+            {isPaidAds
+              ? 'Multi-entity advertising account authorization. Manage access, MCC customer discovery, and AES-256 encrypted refresh tokens.'
+              : 'Multi-entity organic social profile authorization. Manage publishing permissions, channel discovery, and live telemetry.'}
           </p>
         </div>
 
         {canManage && (
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => {
-                resetForm();
-                setIsConnectOpen(true);
-              }}
-              className="gap-1.5 shadow-sm"
+              onClick={() => handleOpenConnect(isPaidAds ? 'GOOGLE_ADS' : 'LINKEDIN_PAGE')}
+              className="gap-1.5 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Plus className="w-4 h-4" />
-              Connect Account
+              {isPaidAds ? 'Connect Ad Account' : 'Connect Social Channel'}
             </Button>
           </div>
         )}
+      </div>
+
+      {/* Sub-Nav Menu Switcher (matching sidebar sub-navigation) */}
+      <div className="flex items-center justify-between border-b border-border/60 pb-3">
+        <div className="flex items-center gap-2">
+          <Link
+            to="/configurations/integrations?category=PAID_ADS"
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
+              isPaidAds
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            <span>Paid Advertising</span>
+            <span
+              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
+                isPaidAds
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {counts.paidCount} / 4
+            </span>
+          </Link>
+
+          <Link
+            to="/configurations/integrations?category=SOCIAL_MEDIA"
+            className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs transition-all ${
+              !isPaidAds
+                ? 'bg-primary text-primary-foreground shadow-xs font-semibold'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted/70 font-medium'
+            }`}
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span>Organic Social Media</span>
+            <span
+              className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-semibold ${
+                !isPaidAds
+                  ? 'bg-primary-foreground/20 text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {counts.socialCount} / 6
+            </span>
+          </Link>
+        </div>
+
+        <span className="text-xs text-muted-foreground hidden md:inline">
+          {filteredProviders.length} platforms available in this section
+        </span>
       </div>
 
       {/* Entity Selector Bar */}
@@ -329,22 +553,21 @@ export default function OAuthIntegrations() {
 
               <div className="h-4 w-px bg-border hidden sm:block" />
 
-              <div className="flex items-center gap-2 min-w-[260px]">
-                <Layers className="w-4 h-4 text-muted-foreground" />
+              <div className="flex items-center gap-2 min-w-[240px]">
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Target Entity:
+                  Entity Filter:
                 </Label>
                 <Select
                   value={selectedCompanyId}
                   onValueChange={setSelectedCompanyId}
-                  disabled={loadingCompanies}
+                  disabled={loadingConnections}
                 >
                   <SelectTrigger className="h-9 w-[220px]">
-                    <SelectValue placeholder="Choose Entity" />
+                    <SelectValue placeholder="Select Entity" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ALL">
-                      🌐 Global Master (All Entities)
+                      🏢 Organization Master + All Subsidiaries
                     </SelectItem>
                     {companies.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
@@ -356,21 +579,30 @@ export default function OAuthIntegrations() {
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-md border border-border/40">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              Tokens encrypted with AES-256 Fernet in PostgreSQL
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs gap-1 font-normal py-1 px-2.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="font-semibold text-foreground">
+                  {isPaidAds ? counts.paidCount : counts.socialCount}
+                </span>
+                <span className="text-muted-foreground">active</span>
+              </Badge>
+              <Badge variant="outline" className="text-xs gap-1 font-normal py-1 px-2.5">
+                <Lock className="w-3.5 h-3.5 text-primary" />
+                <span>AES-256-GCM Encrypted</span>
+              </Badge>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Provider Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {PROVIDERS.map((provider) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredProviders.map((provider) => {
           const meta = PROVIDER_METADATA[provider];
           const info = providerConnections[provider];
-          const directConn = info.direct;
-          const fallbackConn = info.fallback;
+          const directConn = info?.direct;
+          const fallbackConn = info?.fallback;
           const activeConn = directConn || fallbackConn;
 
           const isDirect = !!directConn;
@@ -384,14 +616,19 @@ export default function OAuthIntegrations() {
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg ${meta.iconBg}`}>
-                      {provider === 'GOOGLE_ADS' ? 'G' : provider === 'MICROSOFT_ADS' ? 'M' : provider === 'META_ADS' ? 'f' : 'in'}
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base shadow-xs ${meta.iconBg}`}>
+                      {meta.iconChar}
                     </div>
                     <div>
-                      <CardTitle className="text-base font-semibold">{meta.name}</CardTitle>
-                      <CardDescription className="text-xs line-clamp-1">
-                        {meta.description}
-                      </CardDescription>
+                      <div className="flex items-center gap-1.5">
+                        <CardTitle className="text-sm font-semibold">{meta.name}</CardTitle>
+                      </div>
+                      <Badge
+                        variant="outline"
+                        className="text-[9px] mt-0.5 px-1.5 py-0 font-normal uppercase tracking-wider text-muted-foreground"
+                      >
+                        {meta.category === 'PAID_ADS' ? 'Paid Advertising' : 'Social Media'}
+                      </Badge>
                     </div>
                   </div>
 
@@ -414,6 +651,10 @@ export default function OAuthIntegrations() {
               </CardHeader>
 
               <CardContent className="py-2 space-y-3 flex-1 text-sm">
+                <p className="text-xs text-muted-foreground line-clamp-2">
+                  {meta.description}
+                </p>
+
                 {activeConn ? (
                   <div className="p-3 rounded-md bg-muted/40 border border-border/50 space-y-2 text-xs">
                     <div className="flex items-center justify-between">
@@ -430,15 +671,15 @@ export default function OAuthIntegrations() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Account Name:</span>
-                      <span className="font-medium text-foreground">
-                        {activeConn.account_name || 'Standard Account'}
+                      <span className="text-muted-foreground">Authorized Account:</span>
+                      <span className="font-medium text-foreground truncate max-w-[160px]">
+                        {activeConn.account_name || 'Active Account'}
                       </span>
                     </div>
 
                     {activeConn.provider_account_id && (
                       <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Customer / MCC ID:</span>
+                        <span className="text-muted-foreground">{meta.idLabel}:</span>
                         <span className="font-mono text-foreground">
                           {activeConn.provider_account_id}
                         </span>
@@ -446,24 +687,25 @@ export default function OAuthIntegrations() {
                     )}
 
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Token Expiry:</span>
+                      <span className="text-muted-foreground">Token Life:</span>
                       <span className="text-muted-foreground">
                         {activeConn.expires_at
-                          ? new Date(activeConn.expires_at).toLocaleDateString()
-                          : 'Auto-refreshing'}
+                          ? 'Expires ' + new Date(activeConn.expires_at).toLocaleDateString()
+                          : 'Auto-refreshing via OAuth 2.0'}
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 rounded-md border border-dashed border-border/80 text-center text-xs text-muted-foreground">
-                    No active OAuth token registered for this entity or parent organization.
+                  <div className="p-3 rounded-md border border-dashed border-border/80 text-center text-xs text-muted-foreground bg-muted/10 space-y-1.5">
+                    <p className="font-medium text-foreground/80">OAuth 2.0 Authorization Required</p>
+                    <p className="text-[11px]">Click Connect to sign in and authorize this channel.</p>
                   </div>
                 )}
               </CardContent>
 
               <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5">
-                  {activeConn && (
+                  {activeConn && canManage && (
                     <Button
                       variant="ghost"
                       size="sm"
@@ -491,38 +733,38 @@ export default function OAuthIntegrations() {
                 {canManage && (
                   <div className="flex items-center gap-1.5">
                     {activeConn ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs text-destructive hover:bg-destructive/10"
-                        disabled={disconnectMutation.isPending}
-                        onClick={() => {
-                          if (confirm(`Disconnect and revoke ${meta.name} connection?`)) {
-                            disconnectMutation.mutate(activeConn.id);
-                          }
-                        }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1"
+                          onClick={() => handleOpenConnect(provider)}
+                          title="Switch or re-authorize account"
+                        >
+                          <KeyRound className="w-3 h-3 text-muted-foreground" />
+                          Reconnect
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs text-destructive hover:bg-destructive/10"
+                          disabled={disconnectMutation.isPending}
+                          onClick={() => {
+                            if (confirm(`Disconnect and revoke ${meta.name} connection?`)) {
+                              disconnectMutation.mutate(activeConn.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     ) : (
                       <Button
                         size="sm"
-                        className="h-8 text-xs gap-1"
-                        onClick={() => {
-                          handleProviderChange(provider);
-                          if (selectedCompanyId !== 'ALL') {
-                            setFormData((prev) => ({
-                              ...prev,
-                              scopeType: 'COMPANY',
-                              companyId: selectedCompanyId,
-                            }));
-                          } else {
-                            setFormData((prev) => ({ ...prev, scopeType: 'ORGANIZATION' }));
-                          }
-                          setIsConnectOpen(true);
-                        }}
+                        className="h-8 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 shadow-xs"
+                        onClick={() => handleOpenConnect(provider)}
                       >
-                        <Plus className="w-3 h-3" />
+                        <Plus className="w-3.5 h-3.5" />
                         Connect
                       </Button>
                     )}
@@ -534,164 +776,136 @@ export default function OAuthIntegrations() {
         })}
       </div>
 
-      {/* Connect Account Modal */}
+      {/* OAuth 2.0 Sign-In & Authorization Modal */}
       <Dialog open={isConnectOpen} onOpenChange={setIsConnectOpen}>
-        <DialogContent className="sm:max-w-[540px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5 text-primary" />
-              Connect Ad Provider
-            </DialogTitle>
-            <DialogDescription>
-              Store authorized OAuth tokens for your multi-entity marketing hierarchy. All tokens are encrypted at rest with Fernet cryptography.
-            </DialogDescription>
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow-xs ${
+                  PROVIDER_METADATA[connectProvider]?.iconBg || 'bg-primary/10 text-primary'
+                }`}
+              >
+                {PROVIDER_METADATA[connectProvider]?.iconChar || '•'}
+              </div>
+              <div>
+                <DialogTitle className="text-base font-semibold">
+                  Connect {PROVIDER_METADATA[connectProvider]?.name}
+                </DialogTitle>
+                <DialogDescription className="text-xs mt-0.5">
+                  Sign in with your existing account to grant OAuth 2.0 access.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
 
-          <form onSubmit={handleConnectSubmit} className="space-y-4 py-2">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Provider Platform</Label>
-                <Select
-                  value={formData.provider}
-                  onValueChange={(val) => handleProviderChange(val as OAuthProvider)}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PROVIDERS.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {PROVIDER_METADATA[p].name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Connection Scope</Label>
-                <Select
-                  value={formData.scopeType}
-                  onValueChange={(val: 'ORGANIZATION' | 'COMPANY') =>
-                    setFormData((prev) => ({ ...prev, scopeType: val }))
-                  }
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ORGANIZATION">
-                      🏢 Organization Master (Fallback)
-                    </SelectItem>
-                    <SelectItem value="COMPANY">
-                      🎯 Subsidiary Entity Override
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {formData.scopeType === 'COMPANY' && (
-              <div className="space-y-1.5">
-                <Label className="text-xs">Target Subsidiary / Company</Label>
-                <Select
-                  value={formData.companyId}
-                  onValueChange={(val) => setFormData((prev) => ({ ...prev, companyId: val }))}
-                >
-                  <SelectTrigger className="h-9">
-                    <SelectValue placeholder="Select Company" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companies.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} ({c.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Account Label / Name</Label>
-                <Input
-                  className="h-9 text-xs"
-                  placeholder="e.g. DeskFlex US Ads"
-                  value={formData.accountName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, accountName: e.target.value }))}
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Customer / MCC ID</Label>
-                <Input
-                  className="h-9 text-xs"
-                  placeholder="e.g. 123-456-7890"
-                  value={formData.providerAccountId}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, providerAccountId: e.target.value }))
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Access Token *</Label>
-              <Input
-                type="password"
-                className="h-9 text-xs font-mono"
-                placeholder="ya29.a0AfH6SMB..."
-                value={formData.accessToken}
-                onChange={(e) => setFormData((prev) => ({ ...prev, accessToken: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs">Refresh Token (Optional)</Label>
-              <Input
-                type="password"
-                className="h-9 text-xs font-mono"
-                placeholder="1//04..."
-                value={formData.refreshToken}
-                onChange={(e) => setFormData((prev) => ({ ...prev, refreshToken: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
+          <form onSubmit={handleOAuthSignIn} className="space-y-4 py-2">
+            {/* Entity Target */}
+            <div className="p-3.5 rounded-xl border border-border/70 bg-muted/30 space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">OAuth Scopes</Label>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      scopes: PROVIDER_METADATA[prev.provider].defaultScope,
-                    }))
-                  }
-                  className="text-[11px] text-primary hover:underline"
-                >
-                  Reset Default
-                </button>
+                <Label className="text-xs font-semibold text-foreground">
+                  Connect for which business entity?
+                </Label>
+                <Badge variant="secondary" className="text-[10px]">
+                  Hierarchy Assignment
+                </Badge>
               </div>
-              <Input
-                className="h-9 text-xs font-mono"
-                value={formData.scopes}
-                onChange={(e) => setFormData((prev) => ({ ...prev, scopes: e.target.value }))}
-              />
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant={connectScopeType === 'ORGANIZATION' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-9 text-xs justify-start px-3"
+                  onClick={() => setConnectScopeType('ORGANIZATION')}
+                >
+                  <Building2 className="w-3.5 h-3.5 mr-1.5" />
+                  Org Master (ZenaTech)
+                </Button>
+
+                <Button
+                  type="button"
+                  variant={connectScopeType === 'COMPANY' ? 'default' : 'outline'}
+                  size="sm"
+                  className="h-9 text-xs justify-start px-3"
+                  onClick={() => {
+                    setConnectScopeType('COMPANY');
+                    if (!connectCompanyId && companies.length > 0) {
+                      setConnectCompanyId(companies[0].id);
+                    }
+                  }}
+                >
+                  <ArrowRight className="w-3.5 h-3.5 mr-1.5" />
+                  Subsidiary Company
+                </Button>
+              </div>
+
+              {connectScopeType === 'COMPANY' && (
+                <div className="space-y-1.5 pt-1">
+                  <Label className="text-[11px] text-muted-foreground">Select Subsidiary Entity:</Label>
+                  <Select value={connectCompanyId} onValueChange={setConnectCompanyId}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Select Company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {companies.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name} ({c.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
-            <DialogFooter className="pt-3">
+            {/* Requested Permissions & Explanation */}
+            <div className="p-3.5 rounded-xl border border-border/70 bg-card space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <span>Requested OAuth 2.0 Scopes:</span>
+              </div>
+              <ul className="space-y-1.5 text-xs text-muted-foreground pl-1">
+                {PROVIDER_METADATA[connectProvider]?.authPermissions.map((perm, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+                    <span>{perm}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/50">
+                Backend automatically discovers ad account IDs and encrypts tokens with AES-256-GCM. No credentials or secret keys are exposed.
+              </p>
+            </div>
+
+            <DialogFooter className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-2">
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
+                size="sm"
                 onClick={() => setIsConnectOpen(false)}
+                className="w-full sm:w-auto text-xs"
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={storeMutation.isPending}>
-                {storeMutation.isPending ? 'Encrypting & Saving...' : 'Save & Connect'}
+
+              <Button
+                type="submit"
+                size="sm"
+                disabled={connectMutation.isPending}
+                className="w-full sm:w-auto gap-2 bg-primary text-primary-foreground hover:bg-primary/90 text-xs px-4"
+              >
+                {connectMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Authorizing with {PROVIDER_METADATA[connectProvider]?.name}...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Sign In & Connect {PROVIDER_METADATA[connectProvider]?.name}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </form>

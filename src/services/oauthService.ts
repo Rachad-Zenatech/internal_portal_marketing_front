@@ -1,6 +1,16 @@
 import { apiClient } from '@/services/apiClient';
 
-export type OAuthProvider = 'GOOGLE_ADS' | 'MICROSOFT_ADS' | 'META_ADS' | 'LINKEDIN_ADS';
+export type OAuthProvider =
+  | 'GOOGLE_ADS'
+  | 'MICROSOFT_ADS'
+  | 'META_ADS'
+  | 'LINKEDIN_ADS'
+  | 'LINKEDIN_PAGE'
+  | 'X_TWITTER'
+  | 'FACEBOOK_PAGE'
+  | 'INSTAGRAM'
+  | 'YOUTUBE'
+  | 'TIKTOK';
 export type ConnectionStatus = 'CONNECTED' | 'NEEDS_REAUTH' | 'EXPIRED' | 'REVOKED' | 'ERROR';
 
 export interface Organization {
@@ -70,6 +80,23 @@ export interface ResolvedConnection {
   provider: OAuthProvider;
 }
 
+export interface OAuthAuthorizeResponse {
+  provider: OAuthProvider;
+  authorization_url: string;
+  state: string;
+  is_configured: boolean;
+}
+
+export interface OAuthConnectResponse {
+  connection: OAuthConnection;
+  discovered_accounts: Array<{
+    account_id: string;
+    account_name: string;
+    currency?: string;
+    time_zone?: string;
+  }>;
+}
+
 export const oauthService = {
   getOrganizations: () => apiClient.get<Organization[]>('/api/oauth/organizations'),
   getCompanies: (orgId?: string) =>
@@ -93,4 +120,14 @@ export const oauthService = {
     if (companyId) q.set('company_id', companyId);
     return apiClient.get<ResolvedConnection>('/api/oauth/resolve?' + q.toString());
   },
+  getAuthorizationUrl: (provider: OAuthProvider, params: { organization_id: string; company_id?: string; redirect_uri?: string }) => {
+    const q = new URLSearchParams({ organization_id: params.organization_id });
+    if (params.company_id) q.set('company_id', params.company_id);
+    if (params.redirect_uri) q.set('redirect_uri', params.redirect_uri);
+    return apiClient.get<OAuthAuthorizeResponse>('/api/oauth/authorize/' + provider + '?' + q.toString());
+  },
+  handleCallback: (data: { provider: OAuthProvider; code: string; state: string; redirect_uri?: string }) =>
+    apiClient.post<OAuthConnectResponse>('/api/oauth/callback', data),
+  connectInstant: (provider: OAuthProvider, data: { organization_id: string; company_id?: string | null; account_name?: string; provider_account_id?: string }) =>
+    apiClient.post<OAuthConnectResponse>('/api/oauth/connect-instant/' + provider, data),
 };
