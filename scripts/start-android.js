@@ -100,14 +100,14 @@ function getAvailableAvd(emulatorPath) {
   return "Pixel_7";
 }
 
-// Backend port the app calls, taken from EXPO_PUBLIC_API_BASE_URL in .env (default 8006).
+// Backend port the app calls, taken from EXPO_PUBLIC_API_BASE_URL in .env (default 8010).
 function getBackendPort() {
   try {
     const envFile = fs.readFileSync(path.resolve(".env"), "utf-8");
     const match = envFile.match(/^EXPO_PUBLIC_API_BASE_URL=.*:(\d+)\/?\s*$/m);
     if (match) return match[1];
   } catch {}
-  return "8006";
+  return "8010";
 }
 
 async function main() {
@@ -172,9 +172,9 @@ async function main() {
   try {
     execSync(`"${adbPath}" reverse tcp:8091 tcp:8091`, { stdio: "ignore" });
     execSync(`"${adbPath}" reverse tcp:${apiPort} tcp:${apiPort}`, { stdio: "ignore" });
-    execSync(`"${adbPath}" reverse tcp:5177 tcp:5177`, { stdio: "ignore" });
+    execSync(`"${adbPath}" reverse tcp:5180 tcp:5180`, { stdio: "ignore" });
     console.log(
-      `🔗 Reverse port forwarding configured (8091 -> 8091, ${apiPort} -> ${apiPort}, 5177 -> 5177).`
+      `🔗 Reverse port forwarding configured (8091 -> 8091, ${apiPort} -> ${apiPort}, 5180 -> 5180).`
     );
   } catch {}
 
