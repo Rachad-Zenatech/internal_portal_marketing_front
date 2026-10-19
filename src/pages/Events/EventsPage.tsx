@@ -51,7 +51,8 @@ type UploadTarget = Pick<InitiativeListItem, "id" | "name" | "currency">;
 /** Each month in the period (by the month events start) for one currency; months without events show as empty */
 function monthlyPoints(rows: EventMonthlyRow[], currency: string, period: EventPeriod | null): EventBudgetPoint[] {
   const byMonth = new Map(rows.filter((r) => r.currency === currency).map((r) => [r.month.slice(0, 7), r]));
-  const keys = period ? monthsBetween(period.from, period.to) : [...byMonth.keys()].sort().slice(-24);
+  // "All time" comes back with no dates (from and to are null): use the months the events are in
+  const keys = period?.from && period?.to ? monthsBetween(period.from, period.to) : [...byMonth.keys()].sort().slice(-24);
   return keys.map((key) => {
     const date = new Date(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1, 1);
     const row = byMonth.get(key);

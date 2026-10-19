@@ -5,8 +5,9 @@ export type CostCategory = "BOOTH_SPACE" | "TRAVEL" | "GROUND_TRANSPORT" | "STAF
 export type CostCategories = Record<CostCategory, number>;
 
 export interface EventPeriod {
-  from: string;
-  to: string;
+  /** Both null for "All time" */
+  from: string | null;
+  to: string | null;
 }
 
 /** The six key figures; null where they can't be worked out */
