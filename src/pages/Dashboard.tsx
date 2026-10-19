@@ -66,7 +66,7 @@ export default function Dashboard() {
     },
     {
       title: "User-Role Assignment",
-      description: "Assign active roles to users and grant workflow authorization matrices.",
+      description: "Assign active roles and permissions to marketing users.",
       icon: Key,
       path: "/configurations/user-role-assignment",
       color: "from-purple-500/10 to-violet-500/10 text-purple-600 dark:text-purple-400 border-purple-200/50 dark:border-purple-900/40",
