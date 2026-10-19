@@ -122,7 +122,7 @@ const COLUMNS: Record<string, Column> = Object.fromEntries(
 export type EventTableView = "overview" | "comparison" | "costs" | "outcomes";
 
 export const TABLE_VIEWS: { value: EventTableView; label: string; columns: string[] }[] = [
-  { value: "overview", label: "Overview", columns: ["brand", "region", "type", "owner", "budget", "actual", "variance", "status"] },
+  { value: "overview", label: "Overview", columns: ["region", "actual", "variance", "status"] },
   {
     value: "comparison",
     label: "Event Comparison",

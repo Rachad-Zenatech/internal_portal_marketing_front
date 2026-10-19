@@ -9,6 +9,9 @@ export const STATUS_LABELS: Record<InitiativeStatus, string> = {
   CANCELLED: "Cancelled",
 };
 
+/** Events: Upcoming before they start, In progress while they're on, then Completed (or Cancelled) */
+export const EVENT_STATUS_LABELS: Record<InitiativeStatus, string> = { ...STATUS_LABELS, PLANNED: "Upcoming", ACTIVE: "In progress" };
+
 // Mirrors STATUS_TRANSITIONS in the backend's initiative_service.py
 export const STATUS_TRANSITIONS: Record<InitiativeStatus, InitiativeStatus[]> = {
   // A draft can be finished into any status; nothing goes back to being a draft

@@ -21,7 +21,7 @@ import { formatMoney } from "../Initiatives/format";
 import DraftBanner from "../Initiatives/DraftBanner";
 import InitiativeFormDialog from "../Initiatives/InitiativeFormDialog";
 import ResultsSection from "../Initiatives/ResultsSection";
-import { STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
+import { EVENT_STATUS_LABELS, STATUS_STYLES } from "../Initiatives/status";
 import { dateRange, eventPlace, TIMING_DOT, whenText, type WorkspaceTab } from "./eventDisplay";
 import StaffSection from "./StaffSection";
 import CostSources from "./CostSources";
@@ -229,7 +229,7 @@ export default function EventWorkspace() {
               </span>
             )}
             <Badge variant="outline" className={STATUS_STYLES[initiative.status]}>
-              {STATUS_LABELS[initiative.status]}
+              {EVENT_STATUS_LABELS[initiative.status]}
             </Badge>
             <Badge variant="outline" className="font-mono text-muted-foreground">
               {initiative.event_code}

@@ -18,7 +18,7 @@ import type { EventKeyFigures, EventMonthlyRow, EventPerformance, EventPerforman
 import type { InitiativeListItem, InitiativeStatus } from "@/types/initiatives";
 import CostSheetUpload from "../Initiatives/CostSheetUpload";
 import NavanSyncStatus from "./NavanSyncStatus";
-import { STATUS_LABELS } from "../Initiatives/status";
+import { EVENT_STATUS_LABELS } from "../Initiatives/status";
 import { fmtCount, fmtMoney, fmtUnitCost } from "../PaidAds/adsDisplay";
 import EventBudgetChart, { EventBudgetLegend, type EventBudgetPoint } from "./EventBudgetChart";
 import EventFlags from "./EventFlags";
@@ -41,7 +41,7 @@ import {
 } from "./eventPerformanceDisplay";
 
 const ANY = "ANY";
-const STATUSES: InitiativeStatus[] = ["PLANNED", "ACTIVE", "COMPLETED", "PAUSED", "CANCELLED"];
+const STATUSES: InitiativeStatus[] = ["PLANNED", "ACTIVE", "COMPLETED", "CANCELLED"];
 // Kept in the URL; "region" is the market, "type" the event type
 const FILTER_PARAMS = ["brand", "region", "type", "owner", "status", "currency"];
 const CHANGE_LABEL = "vs. previous period";
@@ -156,7 +156,7 @@ export default function EventsPage() {
   for (const e of allEvents.data?.items ?? []) if (e.owner_user_id) owners.set(e.owner_user_id, e.owner_name ?? "Unknown");
   if (owner && !owners.has(owner)) owners.set(owner, "Selected owner");
   const ownerOptions = [{ value: ANY, label: "All owners" }, ...[...owners].sort((a, b) => a[1].localeCompare(b[1])).map(([id, name]) => ({ value: id, label: name }))];
-  const statusOptions = [{ value: ANY, label: "All statuses" }, ...STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] }))];
+  const statusOptions = [{ value: ANY, label: "All statuses" }, ...STATUSES.map((s) => ({ value: s, label: EVENT_STATUS_LABELS[s] }))];
 
   const importButton = canImport && (
     <Button onClick={() => setImportOpen(true)} className="h-9 gap-2">

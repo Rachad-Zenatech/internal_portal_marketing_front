@@ -2,7 +2,7 @@
 import { countryName } from "@/lib/countries";
 import type { InitiativeStatus } from "@/types/initiatives";
 import type { CostCategory, EventPerformance } from "@/types/eventPerformance";
-import { STATUS_LABELS } from "../Initiatives/status";
+import { EVENT_STATUS_LABELS } from "../Initiatives/status";
 import { isoDate, type DateRange } from "../PaidAds/adsPeriods";
 
 // ─── Periods ─────────────────────────────────────────────────────────────────
@@ -113,7 +113,7 @@ export const EVENT_METRIC_INFO = {
   customers: "Customers: new customers won from the event.",
   revenue: "Revenue won from the event, from HubSpot results.",
   roi: "ROI = (revenue - actual cost) ÷ actual cost × 100.",
-  status: "At Risk: actual plus awaiting costs are above the approved budget, or an active or completed event has no leads.",
+  status: "Upcoming before the event starts, In progress while it's on, Completed once it has ended. Cancelled events keep that status.",
 };
 
 /** "248%", "-12.5%" */
@@ -129,28 +129,24 @@ export function eventRegion(e: Pick<EventPerformance, "city" | "country_code">) 
 
 // ─── Status ──────────────────────────────────────────────────────────────────
 
-/** Above budget once the invoices still due arrive */
-export const headingOverBudget = (e: EventPerformance) => e.approved_budget !== null && e.actual_cost + e.awaiting_cost > e.approved_budget;
 /** Running or done, with no leads recorded */
 export const missingLeads = (e: EventPerformance) => (e.status === "ACTIVE" || e.status === "COMPLETED") && !e.leads;
 
-export type EventDisplayStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "AT_RISK" | "OTHER";
+export type EventDisplayStatus = "PLANNED" | "ACTIVE" | "COMPLETED" | "CANCELLED" | "OTHER";
 
-/** Planned, Active, Completed or At Risk (paused and cancelled events keep their own status) */
+/** Upcoming, In progress, Completed or Cancelled */
 export function displayStatus(e: EventPerformance): EventDisplayStatus {
-  if (e.status !== "PLANNED" && e.status !== "ACTIVE" && e.status !== "COMPLETED") return "OTHER";
-  return headingOverBudget(e) || missingLeads(e) ? "AT_RISK" : e.status;
+  return e.status === "PLANNED" || e.status === "ACTIVE" || e.status === "COMPLETED" || e.status === "CANCELLED" ? e.status : "OTHER";
 }
 
 export function statusLabel(e: EventPerformance) {
-  const s = displayStatus(e);
-  return s === "AT_RISK" ? "At Risk" : (STATUS_LABELS[e.status as InitiativeStatus] ?? e.status);
+  return EVENT_STATUS_LABELS[e.status as InitiativeStatus] ?? e.status;
 }
 
 export const STATUS_PILL: Record<EventDisplayStatus, string> = {
   PLANNED: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
   ACTIVE: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
   COMPLETED: "border-gray-200 bg-gray-100 text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
-  AT_RISK: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",
+  CANCELLED: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",
   OTHER: "border-gray-200 bg-gray-100 text-gray-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400",
 };
