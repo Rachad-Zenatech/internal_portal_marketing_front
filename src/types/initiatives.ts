@@ -3,9 +3,47 @@
 /** DRAFT: saved part-way to finish later; event rules (e.g. city and country) apply once it leaves Draft */
 export type InitiativeStatus = "DRAFT" | "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
 
+/** Where its results come from: a linked ad or CRM campaign, typed in, or decided later */
+export type DataSource = "LINKED" | "MANUAL" | "LATER";
+
+/** External systems a campaign can be linked from */
+export type LinkSystem = "HUBSPOT" | "GOOGLE_ADS" | "MICROSOFT_ADS" | "LINKEDIN_ADS" | "META_ADS";
+
+/** An external campaign that belongs to this initiative (one campaign belongs to one initiative) */
+export interface InitiativeLink {
+  id?: string;
+  system: LinkSystem;
+  external_id: string;
+  account_id: string | null;
+}
+
+export interface InitiativeLinkInput {
+  system: LinkSystem;
+  external_id: string;
+  account_id?: string | null;
+}
+
+/** Why an initiative needs review */
+export type AttentionReason = "OVER_BUDGET" | "NO_BUDGET" | "NO_TRACKING" | "NO_RESULTS" | "NO_DATES";
+
+export type KpiUnit = "COUNT" | "MONEY" | "PERCENT";
+
+/** The optional primary KPI: shown with its target, never used for the worth-it verdict */
+export interface PrimaryKpiRef {
+  id: number;
+  code: string;
+  name: string;
+  unit: KpiUnit;
+}
+
+/** Fields that depend on the channel (see CHANNEL_FIELDS); every one optional */
+export type ChannelDetails = Record<string, string | null>;
+
 export interface InitiativeListItem {
   id: string;
   name: string;
+  /** Short summary, up to 1000 characters */
+  description: string | null;
   brand_id: number;
   brand_name: string;
   channel_id: number;
@@ -26,6 +64,19 @@ export interface InitiativeListItem {
   budget_amount: number | null;
   currency: string;
   status: InitiativeStatus;
+  primary_kpi_id: number | null;
+  primary_kpi: PrimaryKpiRef | null;
+  /** Only with a primary KPI; in the KPI's unit */
+  kpi_target: number | null;
+  data_source: DataSource;
+  channel_details: ChannelDetails;
+  links: InitiativeLink[];
+  /** Invoiced and paid costs in the initiative's currency */
+  actual_spend: number;
+  /** Actual spend as a share of the budget; null without a positive budget */
+  progress_percent: number | null;
+  needs_attention: boolean;
+  attention_reasons: AttentionReason[];
   // Event details — null for initiatives outside the Events channel
   event_code: string | null;
   event_type_id: number | null;
@@ -88,6 +139,12 @@ export interface InitiativeFilters {
   market_id?: number;
   status?: InitiativeStatus;
   search?: string;
+  owner_user_id?: string;
+  /** Initiatives whose dates overlap from..to (YYYY-MM-DD) */
+  from?: string;
+  to?: string;
+  /** Only initiatives that need review */
+  needs_attention?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -107,8 +164,45 @@ export interface InitiativeCreate {
   budget_amount?: number | null;
   currency?: string;
   status?: InitiativeStatus;
+  description?: string | null;
+  /** Optional; a KPI target needs one */
+  primary_kpi_id?: number | null;
+  kpi_target?: number | null;
+  data_source?: DataSource;
+  channel_details?: ChannelDetails;
+  /** Replaces the whole set when sent */
+  links?: InitiativeLinkInput[];
+  /** Only for new initiatives: the maturity window, prefilled from the sub-channel's default */
+  evaluation?: { maturity_days?: number };
   /** Only for initiatives in the Events channel */
   event?: EventDetailsInput;
+}
+
+export interface MoneyAmount {
+  currency: string;
+  amount: number;
+}
+
+interface SummaryCounts {
+  total: number;
+  active: number;
+  needs_attention: number;
+  /** Sum of the matching initiatives' budgets, per currency */
+  allocated_budget: MoneyAmount[];
+}
+
+/** GET /api/initiatives/summary: the KPI cards, with the same filters as the list */
+export interface InitiativeSummary extends SummaryCounts {
+  /** The same period length just before from/to; null without a period */
+  previous: SummaryCounts | null;
+}
+
+/** One line of an initiative's recent activity, from the audit log */
+export interface InitiativeActivity {
+  at: string;
+  actor_name: string | null;
+  title: string;
+  detail: string | null;
 }
 
 export interface OwnerOption {

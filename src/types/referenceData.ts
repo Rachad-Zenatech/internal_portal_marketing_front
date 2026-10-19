@@ -13,6 +13,8 @@ export interface DescribedReferenceItem extends ReferenceItem {
 
 export interface ChannelItem extends ReferenceItem {
   sub_channel_ids: number[];
+  /** A sub-channel must be picked (the channel has a real choice besides Other) */
+  sub_channel_required?: boolean;
 }
 
 export interface GoalItem extends ReferenceItem {
@@ -41,6 +43,17 @@ export interface OutcomeMetric extends ReferenceItem {
   unit: "COUNT" | "MONEY";
 }
 
+/** Optional primary KPI an initiative can be judged on (any channel can use any KPI) */
+export interface PrimaryKpi extends ReferenceItem {
+  unit: "COUNT" | "MONEY" | "PERCENT";
+}
+
+/** A picklist value, e.g. { code: "LEADS", name: "Leads" } for a campaign objective */
+export interface ChoiceItem {
+  code: string;
+  name: string;
+}
+
 /** What success means by default for a sub-channel */
 export interface EvaluationDefault {
   sub_channel_id: number;
@@ -60,6 +73,12 @@ export interface ReferenceData {
   sub_channels: ReferenceItem[];
   funnel_stages: ReferenceItem[];
   goals: GoalItem[];
+  primary_kpis: PrimaryKpi[];
+  /**
+   * Allowed values for picklist fields, keyed by field name (e.g. campaign_objective, focus_area, content_type,
+   * email_platform, partnership_type, link_system). May be missing while the API catches up.
+   */
+  choices?: Record<string, ChoiceItem[]>;
   performance_ratings: DescribedReferenceItem[];
   scale_or_cut_options: DescribedReferenceItem[];
   regions: ReferenceItem[];
