@@ -28,6 +28,8 @@ interface KpiCardProps {
   valueClassName?: string;
   /** A small line under the value when there's no change line */
   hint?: React.ReactNode;
+  /** A small line right under the value, shown with the change line, e.g. "From HubSpot" */
+  caption?: React.ReactNode;
   loading?: boolean;
   /** A small control at the top right, e.g. a currency switch */
   action?: React.ReactNode;
@@ -64,7 +66,7 @@ function ChangeLine({ change, goodWhen, changeLabel }: { change: KpiChange; good
 }
 
 /** A key figure: tinted icon tile, label, big value and how it changed */
-export default function KpiCard({ label, value, icon: Icon, tone, info, change, goodWhen = "up", changeLabel = "vs. previous period", valueClassName, hint, loading, action }: KpiCardProps) {
+export default function KpiCard({ label, value, icon: Icon, tone, info, change, goodWhen = "up", changeLabel = "vs. previous period", valueClassName, hint, caption, loading, action }: KpiCardProps) {
   return (
     <div className={`${DASH_CARD} flex min-w-0 flex-col gap-2 p-3 sm:gap-3 sm:p-5`}>
       {/* Phones: icon above the label, so two cards fit side by side */}
@@ -84,6 +86,7 @@ export default function KpiCard({ label, value, icon: Icon, tone, info, change, 
         ) : (
           <p className={`truncate text-lg font-semibold tracking-tight tabular-nums sm:text-2xl ${valueClassName ?? "text-foreground"}`}>{value}</p>
         )}
+        {caption && !loading && <p className="mt-0.5 truncate text-xs text-muted-foreground">{caption}</p>}
         <div className="mt-1 min-h-4">
           {!loading && (change ? <ChangeLine change={change} goodWhen={goodWhen} changeLabel={changeLabel} /> : hint ? <p className="truncate text-xs text-muted-foreground">{hint}</p> : null)}
         </div>

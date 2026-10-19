@@ -394,7 +394,9 @@ export default function InitiativeDetail() {
   const channel = channelStyle(reference?.channels.find((c) => c.id === initiative.channel_id)?.code);
   const ChannelIcon = channel.icon;
   const hasDates = Boolean(initiative.start_date || initiative.end_date);
-  const isAdCampaign = subChannelCode === "GOOGLE_ADS" || subChannelCode === "BING_ADS";
+  const channelCode = reference?.channels.find((c) => c.id === initiative.channel_id)?.code;
+  // Paid Search and Paid Social campaigns with a platform (sub-channel) have ad results
+  const isAdCampaign = Boolean(subChannelCode) && (channelCode === "PAID_SEARCH" || channelCode === "PAID_SOCIAL");
 
   return (
     <div className="flex w-full flex-1 min-h-0 flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -504,7 +506,7 @@ export default function InitiativeDetail() {
           </SubPageLink>
         )}
         {isAdCampaign && (
-          <SubPageLink to={`/paid-ads?campaign=${initiative.id}&period=all`} title="Ad results" icon={MousePointerClick}>
+          <SubPageLink to={`/paid-ads?campaign=${initiative.id}`} title="Ad results" icon={MousePointerClick}>
             <AdsSnapshot initiativeId={initiative.id} />
           </SubPageLink>
         )}

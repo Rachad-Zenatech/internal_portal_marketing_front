@@ -56,8 +56,11 @@ export const queryKeys = {
   budgets: () => ["budget"] as const,
   budget: (id: string) => ["budget", id] as const,
 
-  // Paid ads (Google Ads + Bing Ads); everything under "ads" so one invalidation refreshes them all
+  // Paid ads (every Paid Search and Paid Social platform); everything under "ads" so one invalidation refreshes them all
   ads: () => ["ads"] as const,
   adResults: (filters: object = {}) => ["ads", "results", filters] as const,
   adCampaigns: (platform: string = "") => ["ads", "campaigns", platform] as const,
+  adsOverview: (filters: object) => ["ads", "overview", filters] as const,
+  adsCampaignDetail: (id: string, from: string, to: string) => ["ads", "campaign-detail", id, from, to] as const,
+  adsDataHealth: (filters: object = {}) => ["ads", "data-health", filters] as const,
 };

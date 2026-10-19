@@ -5,12 +5,42 @@ import {
   deleteAdResult,
   getAdCampaigns,
   getAdResults,
+  getAdsCampaignDetail,
+  getAdsDataHealth,
+  getAdsOverview,
   undoAdsImport,
   updateAdResult,
   uploadAdsSheet,
 } from "@/services/adsService";
 import { queryKeys } from "@/services/queryKeys";
-import type { AdPlatform, AdResultCreate, AdResultFilters, AdResultUpdate } from "@/types/ads";
+import type { AdPlatform, AdResultCreate, AdResultFilters, AdResultUpdate, AdsHealthFilters, AdsOverviewFilters } from "@/types/ads";
+
+/** The Paid Advertising page: figures, charts, attention list and campaign rows for a date range */
+export function useAdsOverview(filters: AdsOverviewFilters) {
+  return useQuery({
+    queryKey: queryKeys.adsOverview(filters),
+    queryFn: () => getAdsOverview(filters),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/** One campaign for the side panel */
+export function useAdsCampaignDetail(initiativeId: string | null, range: { from: string; to: string }) {
+  return useQuery({
+    queryKey: queryKeys.adsCampaignDetail(initiativeId ?? "", range.from, range.to),
+    queryFn: () => getAdsCampaignDetail(initiativeId as string, range),
+    enabled: Boolean(initiativeId),
+  });
+}
+
+export function useAdsDataHealth(filters: AdsHealthFilters, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.adsDataHealth(filters),
+    queryFn: () => getAdsDataHealth(filters),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
+}
 
 export function useAdResults(filters: AdResultFilters, enabled = true) {
   return useQuery({

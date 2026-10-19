@@ -2,7 +2,20 @@
 
 export type SpendStatus = "ESTIMATED" | "COMMITTED" | "INVOICED" | "PAID";
 /** TRAVEL_FEED is kept for older rows only */
-export type SpendSource = "MANUAL" | "STAFF_CALCULATOR" | "COST_SHEET_UPLOAD" | "TRAVEL_FEED" | "GOOGLE_ADS" | "MICROSOFT_ADS" | "NAVAN";
+export type SpendSource =
+  | "MANUAL"
+  | "STAFF_CALCULATOR"
+  | "COST_SHEET_UPLOAD"
+  | "TRAVEL_FEED"
+  | "GOOGLE_ADS"
+  | "MICROSOFT_ADS"
+  | "NAVAN"
+  | "LINKEDIN_ADS"
+  | "META_ADS"
+  | "TIKTOK_ADS"
+  | "X_ADS"
+  | "REDDIT_ADS"
+  | "OTHER_ADS";
 export type PaymentMethod = "AP_INVOICE" | "CORPORATE_CARD" | "OTHER";
 export type CostType = "OPEX" | "CAPEX";
 /** Why some fields on a line can't change */

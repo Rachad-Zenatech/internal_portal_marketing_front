@@ -10,15 +10,37 @@ import type {
   AdResultFilters,
   AdResultsResponse,
   AdResultUpdate,
+  AdsCampaignDetail,
+  AdsHealth,
+  AdsHealthFilters,
+  AdsOverview,
+  AdsOverviewFilters,
 } from "@/types/ads";
 
-export function getAdResults(filters: AdResultFilters = {}) {
+function queryString(filters: object) {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(filters)) {
     if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
   }
   const query = params.toString();
-  return apiClient.get<AdResultsResponse>(`/api/ads/results${query ? `?${query}` : ""}`);
+  return query ? `?${query}` : "";
+}
+
+export function getAdResults(filters: AdResultFilters = {}) {
+  return apiClient.get<AdResultsResponse>(`/api/ads/results${queryString(filters)}`);
+}
+
+/** Everything the Paid Advertising page shows for a date range and filters, in one currency */
+export function getAdsOverview(filters: AdsOverviewFilters) {
+  return apiClient.get<AdsOverview>(`/api/ads/overview${queryString(filters)}`);
+}
+
+export function getAdsCampaignDetail(initiativeId: string, range: { from: string; to: string }) {
+  return apiClient.get<AdsCampaignDetail>(`/api/ads/campaigns/${initiativeId}${queryString(range)}`);
+}
+
+export function getAdsDataHealth(filters: AdsHealthFilters = {}) {
+  return apiClient.get<AdsHealth>(`/api/ads/data-health${queryString(filters)}`);
 }
 
 export function getAdCampaigns(platform?: AdPlatform) {

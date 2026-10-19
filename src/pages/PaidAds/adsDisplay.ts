@@ -2,14 +2,37 @@
 import type { AdPlatform, AdResultSource, AdResultStatus } from "@/types/ads";
 import { formatMoney } from "../Initiatives/format";
 
-export const PLATFORMS: AdPlatform[] = ["GOOGLE_ADS", "BING_ADS"];
+/** Every Paid Search and Paid Social platform, in display order */
+export const PLATFORMS: AdPlatform[] = ["GOOGLE_ADS", "BING_ADS", "LINKEDIN_ADS", "META_ADS", "YOUTUBE_ADS", "TIKTOK_ADS", "X_ADS", "REDDIT_ADS", "DISPLAY_PROGRAMMATIC", "OTHER"];
 
 export const PLATFORM_LABELS: Record<AdPlatform, string> = {
   GOOGLE_ADS: "Google Ads",
-  BING_ADS: "Bing Ads",
+  BING_ADS: "Microsoft Ads",
+  LINKEDIN_ADS: "LinkedIn Ads",
+  META_ADS: "Meta Ads",
+  YOUTUBE_ADS: "YouTube Ads",
+  TIKTOK_ADS: "TikTok Ads",
+  X_ADS: "X Ads",
+  REDDIT_ADS: "Reddit Ads",
+  DISPLAY_PROGRAMMATIC: "Display",
+  OTHER: "Other",
 };
 
-/** Each platform's own colour: Google blue, Bing teal */
+/** Short mark for the platform icon tile, and its brand-like tile colour */
+export const PLATFORM_MARK: Record<AdPlatform, { text: string; tile: string }> = {
+  GOOGLE_ADS: { text: "G", tile: "bg-blue-600 text-white" },
+  BING_ADS: { text: "M", tile: "bg-teal-600 text-white" },
+  LINKEDIN_ADS: { text: "in", tile: "bg-sky-700 text-white" },
+  META_ADS: { text: "f", tile: "bg-indigo-600 text-white" },
+  YOUTUBE_ADS: { text: "YT", tile: "bg-red-600 text-white" },
+  TIKTOK_ADS: { text: "TT", tile: "bg-zinc-900 text-white dark:bg-zinc-200 dark:text-zinc-900" },
+  X_ADS: { text: "X", tile: "bg-zinc-800 text-white dark:bg-zinc-300 dark:text-zinc-900" },
+  REDDIT_ADS: { text: "R", tile: "bg-orange-600 text-white" },
+  DISPLAY_PROGRAMMATIC: { text: "D", tile: "bg-slate-500 text-white" },
+  OTHER: { text: "?", tile: "bg-slate-400 text-white" },
+};
+
+/** Each platform's own colour (spelled out so Tailwind keeps the classes) */
 export const PLATFORM_STYLES: Record<AdPlatform, { badge: string; dot: string; text: string; band: string }> = {
   GOOGLE_ADS: {
     badge: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300",
@@ -22,6 +45,54 @@ export const PLATFORM_STYLES: Record<AdPlatform, { badge: string; dot: string; t
     dot: "bg-teal-500",
     text: "text-teal-700 dark:text-teal-300",
     band: "border-l-teal-500",
+  },
+  LINKEDIN_ADS: {
+    badge: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-900 dark:bg-sky-950/60 dark:text-sky-300",
+    dot: "bg-sky-500",
+    text: "text-sky-700 dark:text-sky-300",
+    band: "border-l-sky-500",
+  },
+  META_ADS: {
+    badge: "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300",
+    dot: "bg-indigo-500",
+    text: "text-indigo-700 dark:text-indigo-300",
+    band: "border-l-indigo-500",
+  },
+  YOUTUBE_ADS: {
+    badge: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300",
+    dot: "bg-red-500",
+    text: "text-red-700 dark:text-red-300",
+    band: "border-l-red-500",
+  },
+  TIKTOK_ADS: {
+    badge: "border-zinc-300 bg-zinc-100 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
+    dot: "bg-zinc-700",
+    text: "text-zinc-800 dark:text-zinc-200",
+    band: "border-l-zinc-700",
+  },
+  X_ADS: {
+    badge: "border-zinc-300 bg-zinc-100 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
+    dot: "bg-zinc-500",
+    text: "text-zinc-800 dark:text-zinc-200",
+    band: "border-l-zinc-500",
+  },
+  REDDIT_ADS: {
+    badge: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950/60 dark:text-orange-300",
+    dot: "bg-orange-500",
+    text: "text-orange-700 dark:text-orange-300",
+    band: "border-l-orange-500",
+  },
+  DISPLAY_PROGRAMMATIC: {
+    badge: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300",
+    dot: "bg-slate-500",
+    text: "text-slate-700 dark:text-slate-300",
+    band: "border-l-slate-500",
+  },
+  OTHER: {
+    badge: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300",
+    dot: "bg-slate-400",
+    text: "text-slate-700 dark:text-slate-300",
+    band: "border-l-slate-400",
   },
 };
 
@@ -61,6 +132,16 @@ export function fmtCount(value: number | null | undefined) {
 
 export function fmtMoney(value: number | null | undefined, currency: string) {
   return value === null || value === undefined ? DASH : formatMoney(value, currency);
+}
+
+/** Whole amounts for big figures, e.g. "$8,122" */
+export function fmtWholeMoney(value: number | null | undefined, currency: string) {
+  if (value === null || value === undefined) return DASH;
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 0 }).format(value);
+  } catch {
+    return formatMoney(value, currency);
+  }
 }
 
 /** Cost per click / lead: always with cents, e.g. "$1.20" */

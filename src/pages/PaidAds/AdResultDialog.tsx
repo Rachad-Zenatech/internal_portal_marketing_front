@@ -268,7 +268,7 @@ function AdResultForm({ result, defaultCampaignId, onDone }: AdResultFormProps) 
                   <Plus className="h-3 w-3" />
                   New campaign
                 </button>{" "}
-                (a Paid Search initiative with Google Ads or Bing Ads as the sub-channel).
+                (a Paid Search or Paid Social initiative with its ad platform as the sub-channel).
               </span>
             )
           }
@@ -289,7 +289,7 @@ function AdResultForm({ result, defaultCampaignId, onDone }: AdResultFormProps) 
               </SelectValue>
             </SelectTrigger>
             <SelectContent position="popper" className="max-h-80">
-              {list.length === 0 && !campaigns.isLoading && <p className="px-2 py-3 text-sm text-muted-foreground">No Google Ads or Bing Ads campaigns yet.</p>}
+              {list.length === 0 && !campaigns.isLoading && <p className="px-2 py-3 text-sm text-muted-foreground">No ad campaigns yet.</p>}
               {PLATFORMS.map((p) => {
                 const items = list.filter((c) => c.platform === p);
                 if (!items.length) return null;
