@@ -10,9 +10,13 @@ interface OwnerPickerProps {
   value: OwnerOption | null;
   onChange: (owner: OwnerOption) => void;
   id?: string;
+  /** Shown when no one is picked */
+  placeholder?: string;
+  /** Extra classes for the button, e.g. a width */
+  className?: string;
 }
 
-export default function OwnerPicker({ value, onChange, id }: OwnerPickerProps) {
+export default function OwnerPicker({ value, onChange, id, placeholder = "Select owner", className }: OwnerPickerProps) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [search, setSearch] = useState("");
@@ -28,8 +32,8 @@ export default function OwnerPicker({ value, onChange, id }: OwnerPickerProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button id={id} type="button" variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between font-normal">
-          <span className="truncate">{value ? value.full_name || value.email : "Select owner"}</span>
+        <Button id={id} type="button" variant="outline" role="combobox" aria-expanded={open} className={`w-full justify-between font-normal ${className ?? ""}`}>
+          <span className="truncate">{value ? value.full_name || value.email : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>

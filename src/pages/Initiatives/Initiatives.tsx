@@ -1,143 +1,236 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Download, Layers, Loader2, Megaphone, MoreHorizontal, PlayCircle, Plus, Search, Wallet, X } from "lucide-react";
+import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { MAIN_CHANNEL_CODES, OTHER_CHANNELS } from "@/components/AppShell/Navigation";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { AlertTriangle, ChevronLeft, ChevronRight, Megaphone, Plus, Search } from "lucide-react";
-import HelpIcon from "@/components/ui/HelpIcon";
-import { Badge } from "@/components/ui/badge";
+import { downloadCsv } from "@/components/dashboard/csv";
+import { FilterBar, FilterSelect } from "@/components/dashboard/FilterBar";
+import KpiCard from "@/components/dashboard/KpiCard";
+import { DASH_CARD } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useInitiatives } from "@/hooks/useInitiatives";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useInitiatives, useInitiativeSummary } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
-import type { InitiativeFilters, InitiativeListItem, InitiativeStatus } from "@/types/initiatives";
-import type { ReferenceItem } from "@/types/referenceData";
+import { getInitiatives } from "@/services/initiativesService";
+import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
-import { EVENTS_CHANNEL_CODE, ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
-import { formatBudget, formatDateRangeShort, formatEventLocation, formatMoney, initials } from "./format";
+import { DeleteInitiativeDialog } from "./DeleteInitiativeButton";
+import { formatBudget, formatDate, isoToday } from "./format";
+import { ATTENTION_LABELS, formatKpiValue } from "./initiativeFields";
 import InitiativeFormDialog from "./InitiativeFormDialog";
-import { STATUS_LABELS, STATUS_STYLES } from "./status";
+import InitiativePanel from "./InitiativePanel";
+import InitiativesTable from "./InitiativesTable";
+import OwnerPicker from "./OwnerPicker";
+import { STATUS_LABELS } from "./status";
 
-const PAGE_SIZE = 25;
+const PAGE_SIZE = 10;
 const ALL = "all";
+type ListTab = "all" | "active" | "review";
 
-interface FilterSelectProps {
-  label: string;
-  value: number | string | undefined;
-  options: { value: string; label: string }[];
-  onChange: (value: string | undefined) => void;
-  disabled?: boolean;
+interface PageFilters {
+  brandId: string;
+  channelId: string;
+  status: string;
+  owner: OwnerOption | null;
+  from: string;
+  to: string;
 }
 
-function FilterSelect({ label, value, options, onChange, disabled }: FilterSelectProps) {
+const NO_FILTERS: PageFilters = { brandId: ALL, channelId: ALL, status: ALL, owner: null, from: "", to: "" };
+
+const toDateText = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/** Quick ranges for the date filter, worked out when picked */
+const DATE_PRESETS: { label: string; range: () => [string, string] }[] = [
+  {
+    label: "This month",
+    range: () => {
+      const t = new Date();
+      return [toDateText(new Date(t.getFullYear(), t.getMonth(), 1)), toDateText(new Date(t.getFullYear(), t.getMonth() + 1, 0))];
+    },
+  },
+  {
+    label: "This quarter",
+    range: () => {
+      const t = new Date();
+      const q = Math.floor(t.getMonth() / 3) * 3;
+      return [toDateText(new Date(t.getFullYear(), q, 1)), toDateText(new Date(t.getFullYear(), q + 3, 0))];
+    },
+  },
+  {
+    label: "This year",
+    range: () => {
+      const y = new Date().getFullYear();
+      return [`${y}-01-01`, `${y}-12-31`];
+    },
+  },
+  {
+    label: "Last 90 days",
+    range: () => {
+      const t = new Date();
+      return [toDateText(new Date(t.getFullYear(), t.getMonth(), t.getDate() - 89)), isoToday()];
+    },
+  },
+];
+
+function DateRangeFilter({ from, to, onChange }: { from: string; to: string; onChange: (from: string, to: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const label = from || to ? [formatDate(from || null) ?? "Any", formatDate(to || null) ?? "Any"].join(" to ") : "Any time";
   return (
-    <Select
-      value={value === undefined ? ALL : String(value)}
-      onValueChange={(v) => onChange(v === ALL ? undefined : v)}
-      disabled={disabled}
-    >
-      <SelectTrigger className="w-full sm:w-44" aria-label={label}>
-        <SelectValue placeholder={label} />
-      </SelectTrigger>
-      <SelectContent position="popper" className="max-h-72">
-        <SelectItem value={ALL}>All {label.toLowerCase()}</SelectItem>
-        {options.map((o) => (
-          <SelectItem key={o.value} value={o.value}>
-            {o.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-center md:gap-2">
+      <span className="shrink-0 text-xs font-medium text-muted-foreground md:text-sm">Date range</span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="w-full justify-start gap-2 bg-card font-normal md:w-56" aria-label={`Date range: ${label}`}>
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <span className="truncate">{label}</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="flex w-72 flex-col gap-3 p-3">
+          <div className="flex flex-wrap gap-1.5">
+            {DATE_PRESETS.map((preset) => (
+              <Button
+                key={preset.label}
+                variant="outline"
+                size="sm"
+                className="h-7"
+                onClick={() => {
+                  const [f, t] = preset.range();
+                  onChange(f, t);
+                  setOpen(false);
+                }}
+              >
+                {preset.label}
+              </Button>
+            ))}
+          </div>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            From
+            <DatePicker value={from} max={to || undefined} onChange={(v) => onChange(v, to)} clearable aria-label="From" />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            To
+            <DatePicker value={to} min={from || undefined} onChange={(v) => onChange(from, v)} clearable aria-label="To" />
+          </label>
+          <p className="text-xs text-muted-foreground">Shows initiatives that run at any time in this range.</p>
+          {(from || to) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="self-start"
+              onClick={() => {
+                onChange("", "");
+                setOpen(false);
+              }}
+            >
+              Clear dates
+            </Button>
+          )}
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 }
 
-function ChannelCell({ code, name, subName }: { code: string | undefined; name: string; subName: string | null }) {
-  const { icon: Icon, tile } = channelStyle(code);
+function OwnerFilter({ value, onChange }: { value: OwnerOption | null; onChange: (owner: OwnerOption | null) => void }) {
   return (
-    <div className="flex items-center gap-2.5">
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tile}`}>
-        <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0">
-        <div className="whitespace-nowrap text-slate-900 dark:text-zinc-100">{name}</div>
-        {subName && <div className="whitespace-nowrap text-xs text-slate-500 dark:text-zinc-400">{subName}</div>}
+    <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-center md:gap-2">
+      <span className="shrink-0 text-xs font-medium text-muted-foreground md:text-sm">Owner</span>
+      <div className="flex min-w-0 items-center gap-1">
+        <OwnerPicker value={value} onChange={onChange} placeholder="All owners" className="bg-card md:w-44" />
+        {value && (
+          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => onChange(null)} aria-label="Show every owner">
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </div>
   );
 }
 
-/**
- * Expected cost (estimates included) with a thin bar against the budget: invoiced or paid solid, the rest lighter.
- * Over budget, the bar is the expected total instead: the budget's share in blue, the overspend in red, so no
- * part of it can be read as budget left.
- */
-function ExpectedCostCell({ item }: { item: InitiativeListItem }) {
-  const { expected_total: expected, actual_amount: actual, budget_amount: budget, currency } = item;
-  const hasCosts = expected !== 0 || item.has_mixed_currencies;
-  const percent = budget ? (expected / budget) * 100 : null;
-  const overBudget = budget !== null && percent !== null && percent > 100;
-  // The bar's full width stands for the budget, or for the expected total when that's bigger
-  const scale = overBudget ? expected : (budget ?? 0);
-  const budgetWidth = overBudget && budget ? (budget / scale) * 100 : 100;
-  const actualWidth = scale ? Math.min((Math.max(actual, 0) / scale) * 100, budgetWidth) : 0;
-  const restWidth = overBudget ? budgetWidth - actualWidth : Math.max(Math.min(percent ?? 0, 100) - actualWidth, 0);
-  const overWidth = overBudget ? 100 - budgetWidth : 0;
-  return (
-    <div className="flex flex-col items-end gap-1">
-      <span className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums">
-        {item.has_mixed_currencies && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0} aria-label="Some costs are in another currency">
-                <AlertTriangle className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Some costs are in another currency and aren't included</TooltipContent>
-          </Tooltip>
-        )}
-        {hasCosts ? formatMoney(expected, currency) : <span className="text-slate-400 dark:text-zinc-500">-</span>}
-      </span>
-      {percent !== null && hasCosts && (
-        <span
-          className="flex h-1.5 w-20 overflow-hidden rounded-full bg-slate-100 dark:bg-zinc-800"
-          title={
-            overBudget && budget !== null
-              ? `${formatMoney(expected - budget, currency)} over the ${formatMoney(budget, currency)} budget`
-              : `${Math.round(percent)}% of the budget`
-          }
-        >
-          <span className="h-full bg-indigo-800 dark:bg-indigo-300" style={{ width: `${actualWidth}%` }} />
-          <span className="h-full bg-indigo-400 dark:bg-indigo-700" style={{ width: `${restWidth}%` }} />
-          {overBudget && <span className="h-full bg-red-600 dark:bg-red-400" style={{ width: `${overWidth}%` }} />}
-        </span>
-      )}
-      {overBudget && budget !== null && (
-        <span className="whitespace-nowrap text-xs font-medium tabular-nums text-red-600 dark:text-red-400">
-          {formatMoney(expected - budget, currency)} over
-        </span>
-      )}
-    </div>
-  );
+/** Pages to offer: the first, the last, and two either side of the current one */
+function pageNumbers(current: number, count: number): (number | "gap")[] {
+  const pages = new Set([0, count - 1, current - 1, current, current + 1].filter((p) => p >= 0 && p < count));
+  const sorted = [...pages].sort((a, b) => a - b);
+  const out: (number | "gap")[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) out.push("gap");
+    out.push(p);
+  });
+  return out;
 }
 
-const toOptions = (items: ReferenceItem[]) => items.map((i) => ({ value: String(i.id), label: i.name }));
+const CSV_HEADER = [
+  "Initiative",
+  "Description",
+  "Brand",
+  "Channel",
+  "Sub-channel",
+  "Owner",
+  "Start date",
+  "End date",
+  "Budget",
+  "Currency",
+  "Actual spend",
+  "% of budget spent",
+  "Primary KPI",
+  "KPI target",
+  "Status",
+  "Needs review",
+];
+
+function csvRow(item: InitiativeListItem) {
+  const actual = item.actual_spend ?? item.actual_amount;
+  const percent = item.progress_percent ?? (item.budget_amount ? (actual / item.budget_amount) * 100 : null);
+  return [
+    item.name,
+    item.description,
+    item.brand_name,
+    item.channel_name,
+    item.sub_channel_name,
+    item.owner_name,
+    item.start_date,
+    item.end_date,
+    item.budget_amount,
+    item.currency,
+    actual,
+    percent === null ? null : Math.round(percent),
+    item.primary_kpi?.name,
+    item.primary_kpi && item.kpi_target !== null && item.kpi_target !== undefined ? formatKpiValue(item.kpi_target, item.primary_kpi.unit, item.currency) : null,
+    STATUS_LABELS[item.status],
+    item.needs_attention ? (item.attention_reasons ?? []).map((r) => ATTENTION_LABELS[r] ?? r).join("; ") || "Yes" : "",
+  ];
+}
+
+const amountIn = (amounts: MoneyAmount[] | undefined, currency: string) => amounts?.find((a) => a.currency === currency)?.amount ?? 0;
 
 export default function Initiatives() {
   // The channel lives in the URL (?channel=PAID_SEARCH) so sidebar links and back/forward work
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const channelCode = searchParams.get("channel");
-  const [filters, setFilters] = useState<Omit<InitiativeFilters, "channel_id" | "channel_ids">>({});
+  const [tab, setTab] = useState<ListTab>("all");
+  const [filters, setFilters] = useState<PageFilters>(NO_FILTERS);
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [selected, setSelected] = useState<Map<string, InitiativeListItem>>(new Map());
+  const [budgetCurrency, setBudgetCurrency] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<InitiativeListItem | null>(null);
+  const [deleting, setDeleting] = useState<InitiativeListItem | null>(null);
+  const [panelItem, setPanelItem] = useState<InitiativeListItem | null>(null);
+  const [exporting, setExporting] = useState(false);
   const { hasPermission } = useAuth();
-  const navigate = useNavigate();
   const canCreate = hasPermission("INITIATIVES_CREATE");
+  const canEdit = hasPermission("INITIATIVES_UPDATE");
+  const canDelete = hasPermission("INITIATIVES_DELETE");
 
   // Wait until typing pauses before searching
   useEffect(() => {
@@ -145,303 +238,388 @@ export default function Initiatives() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // A new channel may not include the selected sub-channel; start again from page 1
+  // A new channel page starts again with no channel filter, from page 1
   useEffect(() => {
-    setFilters((prev) => ({ ...prev, sub_channel_id: undefined }));
+    setFilters((prev) => ({ ...prev, channelId: ALL }));
     setPage(0);
+    setSelected(new Map());
   }, [channelCode]);
 
   const { data: reference, isError: referenceFailed, refetch: refetchReference } = useReferenceData();
   const channel = channelCode ? reference?.channels.find((c) => c.code === channelCode) : undefined;
   // "Other channels" in the sidebar: every channel without its own link
   const isOtherChannels = channelCode === OTHER_CHANNELS;
-  const otherChannels = useMemo(
-    () => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)),
-    [reference],
-  );
+  const otherChannels = useMemo(() => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)), [reference]);
   // A channel in the URL can't be resolved without the channel list, or may not exist at all
   const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
   const unknownChannel = Boolean(channelCode) && Boolean(reference) && !channel && !isOtherChannels;
-  const query = {
-    ...filters,
-    channel_id: channel?.id,
-    channel_ids: isOtherChannels ? otherChannels.map((c) => c.id) : undefined,
+  const channelReady = !channelCode || Boolean(channel) || (isOtherChannels && otherChannels.length > 0);
+
+  // What the cards and the list share; the tab and paging only narrow the list
+  const baseQuery: InitiativeFilters = {
+    channel_id: channel?.id ?? (filters.channelId !== ALL ? Number(filters.channelId) : undefined),
+    channel_ids: isOtherChannels && filters.channelId === ALL ? otherChannels.map((c) => c.id) : undefined,
+    brand_id: filters.brandId !== ALL ? Number(filters.brandId) : undefined,
+    status: tab === "active" ? "ACTIVE" : filters.status !== ALL ? (filters.status as InitiativeStatus) : undefined,
+    owner_user_id: filters.owner?.id,
+    from: filters.from || undefined,
+    to: filters.to || undefined,
     search: search || undefined,
-    limit: PAGE_SIZE,
-    offset: page * PAGE_SIZE,
   };
-  // With a channel in the URL, wait for that channel so the unfiltered list doesn't flash first (or show instead)
-  const { data, isPending: isLoading, isError, isFetching } = useInitiatives(
-    query,
-    !channelCode || Boolean(channel) || (isOtherChannels && otherChannels.length > 0),
-  );
+  const summaryQuery: InitiativeFilters = { ...baseQuery, status: filters.status !== ALL ? (filters.status as InitiativeStatus) : undefined };
+  const listQuery: InitiativeFilters = { ...baseQuery, needs_attention: tab === "review" ? true : undefined };
+  const { data, isPending: isLoading, isError, isFetching } = useInitiatives({ ...listQuery, limit: PAGE_SIZE, offset: page * PAGE_SIZE }, channelReady);
+  const { data: summary, isPending: summaryLoading, isError: summaryFailed } = useInitiativeSummary(summaryQuery, channelReady);
 
-  // Sub-channel options follow the chosen channel(s)
-  const subChannelOptions = useMemo(() => {
-    if (!reference) return [];
-    const scope = channel ? [channel] : isOtherChannels ? otherChannels : null;
-    if (!scope) return toOptions(reference.sub_channels);
-    const allowed = new Set(scope.flatMap((c) => c.sub_channel_ids));
-    return toOptions(reference.sub_channels.filter((s) => allowed.has(s.id)));
-  }, [reference, channel, isOtherChannels, otherChannels]);
+  const total = data?.total ?? 0;
+  const items = data?.items ?? [];
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const firstRow = total === 0 ? 0 : page * PAGE_SIZE + 1;
+  const lastRow = Math.min(total, (page + 1) * PAGE_SIZE);
+  const channelCodes = useMemo(() => new Map(reference?.channels.map((c) => [c.id, c.code])), [reference]);
 
-  const setChannel = (id: string | undefined) => {
-    const code = reference?.channels.find((c) => String(c.id) === id)?.code;
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (code) next.set("channel", code);
-      else next.delete("channel");
+  const update = (patch: Partial<PageFilters>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+    setPage(0);
+  };
+  const hasFilters = JSON.stringify(filters) !== JSON.stringify(NO_FILTERS) || searchInput !== "";
+  const clearFilters = () => {
+    setFilters(NO_FILTERS);
+    setSearchInput("");
+    setSearch("");
+    setPage(0);
+  };
+
+  // One currency at a time on the budget card: the one picked, else the largest
+  const budgets = summary?.allocated_budget ?? [];
+  const shownCurrency =
+    budgetCurrency && budgets.some((b) => b.currency === budgetCurrency) ? budgetCurrency : ([...budgets].sort((a, b) => b.amount - a.amount)[0]?.currency ?? "USD");
+  const hasPeriod = Boolean(filters.from || filters.to);
+  const previous = hasPeriod ? summary?.previous : null;
+  const change = (current: number | undefined, prev: number | undefined) => (previous ? { current, previous: prev } : undefined);
+
+  const toggle = (item: InitiativeListItem, checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Map(prev);
+      if (checked) next.set(item.id, item);
+      else next.delete(item.id);
       return next;
     });
-  };
-
-  const updateFilter = (key: "sub_channel_id" | "brand_id" | "status", value: string | undefined) => {
-    setPage(0);
-    setFilters((prev) => {
-      const next = { ...prev };
-      if (key === "status") {
-        next.status = value as InitiativeStatus | undefined;
-      } else {
-        next[key] = value === undefined ? undefined : Number(value);
+  const togglePage = (checked: boolean) =>
+    setSelected((prev) => {
+      const next = new Map(prev);
+      for (const item of items) {
+        if (checked) next.set(item.id, item);
+        else next.delete(item.id);
       }
       return next;
     });
+
+  const fileName = () => `initiatives-${channel?.code.toLowerCase() ?? (isOtherChannels ? "other-channels" : "all")}-${isoToday()}.csv`;
+  const exportSelected = () => downloadCsv(fileName(), CSV_HEADER, [...selected.values()].map(csvRow));
+  // Every initiative matching the filters, a page of 200 at a time
+  const exportAll = async () => {
+    setExporting(true);
+    try {
+      const rows: InitiativeListItem[] = [];
+      for (let offset = 0; ; offset += 200) {
+        const batch = await getInitiatives({ ...listQuery, limit: 200, offset });
+        rows.push(...batch.items);
+        if (batch.items.length === 0 || rows.length >= batch.total) break;
+      }
+      downloadCsv(fileName(), CSV_HEADER, rows.map(csvRow));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not export the initiatives.");
+    } finally {
+      setExporting(false);
+    }
   };
 
-  const hasFilters = Object.values(filters).some((v) => v !== undefined) || search !== "" || Boolean(channelCode);
-  const total = data?.total ?? 0;
-  const items = data?.items ?? [];
-  const firstRow = total === 0 ? 0 : page * PAGE_SIZE + 1;
-  const lastRow = Math.min(total, (page + 1) * PAGE_SIZE);
-
-  // The Events channel gets Code and Location columns
-  const isEventsView = channelCode === EVENTS_CHANNEL_CODE;
-  // Enough to span every column, whichever are showing at this width
-  const columnCount = 10;
-  const subChannelCodes = useMemo(() => new Map(reference?.sub_channels.map((s) => [s.id, s.code])), [reference]);
-  const locationOf = (item: InitiativeListItem) =>
-    formatEventLocation(item.city, item.country_code, ONLINE_EVENT_SUB_CHANNELS.has(subChannelCodes.get(item.sub_channel_id ?? -1) ?? ""));
-  const channelCodes = useMemo(() => new Map(reference?.channels.map((c) => [c.id, c.code])), [reference]);
   const HeaderIcon = channel ? channelStyle(channel.code).icon : Megaphone;
+  const channelOptions = isOtherChannels ? otherChannels : (reference?.channels ?? []);
+
+  const placeholder = referenceMissing ? (
+    <div className="flex items-center justify-center gap-2 py-8 text-sm text-red-600">
+      Could not load the channels.
+      <Button variant="outline" size="sm" onClick={() => refetchReference()}>
+        Try again
+      </Button>
+    </div>
+  ) : unknownChannel ? (
+    <div className="py-10 text-center">
+      <p className="font-medium text-foreground">Unknown channel "{channelCode}"</p>
+      <p className="mt-1 text-sm text-muted-foreground">The link may be out of date. Pick a channel from the menu.</p>
+    </div>
+  ) : isLoading ? (
+    <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      Loading initiatives...
+    </div>
+  ) : isError ? (
+    <p className="py-10 text-center text-sm text-red-600">Could not load the initiatives. Refresh the page to try again.</p>
+  ) : items.length === 0 ? (
+    <div className="flex flex-col items-center py-12 text-center">
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <Megaphone className="h-5 w-5" />
+      </div>
+      <p className="font-medium text-foreground">
+        {tab === "review" && !hasFilters ? "Nothing needs review" : hasFilters || tab !== "all" ? "No initiatives match these filters" : "No initiatives yet"}
+      </p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {tab === "review" && !hasFilters ? "Budgets, tracking and results all look fine." : hasFilters ? "Try clearing a filter." : "Initiatives you track will appear here."}
+      </p>
+    </div>
+  ) : undefined;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out h-full">
+    <div className="flex h-full min-h-0 flex-1 flex-col gap-5 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
       <PageHeader
         icon={HeaderIcon}
-        title={
-          <span className="inline-flex items-center gap-2">
-            {channel ? `${channel.name} initiatives` : isOtherChannels ? "Other channel initiatives" : "Initiatives"}
-            <HelpIcon text="Every marketing initiative across all channels, with its budget and status." />
-          </span>
-        }
+        title={channel ? `${channel.name} Initiatives` : isOtherChannels ? "Other Channel Initiatives" : "All Marketing Initiatives"}
         description={
           channel
-            ? `Initiatives in the ${channel.name} channel, across every brand.`
+            ? `View and manage ${channel.name} initiatives across brands.`
             : isOtherChannels
-              ? `Initiatives in ${otherChannels.map((c) => c.name).join(", ")}.`
-              : "All marketing initiatives across every channel and brand."
+              ? `View and manage initiatives in ${otherChannels.map((c) => c.name).join(", ") || "other channels"}.`
+              : "View and manage all marketing activities across brands and channels."
         }
         actions={
-          canCreate && (
-            <Button onClick={() => setCreateOpen(true)} className="gap-2">
-              <Plus className="h-4 w-4" />
-              New initiative
-            </Button>
-          )
+          <>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="More actions" disabled={exporting}>
+                  {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => void exportAll()} disabled={total === 0}>
+                  <Download />
+                  Export CSV
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {canCreate && (
+              <Button onClick={() => setCreateOpen(true)} className="gap-2">
+                <Plus className="h-4 w-4" />
+                New Initiative
+              </Button>
+            )}
+          </>
         }
       />
 
-      {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} />}
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTab(v as ListTab);
+          setPage(0);
+          // The Active tab is its own status filter
+          if (v === "active") setFilters((prev) => ({ ...prev, status: ALL }));
+        }}
+      >
+        <div className="overflow-x-auto border-b border-border">
+          <TabsList variant="line" className="h-10">
+            <TabsTrigger value="all">All Initiatives</TabsTrigger>
+            <TabsTrigger value="active">Active Initiatives</TabsTrigger>
+            <TabsTrigger value="review">
+              Needs Review
+              {!!summary?.needs_attention && (
+                <span className="ml-1 rounded-full bg-amber-100 px-1.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">{summary.needs_attention}</span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+      </Tabs>
 
-      <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-        <div className="relative w-full sm:w-64">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-4 lg:grid-cols-4">
+        <KpiCard
+          label="Total Initiatives"
+          icon={Layers}
+          tone="blue"
+          value={summaryFailed ? "-" : (summary?.total ?? 0).toLocaleString()}
+          hint="Across all marketing channels"
+          info="Every initiative that matches the filters."
+          change={change(summary?.total, previous?.total)}
+          loading={summaryLoading && channelReady}
+        />
+        <KpiCard
+          label="Active Initiatives"
+          icon={PlayCircle}
+          tone="green"
+          value={summaryFailed ? "-" : (summary?.active ?? 0).toLocaleString()}
+          hint="Currently running"
+          info="Initiatives with the status Active."
+          change={change(summary?.active, previous?.active)}
+          loading={summaryLoading && channelReady}
+        />
+        <KpiCard
+          label="Total Allocated Budget"
+          icon={Wallet}
+          tone="violet"
+          value={summaryFailed ? "-" : formatBudget(amountIn(budgets, shownCurrency), shownCurrency)}
+          hint={hasPeriod ? "Selected reporting period" : "All dates"}
+          info="The budgets of the matching initiatives added up, in one currency at a time. Amounts are never converted."
+          change={previous ? { current: amountIn(budgets, shownCurrency), previous: amountIn(previous.allocated_budget, shownCurrency) } : undefined}
+          loading={summaryLoading && channelReady}
+          action={
+            budgets.length > 1 && (
+              <Select value={shownCurrency} onValueChange={setBudgetCurrency}>
+                <SelectTrigger size="sm" className="h-7 w-20 bg-card text-xs" aria-label="Budget currency">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" align="end">
+                  {budgets.map((b) => (
+                    <SelectItem key={b.currency} value={b.currency}>
+                      {b.currency}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )
+          }
+        />
+        <KpiCard
+          label="Needs Attention"
+          icon={AlertTriangle}
+          tone="amber"
+          value={summaryFailed ? "-" : (summary?.needs_attention ?? 0).toLocaleString()}
+          hint="Budget, tracking, or results issues"
+          info="Over budget, no budget, nothing tracked after two weeks, no results after it ended, or no start date."
+          change={change(summary?.needs_attention, previous?.needs_attention)}
+          goodWhen="down"
+          loading={summaryLoading && channelReady}
+        />
+      </div>
+
+      <FilterBar onClear={hasFilters ? clearFilters : undefined}>
+        <div className="relative col-span-2 min-w-0 md:w-64">
+          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchInput}
             onChange={(e) => {
               setSearchInput(e.target.value);
               setPage(0);
             }}
-            placeholder="Search by name or event code"
-            className="pl-8"
+            placeholder="Search initiatives, brands, owners"
+            className="bg-card pl-8"
+            aria-label="Search initiatives, brands or owners"
           />
         </div>
         <FilterSelect
-          label="Channels"
-          value={channel?.id}
-          options={reference ? toOptions(isOtherChannels ? otherChannels : reference.channels) : []}
-          onChange={setChannel}
+          label="Brand"
+          value={filters.brandId}
+          onChange={(v) => update({ brandId: v })}
+          options={[{ value: ALL, label: "All brands" }, ...(reference?.brands ?? []).map((b) => ({ value: String(b.id), label: b.name }))]}
         />
-        <FilterSelect
-          label="Sub-channels"
-          value={filters.sub_channel_id}
-          options={subChannelOptions}
-          onChange={(v) => updateFilter("sub_channel_id", v)}
-        />
-        <FilterSelect
-          label="Brands"
-          value={filters.brand_id}
-          options={reference ? toOptions(reference.brands) : []}
-          onChange={(v) => updateFilter("brand_id", v)}
-        />
-        <FilterSelect
-          label="Statuses"
-          value={filters.status}
-          options={Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))}
-          onChange={(v) => updateFilter("status", v)}
-        />
-        {hasFilters && (
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setFilters({});
-              setSearchInput("");
-              setSearch("");
-              setPage(0);
-              setChannel(undefined);
-            }}
-          >
-            Clear filters
-          </Button>
+        {/* A channel page is already filtered to its channel */}
+        {!channel && (
+          <FilterSelect
+            label="Channel"
+            value={filters.channelId}
+            onChange={(v) => update({ channelId: v })}
+            options={[{ value: ALL, label: isOtherChannels ? "All other channels" : "All channels" }, ...channelOptions.map((c) => ({ value: String(c.id), label: c.name }))]}
+          />
         )}
+        {tab !== "active" && (
+          <FilterSelect
+            label="Status"
+            value={filters.status}
+            onChange={(v) => update({ status: v })}
+            options={[{ value: ALL, label: "All statuses" }, ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label }))]}
+          />
+        )}
+        <OwnerFilter value={filters.owner} onChange={(owner) => update({ owner })} />
+        <DateRangeFilter from={filters.from} to={filters.to} onChange={(from, to) => update({ from, to })} />
+      </FilterBar>
+
+      {selected.size > 0 && (
+        <div className={`${DASH_CARD} flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm`}>
+          <span className="font-medium text-foreground">{selected.size} selected</span>
+          <Button size="sm" variant="outline" className="gap-1.5" onClick={exportSelected}>
+            <Download className="h-4 w-4" />
+            Export selected
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Map())}>
+            Clear selection
+          </Button>
+        </div>
+      )}
+
+      <div className={`${DASH_CARD} flex flex-col overflow-hidden`}>
+        <InitiativesTable
+          items={items}
+          channelCodes={channelCodes}
+          selected={selected}
+          onToggle={toggle}
+          onTogglePage={togglePage}
+          placeholder={placeholder}
+          dimmed={isFetching && !isLoading}
+          onOpen={setPanelItem}
+          onEdit={canEdit ? setEditing : undefined}
+          onDelete={canDelete ? setDeleting : undefined}
+        />
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <span>{total === 0 ? "No initiatives" : `Showing ${firstRow}-${lastRow} of ${total} initiatives`}</span>
+          {pageCount > 1 && (
+            <nav className="flex items-center gap-1" aria-label="Pages">
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => p - 1)} disabled={page === 0} aria-label="Previous page">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {pageNumbers(page, pageCount).map((p, i) =>
+                p === "gap" ? (
+                  <span key={`gap-${i}`} className="px-1">
+                    ...
+                  </span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === page ? "default" : "outline"}
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setPage(p)}
+                    aria-label={`Page ${p + 1}`}
+                    aria-current={p === page ? "page" : undefined}
+                  >
+                    {p + 1}
+                  </Button>
+                ),
+              )}
+              <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setPage((p) => p + 1)} disabled={lastRow >= total} aria-label="Next page">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </nav>
+          )}
+        </div>
       </div>
 
-      {/* @container: columns appear as the card gets wider (not the window), so nothing scrolls sideways;
-          the details of hidden columns move under the initiative's name */}
-      <Card className="@container flex-1 min-h-0 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 overflow-hidden shadow-sm flex flex-col p-0">
-        <TooltipProvider delayDuration={150}>
-          <Table className="m-0 relative" containerClassName="w-full overflow-x-auto">
-            <TableHeader>
-              <TableRow className="border-t-0">
-                <TableHead className="h-12">Initiative</TableHead>
-                {isEventsView && <TableHead className="hidden h-12 @4xl:table-cell">Location</TableHead>}
-                <TableHead className="hidden h-12 @3xl:table-cell">Brand</TableHead>
-                <TableHead className="hidden h-12 @5xl:table-cell">{isEventsView ? "Type" : "Channel"}</TableHead>
-                <TableHead className="hidden h-12 @4xl:table-cell">Owner</TableHead>
-                <TableHead className="hidden h-12 @2xl:table-cell">Dates</TableHead>
-                <TableHead className="hidden h-12 text-right @xl:table-cell">Budget</TableHead>
-                <TableHead className="hidden h-12 text-right @lg:table-cell">Expected cost</TableHead>
-                <TableHead className="h-12">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className={isFetching && !isLoading ? "opacity-60 transition-opacity" : undefined}>
-              {referenceMissing ? (
-                <TableRow>
-                  <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">
-                    Could not load the channels.{" "}
-                    <Button variant="outline" size="sm" className="ml-2" onClick={() => refetchReference()}>
-                      Try again
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ) : unknownChannel ? (
-                <TableRow>
-                  <TableCell colSpan={columnCount} className="py-12">
-                    <div className="flex flex-col items-center text-center">
-                      <p className="font-medium text-slate-900 dark:text-zinc-100">Unknown channel “{channelCode}”</p>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">The link may be out of date.</p>
-                      <Button variant="outline" size="sm" className="mt-3" onClick={() => setChannel(undefined)}>
-                        Show all initiatives
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : isLoading ? (
-                <TableRow>
-                  <TableCell colSpan={columnCount} className="text-center py-8 text-slate-500">Loading initiatives...</TableCell>
-                </TableRow>
-              ) : isError ? (
-                <TableRow>
-                  <TableCell colSpan={columnCount} className="text-center py-8 text-red-600">Could not load the initiatives. Refresh the page to try again.</TableCell>
-                </TableRow>
-              ) : items.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={columnCount} className="py-12">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400">
-                        <Megaphone className="h-5 w-5" />
-                      </div>
-                      <p className="font-medium text-slate-900 dark:text-zinc-100">
-                        {hasFilters ? "No initiatives match these filters" : "No initiatives yet"}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500 dark:text-zinc-400">
-                        {hasFilters ? "Try clearing a filter." : "Initiatives you track will appear here."}
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                items.map((item) => (
-                  <TableRow key={item.id} className="cursor-pointer" onClick={() => navigate(`/initiatives/${item.id}`)}>
-                    <TableCell className="font-medium text-slate-900 dark:text-zinc-100">
-                      {/* Real link for keyboard and screen-reader users; the row click covers the mouse */}
-                      <Link to={`/initiatives/${item.id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
-                        {item.name}
-                      </Link>
-                      {/* The event code always, then whatever the hidden columns would have shown */}
-                      <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-xs font-normal text-slate-500 dark:text-zinc-400">
-                        {item.event_code && <span className="font-mono">{item.event_code}</span>}
-                        <span className="@3xl:hidden">{item.brand_name}</span>
-                        <span className="@5xl:hidden">{isEventsView ? item.sub_channel_name : item.sub_channel_name ? `${item.channel_name} / ${item.sub_channel_name}` : item.channel_name}</span>
-                        {isEventsView && locationOf(item) !== "-" && <span className="@4xl:hidden">{locationOf(item)}</span>}
-                        {(item.start_date || item.end_date) && <span className="@2xl:hidden">{formatDateRangeShort(item.start_date, item.end_date)}</span>}
-                        {item.budget_amount !== null && <span className="@xl:hidden">Budget {formatBudget(item.budget_amount, item.currency)}</span>}
-                        {item.expected_total !== 0 && <span className="@lg:hidden">Expected {formatMoney(item.expected_total, item.currency)}</span>}
-                      </div>
-                    </TableCell>
-                    {isEventsView && <TableCell className="hidden @4xl:table-cell">{locationOf(item)}</TableCell>}
-                    <TableCell className="hidden @3xl:table-cell">{item.brand_name}</TableCell>
-                    <TableCell className="hidden @5xl:table-cell">
-                      {isEventsView ? (
-                        item.sub_channel_name ?? "-"
-                      ) : (
-                        <ChannelCell code={channelCodes.get(item.channel_id)} name={item.channel_name} subName={item.sub_channel_name} />
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden @4xl:table-cell">
-                      {item.owner_name ? (
-                        <div className="flex items-center gap-2" title={item.owner_name}>
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold text-white dark:bg-zinc-200 dark:text-zinc-900">
-                            {initials(item.owner_name)}
-                          </span>
-                          {/* Just the initials until there's room for the name */}
-                          <span className="hidden @7xl:inline">{item.owner_name}</span>
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden @2xl:table-cell">{formatDateRangeShort(item.start_date, item.end_date)}</TableCell>
-                    <TableCell className="hidden text-right tabular-nums whitespace-nowrap @xl:table-cell">{formatBudget(item.budget_amount, item.currency)}</TableCell>
-                    <TableCell className="hidden @lg:table-cell">
-                      <ExpectedCostCell item={item} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={STATUS_STYLES[item.status]}>
-                        {STATUS_LABELS[item.status]}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TooltipProvider>
-
-        <div className="mt-auto flex items-center justify-between border-t border-slate-200 dark:border-zinc-800 px-4 py-3 text-sm text-slate-500 dark:text-zinc-400">
-          <span>{total === 0 ? "0 initiatives" : `${firstRow}–${lastRow} of ${total} initiatives`}</span>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)} disabled={page === 0}>
-              <ChevronLeft className="h-4 w-4" />
-              Previous
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)} disabled={lastRow >= total}>
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </Card>
+      <InitiativePanel item={panelItem} onClose={() => setPanelItem(null)} onEdit={canEdit ? setEditing : undefined} />
+      {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} defaultChannelCode={channel?.code} />}
+      {editing && (
+        <InitiativeFormDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditing(null);
+          }}
+          initiative={editing}
+        />
+      )}
+      {deleting && (
+        <DeleteInitiativeDialog
+          initiative={deleting}
+          open
+          onOpenChange={(open) => {
+            if (!open) setDeleting(null);
+          }}
+          onDeleted={() => {
+            setSelected((prev) => {
+              const next = new Map(prev);
+              next.delete(deleting.id);
+              return next;
+            });
+            if (panelItem?.id === deleting.id) setPanelItem(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -25,7 +25,11 @@ export const queryKeys = {
   // Marketing reference data
   referenceData: () => ["reference-data"] as const,
   initiatives: (filters: object = {}) => ["initiatives", filters] as const,
+  // Under "initiatives" so anything that refreshes the list refreshes the cards too
+  initiativeSummary: (filters: object = {}) => ["initiatives", "summary", filters] as const,
   initiative: (id: string) => ["initiative", id] as const,
+  // Under "initiative" so saving an initiative refreshes its activity
+  initiativeActivity: (id: string, limit: number) => ["initiative", id, "activity", limit] as const,
   initiativeOwnerOptions: (search: string) => ["initiative-owner-options", search] as const,
   spendLines: (initiativeId: string) => ["spend-lines", initiativeId] as const,
   navanStatus: () => ["navan-status"] as const,

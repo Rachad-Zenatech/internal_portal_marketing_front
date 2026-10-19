@@ -15,6 +15,7 @@ import {
   Share2,
   Star,
   Store,
+  Users,
 } from "lucide-react";
 
 export interface ChannelStyle {
@@ -29,6 +30,7 @@ export interface ChannelStyle {
 // Class names are written out in full so Tailwind can find them.
 const STYLES: Record<string, ChannelStyle> = {
   PAID_SEARCH: { icon: Search, tile: "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-blue-400", dot: "bg-blue-500" },
+  ORGANIC_SOCIAL: { icon: Users, tile: "bg-purple-50 text-purple-600 dark:bg-purple-950/60 dark:text-purple-400", dot: "bg-purple-500" },
   PAID_SOCIAL: { icon: Share2, tile: "bg-pink-50 text-pink-600 dark:bg-pink-950/60 dark:text-pink-400", dot: "bg-pink-500" },
   SEO: { icon: Globe, tile: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400", dot: "bg-emerald-500" },
   CONTENT_MARKETING: { icon: FileText, tile: "bg-amber-50 text-amber-600 dark:bg-amber-950/60 dark:text-amber-400", dot: "bg-amber-500" },
