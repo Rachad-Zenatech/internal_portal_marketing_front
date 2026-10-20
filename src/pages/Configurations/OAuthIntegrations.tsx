@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -13,7 +13,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Lock,
-  Sparkles,
   KeyRound,
   Megaphone,
   Share2,
@@ -53,6 +52,9 @@ import {
 } from '@/components/ui/select';
 import HelpIcon from '@/components/ui/HelpIcon';
 import { useAuth } from '@/lib/AuthContext';
+import { useGoogleAdsStatus, useSyncGoogleAds } from '@/hooks/useGoogleAds';
+import { queryKeys } from '@/services/queryKeys';
+import { describeGoogleAdsRun } from '@/pages/PaidAds/GoogleAdsSyncStatus';
 
 export type IntegrationCategory = 'PAID_ADS' | 'SOCIAL_MEDIA';
 
@@ -235,10 +237,43 @@ const ALL_PROVIDERS: OAuthProvider[] = [
 
 export default function OAuthIntegrations() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { hasPermission, isSuperAdmin } = useAuth();
-  const canManage = isSuperAdmin || hasPermission('CONFIG_ROLES_UPDATE');
+  const { hasPermission } = useAuth();
+  // Super admins pass every permission check
+  const canManage = hasPermission('CONFIG_ROLES_UPDATE');
+  const canSyncGoogleAds = hasPermission('INITIATIVES_UPDATE');
+
+  // Google Ads: mock or live mode (shown on its card), and the sync suggested after connecting
+  const { data: googleAdsStatus } = useGoogleAdsStatus(hasPermission('INITIATIVES_VIEW'));
+  const syncGoogleAds = useSyncGoogleAds();
+  const suggestGoogleAdsSync = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.googleAdsStatus() });
+    if (!canSyncGoogleAds) return;
+    toast('Google Ads is connected', {
+      description: 'Sync now to bring in its campaigns and weekly results.',
+      duration: 15000,
+      action: {
+        label: 'Sync now',
+        onClick: () =>
+          syncGoogleAds.mutate(undefined, {
+            onSuccess: (summary) => toast.success('Synced with Google Ads', { description: describeGoogleAdsRun(summary) }),
+            onError: (err) => toast.error("Couldn't sync with Google Ads", { description: err.message || 'Try again in a few minutes.' }),
+          }),
+      },
+    });
+  };
+
+  // Back from the Google sign-in (OAuthCallbackPage adds ?connected=GOOGLE_ADS): suggest syncing once
+  const connectedParam = searchParams.get('connected');
+  useEffect(() => {
+    if (connectedParam !== 'GOOGLE_ADS') return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('connected');
+    setSearchParams(next, { replace: true });
+    suggestGoogleAdsSync();
+    // Runs once per return from the sign-in
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectedParam]);
 
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('ALL');
@@ -311,6 +346,7 @@ export default function OAuthIntegrations() {
       );
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
       setIsConnectOpen(false);
+      if (variables.provider === 'GOOGLE_ADS') suggestGoogleAdsSync();
     },
     onError: (err: any) => {
       toast.error('Test connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
@@ -652,6 +688,21 @@ export default function OAuthIntegrations() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <CardTitle className="text-sm font-semibold">{meta.name}</CardTitle>
+                        {provider === 'GOOGLE_ADS' && googleAdsStatus && (
+                          <Badge
+                            variant="outline"
+                            className="px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
+                            title={
+                              googleAdsStatus.mode === 'mock'
+                                ? 'Mock mode: connecting uses fake sign-in and made-up accounts, and the sync makes up campaigns and results. Google is not called.'
+                                : googleAdsStatus.configured
+                                  ? 'Live mode: real Google sign-in and the Google Ads API.'
+                                  : "Live mode, but Google Ads isn't set up: add GOOGLE_ADS_CLIENT_ID and GOOGLE_ADS_CLIENT_SECRET."
+                            }
+                          >
+                            {googleAdsStatus.mode === 'mock' ? 'Mock' : 'Live'}
+                          </Badge>
+                        )}
                       </div>
                       <Badge
                         variant="outline"

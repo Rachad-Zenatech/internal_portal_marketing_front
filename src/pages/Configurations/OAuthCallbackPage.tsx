@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,8 @@ export default function OAuthCallbackPage() {
         setStatus('success');
         setConnectedDetails(res);
         setTimeout(() => {
-          navigate('/configurations/integrations?category=PAID_ADS');
+          // Google Ads: the integrations page then suggests syncing its campaigns and results
+          navigate(`/configurations/integrations?category=PAID_ADS${provider === 'GOOGLE_ADS' ? '&connected=GOOGLE_ADS' : ''}`);
         }, 2200);
       })
       .catch((err) => {

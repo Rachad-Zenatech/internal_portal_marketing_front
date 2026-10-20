@@ -114,12 +114,14 @@ export const SOURCE_LABELS: Record<AdResultSource, string> = {
   MANUAL: "Typed in",
   SPREADSHEET: "Spreadsheet",
   DATA_STUDIO: "Data Studio",
+  GOOGLE_ADS_API: "Google Ads",
 };
 
 export const SOURCE_STYLES: Record<AdResultSource, string> = {
   MANUAL: "border-border bg-muted/60 text-muted-foreground",
   SPREADSHEET: "border-border bg-muted/60 text-muted-foreground",
   DATA_STUDIO: "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300",
+  GOOGLE_ADS_API: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300",
 };
 
 // ─── Numbers ─────────────────────────────────────────────────────────────────

@@ -7,7 +7,7 @@ import { Button } from "./components/ui/button";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const AppShell = lazy(() => import("./components/AppShell/AppShell"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Dashboard = lazy(() => import("./pages/MarketingDashboard/MarketingDashboard"));
 const Initiatives = lazy(() => import("./pages/Initiatives/Initiatives"));
 const InitiativeDetail = lazy(() => import("./pages/Initiatives/InitiativeDetail"));
 const InitiativeCosts = lazy(() => import("./pages/Initiatives/InitiativeCosts"));
