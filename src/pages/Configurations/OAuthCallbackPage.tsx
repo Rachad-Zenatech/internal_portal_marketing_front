@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -54,7 +54,9 @@ export default function OAuthCallbackPage() {
         setStatus('success');
         setConnectedDetails(res);
         setTimeout(() => {
-          navigate('/configurations/integrations?category=PAID_ADS');
+          // Google Ads and Microsoft Ads: the integrations page then suggests syncing their campaigns and results
+          const synced = provider === 'GOOGLE_ADS' || provider === 'MICROSOFT_ADS';
+          navigate(`/configurations/integrations?category=PAID_ADS${synced ? `&connected=${provider}` : ''}`);
         }, 2200);
       })
       .catch((err) => {

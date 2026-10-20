@@ -9,7 +9,10 @@ import {
   getInitiativeSummary,
   getOwnerOptions,
   updateInitiative,
+  applyEventBudgets,
+  previewEventBudgets,
 } from "@/services/initiativesService";
+import type { EventBudgetChange } from "@/types/eventBudgets";
 import type { InitiativeCreate, InitiativeFilters, InitiativeUpdate } from "@/types/initiatives";
 
 export function useInitiatives(filters: InitiativeFilters, enabled = true) {
@@ -110,5 +113,23 @@ export function useOwnerOptions(search: string, enabled: boolean) {
     enabled,
     staleTime: 1000 * 60,
     placeholderData: keepPreviousData,
+  });
+}
+
+export function usePreviewEventBudgets() {
+  return useMutation({ mutationFn: (file: File) => previewEventBudgets(file) });
+}
+
+/** Many events' budgets at once: refresh everything that shows an event's budget */
+export function useApplyEventBudgets() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (changes: EventBudgetChange[]) => applyEventBudgets(changes),
+    onSuccess: () =>
+      Promise.all(
+        [["initiatives"], ["initiative"], ["event-overview"], ["event-performance"], ["performance"], ["evaluation"]].map((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        ),
+      ),
   });
 }

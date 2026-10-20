@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
@@ -13,7 +13,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Lock,
-  Sparkles,
   KeyRound,
   Megaphone,
   Share2,
@@ -53,6 +52,8 @@ import {
 } from '@/components/ui/select';
 import HelpIcon from '@/components/ui/HelpIcon';
 import { useAuth } from '@/lib/AuthContext';
+import { isAdSyncProvider } from '@/services/adSyncService';
+import { AdPlatformLastSynced, AdSyncModeBadge, SyncAdPlatformButton, useSuggestAdSync } from '@/pages/PaidAds/AdSyncStatus';
 
 export type IntegrationCategory = 'PAID_ADS' | 'SOCIAL_MEDIA';
 
@@ -235,10 +236,27 @@ const ALL_PROVIDERS: OAuthProvider[] = [
 
 export default function OAuthIntegrations() {
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { hasPermission, isSuperAdmin } = useAuth();
-  const canManage = isSuperAdmin || hasPermission('CONFIG_ROLES_UPDATE');
+  const { hasPermission } = useAuth();
+  // Super admins pass every permission check
+  const canManage = hasPermission('CONFIG_ROLES_UPDATE');
+  const canSyncAds = hasPermission('INITIATIVES_UPDATE');
+  // Platforms with a campaign sync (Google Ads, Microsoft Ads) show their mode and last sync on their cards
+  const canViewAdSync = hasPermission('INITIATIVES_VIEW');
+  // ... and suggest syncing once they're connected
+  const suggestAdSync = useSuggestAdSync(canSyncAds);
+
+  // Back from the sign-in (OAuthCallbackPage adds ?connected=GOOGLE_ADS or MICROSOFT_ADS): suggest syncing once
+  const connectedParam = searchParams.get('connected');
+  useEffect(() => {
+    if (!isAdSyncProvider(connectedParam)) return;
+    const next = new URLSearchParams(searchParams);
+    next.delete('connected');
+    setSearchParams(next, { replace: true });
+    suggestAdSync(connectedParam);
+    // Runs once per return from the sign-in
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectedParam]);
 
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>('ALL');
@@ -311,6 +329,7 @@ export default function OAuthIntegrations() {
       );
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
       setIsConnectOpen(false);
+      if (isAdSyncProvider(variables.provider)) suggestAdSync(variables.provider);
     },
     onError: (err: any) => {
       toast.error('Test connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
@@ -627,7 +646,7 @@ export default function OAuthIntegrations() {
       </Card>
 
       {/* Provider Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-5">
         {filteredProviders.map((provider) => {
           const meta = PROVIDER_METADATA[provider];
           const info = providerConnections[provider];
@@ -652,6 +671,7 @@ export default function OAuthIntegrations() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <CardTitle className="text-sm font-semibold">{meta.name}</CardTitle>
+                        {isAdSyncProvider(provider) && <AdSyncModeBadge provider={provider} enabled={canViewAdSync} />}
                       </div>
                       <Badge
                         variant="outline"
@@ -687,8 +707,8 @@ export default function OAuthIntegrations() {
 
                 {activeConn ? (
                   <div className="p-3 rounded-md bg-muted/40 border border-border/50 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Hierarchy Scope:</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Hierarchy Scope:</span>
                       {isDirect ? (
                         <Badge variant="default" className="text-[10px] bg-primary/90">
                           Dedicated Company
@@ -700,25 +720,32 @@ export default function OAuthIntegrations() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Authorized Account:</span>
-                      <span className="font-medium text-foreground truncate max-w-[160px]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Authorized Account:</span>
+                      <span className="min-w-0 truncate text-right font-medium text-foreground" title={activeConn.account_name || undefined}>
                         {activeConn.account_name || 'Active Account'}
                       </span>
                     </div>
 
                     {activeConn.provider_account_id && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{meta.idLabel}:</span>
-                        <span className="font-mono text-foreground">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="shrink-0 text-muted-foreground">{meta.idLabel}:</span>
+                        <span className="min-w-0 truncate text-right font-mono text-foreground">
                           {activeConn.provider_account_id}
                         </span>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Token Life:</span>
-                      <span className="text-muted-foreground">
+                    {isAdSyncProvider(provider) && isConnected && canViewAdSync && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="shrink-0 text-muted-foreground">Campaign Data:</span>
+                        <AdPlatformLastSynced provider={provider} />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Token Life:</span>
+                      <span className="shrink-0 text-muted-foreground">
                         {activeConn.expires_at
                           ? 'Expires ' + new Date(activeConn.expires_at).toLocaleDateString()
                           : 'Auto-refreshing via OAuth 2.0'}
@@ -733,8 +760,11 @@ export default function OAuthIntegrations() {
                 )}
               </CardContent>
 
-              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {isAdSyncProvider(provider) && isConnected && canSyncAds && (
+                    <SyncAdPlatformButton provider={provider} className="h-8 text-xs gap-1" label="Sync now" />
+                  )}
                   {activeConn && canManage && (
                     <Button
                       variant="ghost"
@@ -742,9 +772,10 @@ export default function OAuthIntegrations() {
                       className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
                       disabled={refreshMutation.isPending}
                       onClick={() => refreshMutation.mutate(activeConn.id)}
+                      title="Renew the sign-in token for this connection"
                     >
                       <RefreshCw className={`w-3 h-3 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
-                      Refresh
+                      Refresh token
                     </Button>
                   )}
 
@@ -761,7 +792,7 @@ export default function OAuthIntegrations() {
                 </div>
 
                 {canManage && (
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                  <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
                     {activeConn ? (
                       <div className="flex items-center gap-1">
                         <Button

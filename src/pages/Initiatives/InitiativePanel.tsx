@@ -13,6 +13,7 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import type { InitiativeListItem } from "@/types/initiatives";
 import type { Performance } from "@/types/performance";
+import { AdOutcomes } from "../PaidAds/CampaignPanel";
 import CostOverview from "./CostOverview";
 import { Empty, Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
@@ -245,6 +246,11 @@ function RecentActivity({ initiativeId }: { initiativeId: string }) {
 }
 
 function PerformanceTab({ item, performance, loading, kind }: { item: InitiativeListItem; performance: Performance | undefined; loading: boolean; kind: "outcomes" | "evaluation" }) {
+  const { data: reference } = useReferenceData();
+  const channelCode = reference?.channels.find((c) => c.id === item.channel_id)?.code;
+  // Paid Search and Paid Social campaigns with a platform (sub-channel) have ad results instead of monthly outcomes
+  const isAdCampaign = Boolean(item.sub_channel_id) && (channelCode === "PAID_SEARCH" || channelCode === "PAID_SOCIAL");
+  if (kind === "outcomes" && isAdCampaign) return <AdOutcomes initiativeId={item.id} startDate={item.start_date} />;
   if (loading) return <Skeleton className="h-48 w-full" />;
   if (!performance) return <p className={`text-sm ${MUTED}`}>Could not load the performance figures.</p>;
   return kind === "outcomes" ? <ResultsSection initiative={item} performance={performance} /> : <WorthItSection initiative={item} performance={performance} />;

@@ -1,3 +1,4 @@
+import type { EventBudgetChange, EventBudgetPreview } from "@/types/eventBudgets";
 import { apiClient } from "./apiClient";
 import type {
   InitiativeActivity,
@@ -58,4 +59,16 @@ export function updateInitiative(id: string, data: InitiativeUpdate) {
 /** Drafts and initiatives outside Events only; an event past Draft is cancelled instead */
 export function deleteInitiative(id: string) {
   return apiClient.delete<null>(`/api/initiatives/${id}`, { actionLabel: "Deleting initiative" });
+}
+
+/** Check a sheet of event budgets: which events it matches and what would change. Saves nothing. */
+export function previewEventBudgets(file: File) {
+  const body = new FormData();
+  body.append("file", file);
+  return apiClient.post<EventBudgetPreview>("/api/initiatives/event-budgets/preview", body, { actionLabel: "Checking spreadsheet" });
+}
+
+/** Save previewed event budgets, all or nothing */
+export function applyEventBudgets(changes: EventBudgetChange[]) {
+  return apiClient.post<{ updated: number }>("/api/initiatives/event-budgets/apply", { changes }, { actionLabel: "Saving budgets" });
 }

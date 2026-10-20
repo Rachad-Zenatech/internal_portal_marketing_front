@@ -9,6 +9,7 @@ import type { AdsCampaignRow, AdsHealthFilters, AdsOverview } from "@/types/ads"
 import { DASH, fmtCount, fmtMoney, fmtPercent, fmtUnitCost } from "./adsDisplay";
 import { PlatformBudgetChart, PlatformBudgetLegend } from "./AdsCharts";
 import { CampaignStatusPill, PlatformIcon, UsageBar } from "./AdsPieces";
+import { timeAgo } from "../Events/NavanSyncStatus";
 import { CONNECTION_LABELS, formatDay, formatRange, HEALTH_DOT, HEALTH_LABELS, HEALTH_TONE, SOURCE_KIND_LABELS } from "./overviewDisplay";
 
 function TableCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
@@ -299,11 +300,17 @@ export function DataHealthTab({ filters, onOpen }: { filters: AdsHealthFilters; 
                     {p.connection_status ? (
                       <span className={p.connection_status === "CONNECTED" ? "text-emerald-700 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}>
                         API: {CONNECTION_LABELS[p.connection_status] ?? p.connection_status}
+                        {p.sync_mode === "mock" ? " (mock data)" : ""}
                       </span>
                     ) : p.source ? (
                       SOURCE_KIND_LABELS[p.source]
                     ) : (
                       <span className="text-muted-foreground">No results yet</span>
+                    )}
+                    {p.last_sync_at && (
+                      <span className="block text-xs text-muted-foreground" title={new Date(p.last_sync_at).toLocaleString()}>
+                        Synced {timeAgo(p.last_sync_at)}
+                      </span>
                     )}
                   </td>
                   <td className={`${TD} max-w-56 truncate text-muted-foreground`} title={[...p.connections.map((c) => c.account_name ?? c.account_id ?? ""), ...p.accounts].join(", ")}>

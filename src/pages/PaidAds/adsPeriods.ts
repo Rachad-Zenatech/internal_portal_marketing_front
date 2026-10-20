@@ -21,46 +21,10 @@ export function parsePeriod(value: string | null): PeriodKey {
 const pad = (n: number) => String(n).padStart(2, "0");
 /** A local date as YYYY-MM-DD */
 export const isoDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-export const todayIso = () => isoDate(new Date());
-
-const addDays = (d: Date, n: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-const monthStart = (y: number, m: number) => new Date(y, m, 1);
-const monthEnd = (y: number, m: number) => new Date(y, m + 1, 0);
 
 export interface DateRange {
   from: string;
   to: string;
-}
-
-/** The dates for a period and the equal-length period right before it (none for All time) */
-export function periodRanges(period: PeriodKey, now = new Date()): { current: DateRange | null; previous: DateRange | null; changeLabel: string } {
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const y = today.getFullYear();
-  const m = today.getMonth();
-  const range = (a: Date, b: Date) => ({ from: isoDate(a), to: isoDate(b) });
-  switch (period) {
-    case "this_month":
-      return { current: range(monthStart(y, m), monthEnd(y, m)), previous: range(monthStart(y, m - 1), monthEnd(y, m - 1)), changeLabel: "vs. previous month" };
-    case "last_month":
-      return { current: range(monthStart(y, m - 1), monthEnd(y, m - 1)), previous: range(monthStart(y, m - 2), monthEnd(y, m - 2)), changeLabel: "vs. previous month" };
-    case "30d":
-    case "90d": {
-      const days = period === "30d" ? 30 : 90;
-      return {
-        current: range(addDays(today, -(days - 1)), today),
-        previous: range(addDays(today, -(2 * days - 1)), addDays(today, -days)),
-        changeLabel: "vs. previous period",
-      };
-    }
-    case "this_year":
-      return {
-        current: range(new Date(y, 0, 1), today),
-        previous: range(new Date(y - 1, 0, 1), new Date(y - 1, m, today.getDate())),
-        changeLabel: "vs. same time last year",
-      };
-    default:
-      return { current: null, previous: null, changeLabel: "" };
-  }
 }
 
 /** "2026-10" */
@@ -79,21 +43,9 @@ export function monthsBetween(first: string, last: string) {
   return out;
 }
 
-/** The chart shows at least the last 6 months, so a short period still has context */
-export function chartRange(current: DateRange): DateRange {
-  const lastMonth = monthKeyOf(current.to);
-  const sixBack = `${addMonthKey(lastMonth, -5)}-01`;
-  return { from: current.from < sixBack ? `${monthKeyOf(current.from)}-01` : sixBack, to: current.to };
-}
-
 export function monthShort(key: string, withYear: boolean) {
   const [y, m] = key.split("-").map(Number);
   return new Date(y, m - 1, 1).toLocaleDateString(undefined, withYear ? { month: "short", year: "2-digit" } : { month: "short" });
-}
-
-export function monthLong(key: string) {
-  const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 // ─── Running now / Upcoming / Finished ───────────────────────────────────────

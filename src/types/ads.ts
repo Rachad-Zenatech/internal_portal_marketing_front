@@ -14,7 +14,7 @@ export type AdPlatform =
   | "OTHER";
 export type AdResultStatus = "ACTIVE" | "PAUSED" | "ENDED";
 /** Where a row came from: typed in, a spreadsheet upload, or (later) the Data Studio feed */
-export type AdResultSource = "MANUAL" | "SPREADSHEET" | "DATA_STUDIO";
+export type AdResultSource = "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API";
 
 /** CTR, CPC, conversion rate, CPL and the cost per figures are calculated by the API; null when they can't be */
 export interface AdMetrics {
@@ -185,7 +185,7 @@ export type CampaignObjective = "AWARENESS" | "TRAFFIC" | "LEADS" | "CONVERSIONS
 export type CampaignStatus = "DRAFT" | "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
 export type AttentionKind = "BUDGET" | "CPL_ABOVE_TARGET" | "CPL_ABOVE_PLATFORM" | "UNEXPECTEDLY_PAUSED" | "DATA_DELAYED";
 export type DataHealthStatus = "OK" | "STALE" | "NO_DATA" | "CONNECTION" | "NOT_STARTED";
-export type DataSourceKind = "API" | "MANUAL" | "SPREADSHEET" | "DATA_STUDIO";
+export type DataSourceKind = "API" | "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API";
 
 export interface AdsOverviewFilters {
   /** YYYY-MM-DD */
@@ -440,6 +440,9 @@ export interface AdsHealthPlatform {
   active_campaign_count: number;
   last_data_date: string | null;
   last_updated_at: string | null;
+  /** When the platform's sync last worked and its mode (Google Ads and YouTube Ads, Bing Ads) */
+  last_sync_at?: string | null;
+  sync_mode?: "mock" | "live" | null;
   problems: AdsHealthProblem[];
 }
 

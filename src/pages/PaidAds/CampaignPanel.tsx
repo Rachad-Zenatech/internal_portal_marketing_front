@@ -335,6 +335,66 @@ function Details({ d }: { d: AdsCampaignDetail }) {
   );
 }
 
+const isoDay = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+/**
+ * An ad campaign's results since it started, for the Outcomes tab of the Marketing Initiatives panel: the platform's
+ * figures (spend, impressions, clicks, conversions), the spend and leads chart, HubSpot's leads, MQLs and SQLs, and
+ * the results by week. Read only: results come from the ad platform sync, uploads or Paid Advertising.
+ */
+export function AdOutcomes({ initiativeId, startDate }: { initiativeId: string; startDate: string | null }) {
+  const today = new Date();
+  const yearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+  const to = isoDay(today);
+  const range = { from: startDate && startDate <= to ? startDate : isoDay(yearAgo), to };
+  const detail = useAdsCampaignDetail(initiativeId, range);
+  const d = detail.data;
+  if (detail.error) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+        Could not load the ad results.
+        <Button variant="outline" size="sm" onClick={() => detail.refetch()}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+  if (!d) return <Skeleton className="h-80 w-full rounded-lg" />;
+  const c = d.campaign;
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          {startDate && startDate <= to ? "Since the campaign started" : "Last 12 months"} ({formatRange(range.from, range.to)}), {c.currency}
+        </p>
+        <Button variant="outline" size="sm" asChild className="gap-1.5">
+          <Link to={`/paid-ads?campaign=${initiativeId}`}>
+            <SquareArrowOutUpRight className="h-3.5 w-3.5" />
+            Open in Paid Advertising
+          </Link>
+        </Button>
+      </div>
+      <Grid>
+        <Stat label="Spend" value={fmtMoney(c.spend, c.currency)} />
+        <Stat label="Impressions" value={fmtCount(c.impressions)} />
+        <Stat label="Clicks" value={fmtCount(c.clicks)} />
+        <Stat label="CTR" value={fmtPercent(c.ctr)} />
+        <Stat label="CPC" value={fmtUnitCost(c.cpc, c.currency)} />
+        <Stat label="Conversions" value={fmtCount(c.conversions)} hint="Platform-reported" />
+      </Grid>
+      <Performance d={d} />
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-foreground">Sales outcomes</p>
+        <Crm d={d} />
+      </div>
+      <div className="flex flex-col gap-2">
+        <p className="text-sm font-medium text-foreground">Results by week</p>
+        <ResultsList initiativeId={initiativeId} />
+      </div>
+    </div>
+  );
+}
+
 interface CampaignPanelProps {
   initiativeId: string | null;
   range: { from: string; to: string };

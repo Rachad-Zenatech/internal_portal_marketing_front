@@ -1,6 +1,7 @@
 import {
   CalendarDays,
   ChartColumn,
+  LayoutDashboard,
   Megaphone,
   ShieldCheck,
   FileClock,
@@ -53,6 +54,20 @@ const initiativesLink = (label: string, channel?: string): NavigationSubItem => 
 
 export const navigation: NavigationItem[] = [
   {
+    label: "Dashboard",
+    path: "/dashboard",
+    icon: LayoutDashboard,
+    section: "MARKETING",
+    navigationCode: "DASHBOARD",
+  },
+  {
+    label: "Budgets & Expenses",
+    path: "/budgets",
+    icon: Wallet,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+  },
+  {
     label: "Marketing Initiatives",
     path: "/initiatives",
     icon: Megaphone,
@@ -75,13 +90,6 @@ export const navigation: NavigationItem[] = [
     label: "Events Overview",
     path: "/events",
     icon: CalendarDays,
-    section: "MARKETING",
-    navigationCode: "INITIATIVES",
-  },
-  {
-    label: "Budgets & Expenses",
-    path: "/budgets",
-    icon: Wallet,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },

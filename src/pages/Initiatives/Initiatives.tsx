@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Download, Layers, Loader2, Megaphone, MoreHorizontal, PlayCircle, Plus, Search, Wallet, X } from "lucide-react";
+import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Download, Layers, Loader2, Megaphone, MoreHorizontal, PlayCircle, Plus, Search, Upload, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/PageHeader";
 import { MAIN_CHANNEL_CODES, OTHER_CHANNELS } from "@/components/AppShell/Navigation";
@@ -19,6 +19,7 @@ import { useInitiatives, useInitiativeSummary } from "@/hooks/useInitiatives";
 import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import { getInitiatives } from "@/services/initiativesService";
+import EventBudgetUpload from "./EventBudgetUpload";
 import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
 import { DeleteInitiativeDialog } from "./DeleteInitiativeButton";
@@ -230,6 +231,7 @@ export default function Initiatives() {
   const { hasPermission } = useAuth();
   const canCreate = hasPermission("INITIATIVES_CREATE");
   const canEdit = hasPermission("INITIATIVES_UPDATE");
+  const [budgetUploadOpen, setBudgetUploadOpen] = useState(false);
   const canDelete = hasPermission("INITIATIVES_DELETE");
 
   // Wait until typing pauses before searching
@@ -249,6 +251,7 @@ export default function Initiatives() {
   const channel = channelCode ? reference?.channels.find((c) => c.code === channelCode) : undefined;
   // "Other channels" in the sidebar: every channel without its own link
   const isOtherChannels = channelCode === OTHER_CHANNELS;
+  const isEvents = channel?.code === "EVENTS";
   const otherChannels = useMemo(() => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)), [reference]);
   // A channel in the URL can't be resolved without the channel list, or may not exist at all
   const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
@@ -396,6 +399,12 @@ export default function Initiatives() {
                   <Download />
                   Export CSV
                 </DropdownMenuItem>
+                {isEvents && canEdit && (
+                  <DropdownMenuItem onSelect={() => setBudgetUploadOpen(true)}>
+                    <Upload />
+                    Upload budgets
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             {canCreate && (
@@ -595,6 +604,7 @@ export default function Initiatives() {
 
       <InitiativePanel item={panelItem} onClose={() => setPanelItem(null)} onEdit={canEdit ? setEditing : undefined} />
       {canCreate && <InitiativeFormDialog open={createOpen} onOpenChange={setCreateOpen} defaultChannelCode={channel?.code} />}
+      {isEvents && canEdit && channel && <EventBudgetUpload open={budgetUploadOpen} onOpenChange={setBudgetUploadOpen} channelId={channel.id} />}
       {editing && (
         <InitiativeFormDialog
           open

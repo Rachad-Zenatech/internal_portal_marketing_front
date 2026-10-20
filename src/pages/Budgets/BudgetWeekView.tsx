@@ -55,13 +55,6 @@ export function weekForMonth(monthKey: string) {
   return toIso(new Date()).startsWith(monthKey) ? thisWeekKey() : toIso(mondayOf(fromIso(`${monthKey}-01`)));
 }
 
-/** The month a week mostly falls in (where its Thursday is), as "2026-10" */
-export function monthOfWeek(weekKey: string) {
-  const thursday = fromIso(weekKey);
-  thursday.setDate(thursday.getDate() + 3);
-  return toIso(thursday).slice(0, 7);
-}
-
 /** "Oct 12 – 18, 2026", "Sep 28 – Oct 4, 2026", "Dec 28, 2026 – Jan 3, 2027" */
 export function weekName(weekKey: string) {
   const start = fromIso(weekKey);
