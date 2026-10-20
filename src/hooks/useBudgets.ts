@@ -1,4 +1,4 @@
-import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryKeys";
 import {
   confirmBudgetImport,
@@ -26,18 +26,6 @@ export function useBudgetMonth(month: string) {
     queryKey: queryKeys.budgetMonth(month),
     queryFn: () => getBudgetMonth(month),
     placeholderData: keepPreviousData,
-  });
-}
-
-/** Several months at once (YYYY-MM-01 each), e.g. for a chart; shares the cache with useBudgetMonth */
-export function useBudgetMonths(months: string[], enabled = true) {
-  return useQueries({
-    queries: months.map((month) => ({
-      queryKey: queryKeys.budgetMonth(month),
-      queryFn: () => getBudgetMonth(month),
-      placeholderData: keepPreviousData,
-      enabled,
-    })),
   });
 }
 

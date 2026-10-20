@@ -54,7 +54,7 @@ import HelpIcon from '@/components/ui/HelpIcon';
 import { useAuth } from '@/lib/AuthContext';
 import { useGoogleAdsStatus, useSyncGoogleAds } from '@/hooks/useGoogleAds';
 import { queryKeys } from '@/services/queryKeys';
-import { describeGoogleAdsRun } from '@/pages/PaidAds/GoogleAdsSyncStatus';
+import { describeGoogleAdsRun, GoogleAdsLastSynced, SyncGoogleAdsButton } from '@/pages/PaidAds/GoogleAdsSyncStatus';
 
 export type IntegrationCategory = 'PAID_ADS' | 'SOCIAL_MEDIA';
 
@@ -767,6 +767,13 @@ export default function OAuthIntegrations() {
                       </div>
                     )}
 
+                    {provider === 'GOOGLE_ADS' && isConnected && googleAdsStatus && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Campaign Data:</span>
+                        <GoogleAdsLastSynced />
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <span className="text-muted-foreground">Token Life:</span>
                       <span className="text-muted-foreground">
@@ -786,6 +793,9 @@ export default function OAuthIntegrations() {
 
               <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  {provider === 'GOOGLE_ADS' && isConnected && canSyncGoogleAds && (
+                    <SyncGoogleAdsButton className="h-8 text-xs gap-1" label="Sync now" />
+                  )}
                   {activeConn && canManage && (
                     <Button
                       variant="ghost"
@@ -793,9 +803,10 @@ export default function OAuthIntegrations() {
                       className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
                       disabled={refreshMutation.isPending}
                       onClick={() => refreshMutation.mutate(activeConn.id)}
+                      title="Renew the sign-in token for this connection"
                     >
                       <RefreshCw className={`w-3 h-3 ${refreshMutation.isPending ? 'animate-spin' : ''}`} />
-                      Refresh
+                      Refresh token
                     </Button>
                   )}
 
