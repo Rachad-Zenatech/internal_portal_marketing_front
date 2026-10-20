@@ -18,6 +18,7 @@ const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
 const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
 const SocialMediaPage = lazy(() => import("./pages/SocialMedia/SocialMediaPage"));
+const Entities = lazy(() => import("./pages/Configurations/Entities"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
 const UserRoleAssignment = lazy(() => import("./pages/Configurations/UserRoleAssignment"));
@@ -168,6 +169,24 @@ function App() {
               {/* Configuration Routes */}
               <Route path="/configuration" element={<Navigate to="/configurations/users" replace />} />
               <Route path="/configurations" element={<Navigate to="/configurations/users" replace />} />
+
+                            {/* Entities */}
+              <Route
+                path="/configuration/entities"
+                element={
+                  <ProtectedRoute navigationCode="CONFIG_ROLES">
+                    <Entities />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/configurations/entities"
+                element={
+                  <ProtectedRoute navigationCode="CONFIG_ROLES">
+                    <Entities />
+                  </ProtectedRoute>
+                }
+              />
 
               {/* Users */}
               <Route

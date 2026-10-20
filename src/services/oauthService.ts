@@ -37,6 +37,26 @@ export interface Company {
   updated_at?: string;
 }
 
+export interface CompanyCreate {
+  organization_id: string;
+  name: string;
+  code: string;
+  parent_company_id?: string | null;
+  brand_id?: number | null;
+  currency?: string;
+  is_active?: boolean;
+}
+
+export interface CompanyUpdate {
+  organization_id?: string;
+  name?: string;
+  code?: string;
+  parent_company_id?: string | null;
+  brand_id?: number | null;
+  currency?: string;
+  is_active?: boolean;
+}
+
 export interface OAuthConnection {
   id: string;
   organization_id: string;
@@ -101,6 +121,12 @@ export const oauthService = {
   getOrganizations: () => apiClient.get<Organization[]>('/api/oauth/organizations'),
   getCompanies: (orgId?: string) =>
     apiClient.get<Company[]>(orgId ? '/api/oauth/companies?organization_id=' + orgId : '/api/oauth/companies'),
+  createCompany: (data: CompanyCreate) =>
+    apiClient.post<Company>('/api/oauth/companies', data),
+  updateCompany: (id: string, data: CompanyUpdate) =>
+    apiClient.put<Company>('/api/oauth/companies/' + id, data),
+  deleteCompany: (id: string) =>
+    apiClient.delete<void>('/api/oauth/companies/' + id),
   getConnections: (params?: { organization_id?: string; company_id?: string; provider?: OAuthProvider }) => {
     const q = new URLSearchParams();
     if (params?.organization_id) q.set('organization_id', params.organization_id);
