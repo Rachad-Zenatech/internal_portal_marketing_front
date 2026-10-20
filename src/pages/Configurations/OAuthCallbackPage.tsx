@@ -54,8 +54,9 @@ export default function OAuthCallbackPage() {
         setStatus('success');
         setConnectedDetails(res);
         setTimeout(() => {
-          // Google Ads: the integrations page then suggests syncing its campaigns and results
-          navigate(`/configurations/integrations?category=PAID_ADS${provider === 'GOOGLE_ADS' ? '&connected=GOOGLE_ADS' : ''}`);
+          // Google Ads and Microsoft Ads: the integrations page then suggests syncing their campaigns and results
+          const synced = provider === 'GOOGLE_ADS' || provider === 'MICROSOFT_ADS';
+          navigate(`/configurations/integrations?category=PAID_ADS${synced ? `&connected=${provider}` : ''}`);
         }, 2200);
       })
       .catch((err) => {

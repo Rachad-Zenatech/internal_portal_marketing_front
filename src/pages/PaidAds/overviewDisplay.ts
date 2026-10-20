@@ -63,6 +63,7 @@ export const SOURCE_KIND_LABELS: Record<DataSourceKind, string> = {
   MANUAL: "Manual",
   DATA_STUDIO: "Data Studio",
   GOOGLE_ADS_API: "Google Ads sync",
+  MICROSOFT_ADS_API: "Microsoft Ads sync",
 };
 
 export const CONNECTION_LABELS: Record<string, string> = {

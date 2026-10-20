@@ -52,9 +52,8 @@ import {
 } from '@/components/ui/select';
 import HelpIcon from '@/components/ui/HelpIcon';
 import { useAuth } from '@/lib/AuthContext';
-import { useGoogleAdsStatus, useSyncGoogleAds } from '@/hooks/useGoogleAds';
-import { queryKeys } from '@/services/queryKeys';
-import { describeGoogleAdsRun, GoogleAdsLastSynced, SyncGoogleAdsButton } from '@/pages/PaidAds/GoogleAdsSyncStatus';
+import { isAdSyncProvider } from '@/services/adSyncService';
+import { AdPlatformLastSynced, AdSyncModeBadge, SyncAdPlatformButton, useSuggestAdSync } from '@/pages/PaidAds/AdSyncStatus';
 
 export type IntegrationCategory = 'PAID_ADS' | 'SOCIAL_MEDIA';
 
@@ -241,36 +240,20 @@ export default function OAuthIntegrations() {
   const { hasPermission } = useAuth();
   // Super admins pass every permission check
   const canManage = hasPermission('CONFIG_ROLES_UPDATE');
-  const canSyncGoogleAds = hasPermission('INITIATIVES_UPDATE');
+  const canSyncAds = hasPermission('INITIATIVES_UPDATE');
+  // Platforms with a campaign sync (Google Ads, Microsoft Ads) show their mode and last sync on their cards
+  const canViewAdSync = hasPermission('INITIATIVES_VIEW');
+  // ... and suggest syncing once they're connected
+  const suggestAdSync = useSuggestAdSync(canSyncAds);
 
-  // Google Ads: mock or live mode (shown on its card), and the sync suggested after connecting
-  const { data: googleAdsStatus } = useGoogleAdsStatus(hasPermission('INITIATIVES_VIEW'));
-  const syncGoogleAds = useSyncGoogleAds();
-  const suggestGoogleAdsSync = () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.googleAdsStatus() });
-    if (!canSyncGoogleAds) return;
-    toast('Google Ads is connected', {
-      description: 'Sync now to bring in its campaigns and weekly results.',
-      duration: 15000,
-      action: {
-        label: 'Sync now',
-        onClick: () =>
-          syncGoogleAds.mutate(undefined, {
-            onSuccess: (summary) => toast.success('Synced with Google Ads', { description: describeGoogleAdsRun(summary) }),
-            onError: (err) => toast.error("Couldn't sync with Google Ads", { description: err.message || 'Try again in a few minutes.' }),
-          }),
-      },
-    });
-  };
-
-  // Back from the Google sign-in (OAuthCallbackPage adds ?connected=GOOGLE_ADS): suggest syncing once
+  // Back from the sign-in (OAuthCallbackPage adds ?connected=GOOGLE_ADS or MICROSOFT_ADS): suggest syncing once
   const connectedParam = searchParams.get('connected');
   useEffect(() => {
-    if (connectedParam !== 'GOOGLE_ADS') return;
+    if (!isAdSyncProvider(connectedParam)) return;
     const next = new URLSearchParams(searchParams);
     next.delete('connected');
     setSearchParams(next, { replace: true });
-    suggestGoogleAdsSync();
+    suggestAdSync(connectedParam);
     // Runs once per return from the sign-in
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connectedParam]);
@@ -346,7 +329,7 @@ export default function OAuthIntegrations() {
       );
       queryClient.invalidateQueries({ queryKey: ['oauth-connections'] });
       setIsConnectOpen(false);
-      if (variables.provider === 'GOOGLE_ADS') suggestGoogleAdsSync();
+      if (isAdSyncProvider(variables.provider)) suggestAdSync(variables.provider);
     },
     onError: (err: any) => {
       toast.error('Test connection failed: ' + (err?.response?.data?.detail || err.message || 'Unknown error'));
@@ -663,7 +646,7 @@ export default function OAuthIntegrations() {
       </Card>
 
       {/* Provider Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,22rem),1fr))] gap-5">
         {filteredProviders.map((provider) => {
           const meta = PROVIDER_METADATA[provider];
           const info = providerConnections[provider];
@@ -688,21 +671,7 @@ export default function OAuthIntegrations() {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <CardTitle className="text-sm font-semibold">{meta.name}</CardTitle>
-                        {provider === 'GOOGLE_ADS' && googleAdsStatus && (
-                          <Badge
-                            variant="outline"
-                            className="px-1.5 py-0 text-[10px] font-medium text-muted-foreground"
-                            title={
-                              googleAdsStatus.mode === 'mock'
-                                ? 'Mock mode: connecting uses fake sign-in and made-up accounts, and the sync makes up campaigns and results. Google is not called.'
-                                : googleAdsStatus.configured
-                                  ? 'Live mode: real Google sign-in and the Google Ads API.'
-                                  : "Live mode, but Google Ads isn't set up: add GOOGLE_ADS_CLIENT_ID and GOOGLE_ADS_CLIENT_SECRET."
-                            }
-                          >
-                            {googleAdsStatus.mode === 'mock' ? 'Mock' : 'Live'}
-                          </Badge>
-                        )}
+                        {isAdSyncProvider(provider) && <AdSyncModeBadge provider={provider} enabled={canViewAdSync} />}
                       </div>
                       <Badge
                         variant="outline"
@@ -738,8 +707,8 @@ export default function OAuthIntegrations() {
 
                 {activeConn ? (
                   <div className="p-3 rounded-md bg-muted/40 border border-border/50 space-y-2 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Hierarchy Scope:</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Hierarchy Scope:</span>
                       {isDirect ? (
                         <Badge variant="default" className="text-[10px] bg-primary/90">
                           Dedicated Company
@@ -751,32 +720,32 @@ export default function OAuthIntegrations() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Authorized Account:</span>
-                      <span className="font-medium text-foreground truncate max-w-[160px]">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Authorized Account:</span>
+                      <span className="min-w-0 truncate text-right font-medium text-foreground" title={activeConn.account_name || undefined}>
                         {activeConn.account_name || 'Active Account'}
                       </span>
                     </div>
 
                     {activeConn.provider_account_id && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">{meta.idLabel}:</span>
-                        <span className="font-mono text-foreground">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="shrink-0 text-muted-foreground">{meta.idLabel}:</span>
+                        <span className="min-w-0 truncate text-right font-mono text-foreground">
                           {activeConn.provider_account_id}
                         </span>
                       </div>
                     )}
 
-                    {provider === 'GOOGLE_ADS' && isConnected && googleAdsStatus && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Campaign Data:</span>
-                        <GoogleAdsLastSynced />
+                    {isAdSyncProvider(provider) && isConnected && canViewAdSync && (
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="shrink-0 text-muted-foreground">Campaign Data:</span>
+                        <AdPlatformLastSynced provider={provider} />
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Token Life:</span>
-                      <span className="text-muted-foreground">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="shrink-0 text-muted-foreground">Token Life:</span>
+                      <span className="shrink-0 text-muted-foreground">
                         {activeConn.expires_at
                           ? 'Expires ' + new Date(activeConn.expires_at).toLocaleDateString()
                           : 'Auto-refreshing via OAuth 2.0'}
@@ -791,10 +760,10 @@ export default function OAuthIntegrations() {
                 )}
               </CardContent>
 
-              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-col sm:flex-row items-center justify-between gap-2">
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                  {provider === 'GOOGLE_ADS' && isConnected && canSyncGoogleAds && (
-                    <SyncGoogleAdsButton className="h-8 text-xs gap-1" label="Sync now" />
+              <CardFooter className="pt-3 border-t border-border/40 bg-muted/10 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {isAdSyncProvider(provider) && isConnected && canSyncAds && (
+                    <SyncAdPlatformButton provider={provider} className="h-8 text-xs gap-1" label="Sync now" />
                   )}
                   {activeConn && canManage && (
                     <Button
@@ -823,7 +792,7 @@ export default function OAuthIntegrations() {
                 </div>
 
                 {canManage && (
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                  <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5">
                     {activeConn ? (
                       <div className="flex items-center gap-1">
                         <Button

@@ -27,7 +27,7 @@ import { BudgetTab, DataHealthTab, PlatformsTab } from "./AdsTabs";
 import CampaignPanel from "./CampaignPanel";
 import CampaignsTable from "./CampaignsTable";
 import { CAMPAIGN_STATUS_LABELS, CAMPAIGN_STATUSES, DEFAULT_RANGE, formatRange, OBJECTIVE_LABELS, OBJECTIVES, resolveRange, type RangeKey } from "./overviewDisplay";
-import GoogleAdsSyncStatus from "./GoogleAdsSyncStatus";
+import AdDataStatus from "./AdSyncStatus";
 import PaidAdsUpload from "./PaidAdsUpload";
 
 const ANY = "ANY";
@@ -181,7 +181,7 @@ export default function PaidAdsPage() {
         subtitle="Monitor campaign performance, spending, and results across all advertising platforms."
         actions={
           <>
-            <GoogleAdsSyncStatus />
+            <AdDataStatus />
             <div className="flex min-w-0 items-center gap-2 [&>*:first-child]:max-sm:flex-1">
               <DateRangePicker rangeKey={range.key} from={range.from} to={range.to} onPreset={setPreset} onCustom={setCustom} />
               {pageMenu}
