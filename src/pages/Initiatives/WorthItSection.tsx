@@ -16,7 +16,7 @@ import { Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { formatMoney } from "./format";
 import { formatDateLong, RATING_STYLES, verdictSentence } from "./performanceRules";
-import RequiredMark from "@/components/RequiredMark";
+import RequiredMark from "@/components/common/RequiredMark";
 
 const RATING_TEXT: Record<string, string> = {
   HIGH: "Worth it",

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CalendarDays, CheckCircle2, Circle, MapPin, Pencil, Presentation, Receipt, TrendingUp, Users, Video } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

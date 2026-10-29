@@ -1,7 +1,7 @@
 // The wizard's steps. Each gets the whole form and a setter; checks live in initiativeForm.ts.
 import { useMemo, useState } from "react";
 import { AlertTriangle, CalendarDays, Link2, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
-import RequiredMark from "@/components/RequiredMark";
+import RequiredMark from "@/components/common/RequiredMark";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";

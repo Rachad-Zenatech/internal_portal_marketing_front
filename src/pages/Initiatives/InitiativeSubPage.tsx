@@ -1,6 +1,6 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { useInitiative } from "@/hooks/useInitiatives";
 import type { InitiativeListItem } from "@/types/initiatives";

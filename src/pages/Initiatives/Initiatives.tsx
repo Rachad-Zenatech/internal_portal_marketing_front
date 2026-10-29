@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Download, Layers, Loader2, Megaphone, MoreHorizontal, PlayCircle, Plus, Search, Upload, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/common/PageHeader";
 import { MAIN_CHANNEL_CODES, OTHER_CHANNELS } from "@/components/AppShell/Navigation";
 import { downloadCsv } from "@/components/dashboard/csv";
 import { FilterBar, FilterSelect } from "@/components/dashboard/FilterBar";
