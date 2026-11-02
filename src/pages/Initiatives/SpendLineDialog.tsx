@@ -22,7 +22,7 @@ import {
   SPEND_STATUS_LABELS,
   SPEND_STATUSES,
 } from "./spendRules";
-import RequiredMark from "@/components/RequiredMark";
+import RequiredMark from "@/components/common/RequiredMark";
 
 const CURRENCIES = ["USD", "CAD", "GBP", "AUD", "EUR"];
 

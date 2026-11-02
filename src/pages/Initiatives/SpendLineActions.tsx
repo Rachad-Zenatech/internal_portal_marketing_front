@@ -22,7 +22,7 @@ import { useDeleteSpendLine, useUpdateSpendLine } from "@/hooks/useSpend";
 import type { PaymentMethod, SpendLine, SpendLineUpdate } from "@/types/spend";
 import { formatMoney, isoToday } from "./format";
 import { INVOICE_HELP, PAYMENT_METHOD_LABELS } from "./spendRules";
-import RequiredMark from "@/components/RequiredMark";
+import RequiredMark from "@/components/common/RequiredMark";
 
 function QuickField({ id, label, required, error, children }: { id: string; label: string; required?: boolean; error?: string | null; children: React.ReactNode }) {
   return (

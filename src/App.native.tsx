@@ -5,10 +5,10 @@ import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-c
 import { AuthProvider, useAuth } from "./lib/AuthContext";
 import { View, ActivityIndicator, StyleSheet } from "@/components/native";
 
-import Login from "./pages/Login.native";
-import PendingAccess from "./pages/PendingAccess.native";
-import Home from "./pages/Home.native";
-import Initiatives from "./pages/Initiatives.native";
+import Login from "./pages/Auth/Login.native";
+import PendingAccess from "./pages/Auth/PendingAccess.native";
+import Home from "./pages/Home/Home.native";
+import Initiatives from "./pages/Initiatives/Initiatives.native";
 
 const Stack = createNativeStackNavigator();
 

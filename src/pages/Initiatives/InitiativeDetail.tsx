@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, MousePointerClick, Pencil, Presentation, Receipt, Target, TrendingUp, UserPlus, Video, Wallet } from "lucide-react";
-import PageHeader from "@/components/PageHeader";
+import PageHeader from "@/components/common/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
