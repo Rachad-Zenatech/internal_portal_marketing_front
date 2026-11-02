@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { InitiativeListItem } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
 import { formatBudget, formatDateRangeShort, formatMoney } from "./format";
+import { HubSpotCell } from "./hubspotFigures";
 import { formatKpiValue } from "./initiativeFields";
 import { SpendBar } from "./InitiativePanel";
 import { StatusPill } from "./StatusPill";
@@ -182,6 +183,9 @@ export default function InitiativesTable({ items, channelCodes, selected, onTogg
               <TableHead className="h-11 text-right">Actual Spend</TableHead>
               <TableHead className="h-11">Progress</TableHead>
               <TableHead className="h-11">Primary KPI</TableHead>
+              <TableHead className="h-11" title="New contacts from the linked HubSpot campaign, and the cost of each">
+                HubSpot
+              </TableHead>
               <TableHead className="h-11">Status</TableHead>
               <TableHead className="h-11 w-12">
                 <span className="sr-only">Actions</span>
@@ -191,7 +195,7 @@ export default function InitiativesTable({ items, channelCodes, selected, onTogg
           <TableBody>
             {placeholder ? (
               <TableRow>
-                <TableCell colSpan={11}>{placeholder}</TableCell>
+                <TableCell colSpan={12}>{placeholder}</TableCell>
               </TableRow>
             ) : (
               items.map((item) => (
@@ -227,6 +231,9 @@ export default function InitiativesTable({ items, channelCodes, selected, onTogg
                   </TableCell>
                   <TableCell>
                     <Kpi item={item} />
+                  </TableCell>
+                  <TableCell>
+                    <HubSpotCell item={item} />
                   </TableCell>
                   <TableCell>
                     <StatusPill item={item} />
@@ -298,6 +305,12 @@ export default function InitiativesTable({ items, channelCodes, selected, onTogg
                           <p className="text-xs text-muted-foreground">Primary KPI</p>
                           <Kpi item={item} />
                         </div>
+                        {item.hubspot && (
+                          <div>
+                            <p className="text-xs text-muted-foreground">HubSpot</p>
+                            <HubSpotCell item={item} />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

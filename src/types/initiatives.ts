@@ -1,4 +1,5 @@
 // Marketing initiatives — mirrors backend models/initiative_model.py
+import type { HubSpotFunnel } from "./hubspot";
 
 /** DRAFT: saved part-way to finish later; event rules (e.g. city and country) apply once it leaves Draft */
 export type InitiativeStatus = "DRAFT" | "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
@@ -39,9 +40,37 @@ export interface PrimaryKpiRef {
 /** Fields that depend on the channel (see CHANNEL_FIELDS); every one optional */
 export type ChannelDetails = Record<string, string | null>;
 
+/** The linked HubSpot campaigns' report figures (to date, added up), from the last HubSpot sync */
+export interface InitiativeHubSpotFigures {
+  campaigns: number;
+  sessions: number | null;
+  new_contacts_first_touch: number | null;
+  new_contacts_last_touch: number | null;
+  influenced_contacts: number | null;
+  /** Which new contacts count as leads (backend setting HUBSPOT_ATTRIBUTION) */
+  attribution: "FIRST_TOUCH" | "LAST_TOUCH";
+  new_contacts: number | null;
+  /** The campaigns' spend items in HubSpot, in the initiative's currency */
+  spend_in_hubspot: number | null;
+  /** Spend / new contacts in the initiative's currency: the portal's actual spend, or HubSpot's while there's none */
+  cost_per_new_contact: number | null;
+  cost_source: "PORTAL" | "HUBSPOT" | null;
+  /** People on the campaigns' contact lists (for events, the lead lists); null without contact lists */
+  list_contacts?: number | null;
+  /** Contacts who reached each stage, by the attribution above; and among the list members */
+  funnel?: HubSpotFunnel | null;
+  list_funnel?: HubSpotFunnel | null;
+  /** Spend (as for cost_per_new_contact) / MQLs and SQLs */
+  cost_per_mql?: number | null;
+  cost_per_sql?: number | null;
+  synced_at: string | null;
+}
+
 export interface InitiativeListItem {
   id: string;
   name: string;
+  /** From the linked HubSpot campaigns; null when none is linked (optional for older responses) */
+  hubspot?: InitiativeHubSpotFigures | null;
   /** Short summary, up to 1000 characters */
   description: string | null;
   brand_id: number;

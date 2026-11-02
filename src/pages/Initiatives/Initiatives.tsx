@@ -185,6 +185,19 @@ const CSV_HEADER = [
   "KPI target",
   "Status",
   "Needs review",
+  "HubSpot new contacts (first touch)",
+  "HubSpot new contacts (last touch)",
+  "HubSpot sessions",
+  "HubSpot influenced contacts",
+  "Cost per new contact",
+  "Cost per new contact from",
+  "HubSpot people on lists",
+  "HubSpot MQLs",
+  "HubSpot SQLs",
+  "HubSpot opportunities",
+  "HubSpot customers",
+  "Cost per MQL",
+  "Cost per SQL",
 ];
 
 function csvRow(item: InitiativeListItem) {
@@ -207,6 +220,19 @@ function csvRow(item: InitiativeListItem) {
     item.primary_kpi && item.kpi_target !== null && item.kpi_target !== undefined ? formatKpiValue(item.kpi_target, item.primary_kpi.unit, item.currency) : null,
     STATUS_LABELS[item.status],
     item.needs_attention ? (item.attention_reasons ?? []).map((r) => ATTENTION_LABELS[r] ?? r).join("; ") || "Yes" : "",
+    item.hubspot?.new_contacts_first_touch,
+    item.hubspot?.new_contacts_last_touch,
+    item.hubspot?.sessions,
+    item.hubspot?.influenced_contacts,
+    item.hubspot?.cost_per_new_contact,
+    item.hubspot?.cost_source === "HUBSPOT" ? "HubSpot spend" : item.hubspot?.cost_source === "PORTAL" ? "Portal spend" : null,
+    item.hubspot?.list_contacts,
+    item.hubspot?.funnel?.mql,
+    item.hubspot?.funnel?.sql,
+    item.hubspot?.funnel?.opportunity,
+    item.hubspot?.funnel?.customer,
+    item.hubspot?.cost_per_mql,
+    item.hubspot?.cost_per_sql,
   ];
 }
 

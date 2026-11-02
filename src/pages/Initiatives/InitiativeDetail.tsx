@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, MousePointerClick, Pencil, Presentation, Receipt, Target, TrendingUp, Video, Wallet } from "lucide-react";
+import { Building2, CalendarDays, Check, ChevronRight, Clock, Copy, ExternalLink, Globe2, MapPin, MousePointerClick, Pencil, Presentation, Receipt, Target, TrendingUp, UserPlus, Video, Wallet } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Empty, InitiativeNotLoaded, Section } from "./detailParts";
 import { CARD, MUTED } from "./detailStyles";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import { formatBoothSize, formatBudget, formatDate, formatDateRangeShort, formatDuration, formatEventLocation, formatMoney, initials, ownerName, timelineProgress } from "./format";
+import { HubSpotSnapshot } from "./hubspotFigures";
 import TravelBudgetUsage from "../Events/TravelBudget";
 import DeleteInitiativeButton from "./DeleteInitiativeButton";
 import DraftBanner from "./DraftBanner";
@@ -397,6 +398,10 @@ export default function InitiativeDetail() {
   const channelCode = reference?.channels.find((c) => c.id === initiative.channel_id)?.code;
   // Paid Search and Paid Social campaigns with a platform (sub-channel) have ad results
   const isAdCampaign = Boolean(subChannelCode) && (channelCode === "PAID_SEARCH" || channelCode === "PAID_SOCIAL");
+  // The synced HubSpot campaign it's linked to, if any (its figures are in initiative.hubspot)
+  const hubspotCampaignId = initiative.hubspot ? initiative.links.find((l) => l.system === "HUBSPOT")?.external_id : undefined;
+  const snapshotCards = 2 + Number(Boolean(initiative.event_code)) + Number(isAdCampaign) + Number(Boolean(hubspotCampaignId));
+  const snapshotColumns = snapshotCards >= 4 ? "xl:grid-cols-4" : snapshotCards === 3 ? "xl:grid-cols-3" : "";
 
   return (
     <div className="flex w-full flex-1 min-h-0 flex-col gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -481,7 +486,7 @@ export default function InitiativeDetail() {
       </div>
 
       {/* Costs, performance and (for events) demos each have their own page, so this one stays an overview */}
-      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${initiative.event_code || isAdCampaign ? "xl:grid-cols-3" : ""}`}>
+      <div className={`grid grid-cols-1 gap-4 md:grid-cols-2 ${snapshotColumns}`}>
         <SubPageLink
           to={`/initiatives/${initiative.id}/costs`}
           title="Costs"
@@ -508,6 +513,11 @@ export default function InitiativeDetail() {
         {isAdCampaign && (
           <SubPageLink to={`/paid-ads?campaign=${initiative.id}`} title="Ad results" icon={MousePointerClick}>
             <AdsSnapshot initiativeId={initiative.id} />
+          </SubPageLink>
+        )}
+        {hubspotCampaignId && (
+          <SubPageLink to={`/hubspot-campaigns?campaign=${hubspotCampaignId}`} title="HubSpot" icon={UserPlus}>
+            <HubSpotSnapshot item={initiative} />
           </SubPageLink>
         )}
       </div>

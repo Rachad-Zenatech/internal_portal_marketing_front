@@ -18,6 +18,7 @@ import CostOverview from "./CostOverview";
 import { Empty, Section } from "./detailParts";
 import { MUTED } from "./detailStyles";
 import { formatBudget, formatDate, formatEventLocation, formatMoney, ownerName } from "./format";
+import { HubSpotFigureList } from "./hubspotFigures";
 import { ATTENTION_LABELS, channelFields, choiceName, DATA_SOURCE_LABELS, formatKpiValue, linkSystemName } from "./initiativeFields";
 import { ONLINE_EVENT_SUB_CHANNELS } from "./eventRules";
 import ResultsSection from "./ResultsSection";
@@ -328,6 +329,11 @@ export default function InitiativePanel({ item: clicked, onClose, onEdit }: Init
               <TabsContent value="overview" className="flex flex-col gap-4 p-4 sm:p-6">
                 <KeyDetails item={item} onEdit={canEdit ? () => onEdit?.(item) : undefined} />
                 <FinancialOverview item={item} />
+                {item.hubspot && (
+                  <Section title="From HubSpot" icon={Users}>
+                    <HubSpotFigureList item={item} />
+                  </Section>
+                )}
                 <OutcomesSummary performance={performance} loading={performanceLoading} onMore={() => setTab("outcomes")} />
                 <RecentActivity initiativeId={item.id} />
               </TabsContent>
