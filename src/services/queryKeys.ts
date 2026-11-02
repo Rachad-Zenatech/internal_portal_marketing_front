@@ -35,6 +35,7 @@ export const queryKeys = {
   navanStatus: () => ["navan-status"] as const,
   hubspotStatus: () => ["hubspot-status"] as const,
   hubspotCampaigns: () => ["hubspot-campaigns"] as const,
+  hubspotSocialPosts: () => ["hubspot-social-posts"] as const,
   adSyncStatus: (provider: string) => ["ad-sync-status", provider] as const,
   spendSummary: (initiativeId: string) => ["spend-summary", initiativeId] as const,
   demos: (initiativeId: string) => ["demos", initiativeId] as const,

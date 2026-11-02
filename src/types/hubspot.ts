@@ -48,6 +48,10 @@ export interface HubSpotCampaign {
   remaining_budget: number | null;
   /** Spend as a percent of budget; null without a budget */
   budget_used_pct: number | null;
+  /** Spend per new contact (first touch); null without spend or without new contacts */
+  cost_per_contact: number | null;
+  /** Money spent, yet HubSpot reports no new contact from the campaign */
+  spend_without_contacts: boolean;
   owner_name: string | null;
   utm: string | null;
   notes: string | null;
@@ -68,6 +72,30 @@ export interface HubSpotCampaign {
   initiative_name: string | null;
 }
 
+/** A social post on one of the connected accounts, with its counters to date (organic posts, not paid ads) */
+export interface HubSpotSocialPost {
+  id: string;
+  /** The connected account ("FacebookPage:123"), its platform and its name (null when the account is no longer connected) */
+  channel_key: string;
+  platform: "facebook" | "linkedin" | "instagram" | "x" | "youtube" | "tiktok" | string;
+  channel_name: string | null;
+  /** HubSpot's status: SUCCESS (published), DRAFT, CANCELED, SUCCESS_ARCHIVE, ERROR_ARCHIVE */
+  status: string | null;
+  message: string | null;
+  media_type: string | null;
+  campaign_id: string | null;
+  campaign_name: string | null;
+  clicks: number | null;
+  likes: number | null;
+  replies: number | null;
+  shares: number | null;
+  interactions: number | null;
+  scheduled_at: string | null;
+  finished_at: string | null;
+  hubspot_created_at: string | null;
+  synced_at: string;
+}
+
 export interface HubSpotSyncSummary {
   campaigns: number;
   created: number;
@@ -82,6 +110,9 @@ export interface HubSpotSyncSummary {
   initiatives_updated: number;
   /** Why the funnel (contacts and lists) couldn't be read; the campaigns synced without it */
   funnel_error?: string | null;
+  /** Social posts read this time, and why they couldn't be (the stored posts were left as they were) */
+  social_posts?: number;
+  social_error?: string | null;
 }
 
 export interface HubSpotSyncStatus {

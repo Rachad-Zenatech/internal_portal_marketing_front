@@ -1,13 +1,13 @@
 // Every HubSpot campaign that matches the filters, with search, CSV export and pages
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Link2, Paperclip, Search } from "lucide-react";
+import { AlertTriangle, ChevronLeft, ChevronRight, Download, Link2, Paperclip, Search } from "lucide-react";
 import { downloadCsv } from "@/components/dashboard/csv";
 import { DASH_CARD } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { HubSpotCampaign } from "@/types/hubspot";
 import { FUNNEL_STAGES } from "./FunnelTable";
-import { assetGroups, assetTotal, brandCode, CURRENCY_SOURCE_LABELS, DASH, fmtCount, fmtMoney, fmtPercent, formatDates, overBudget, STATUS_LABELS, STATUS_PILL, statusKey } from "./hubspotDisplay";
+import { assetGroups, assetTotal, brandCode, CURRENCY_SOURCE_LABELS, DASH, fmtCount, fmtMoney, fmtPercent, fmtUnitCost, formatDates, NO_CONTACTS_NOTE, overBudget, STATUS_LABELS, STATUS_PILL, statusKey } from "./hubspotDisplay";
 
 const PAGE_SIZE = 12;
 
@@ -28,6 +28,19 @@ function AssetsCell({ campaign }: { campaign: HubSpotCampaign }) {
   );
 }
 
+/** Cost per new contact; "No contacts" in amber when money was spent and none came */
+function PerContactCell({ campaign }: { campaign: HubSpotCampaign }) {
+  if (campaign.spend_without_contacts) {
+    return (
+      <span className="inline-flex items-center gap-1 font-medium text-amber-700 dark:text-amber-400" title={NO_CONTACTS_NOTE}>
+        <AlertTriangle className="h-3.5 w-3.5" />
+        No contacts
+      </span>
+    );
+  }
+  return <>{fmtUnitCost(campaign.cost_per_contact, campaign.currency)}</>;
+}
+
 function Figure({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="min-w-0">
@@ -40,7 +53,7 @@ function Figure({ label, value }: { label: string; value: React.ReactNode }) {
 function exportRows(rows: HubSpotCampaign[]) {
   downloadCsv(
     "hubspot-campaigns.csv",
-    ["Campaign", "Brand", "Status", "Start", "End", "Owner", "Currency", "Currency source", "Budget", "Spend", "Remaining budget", "Budget used (%)", "Sessions", "New contacts (first touch)", "New contacts (last touch)", "Influenced contacts", "People on lists", "Leads (first touch)", "MQLs (first touch)", "SQLs (first touch)", "Opportunities (first touch)", "Customers (first touch)", "Assets", "Initiative", "UTM", "HubSpot ID"],
+    ["Campaign", "Brand", "Status", "Start", "End", "Owner", "Currency", "Currency source", "Budget", "Spend", "Remaining budget", "Budget used (%)", "Sessions", "New contacts (first touch)", "Cost per new contact", "Spend but no new contacts", "New contacts (last touch)", "Influenced contacts", "People on lists", "Leads (first touch)", "MQLs (first touch)", "SQLs (first touch)", "Opportunities (first touch)", "Customers (first touch)", "Assets", "Initiative", "UTM", "HubSpot ID"],
     rows.map((c) => [
       c.name,
       brandCode(c.name),
@@ -56,6 +69,8 @@ function exportRows(rows: HubSpotCampaign[]) {
       c.budget_used_pct,
       c.sessions,
       c.new_contacts_first_touch,
+      c.cost_per_contact,
+      c.spend_without_contacts ? "Yes" : "No",
       c.new_contacts_last_touch,
       c.influenced_contacts,
       c.list_contacts,
@@ -144,6 +159,7 @@ export default function HubSpotCampaignsTable({ campaigns, loading, onOpen }: Pr
                   <th className="px-2 py-2.5 text-right font-medium" title="Spend as a percent of budget">Used</th>
                   <th className="px-2 py-2.5 text-right font-medium" title="Website sessions attributed to the campaign, to date">Sessions</th>
                   <th className="px-2 py-2.5 text-right font-medium" title="New contacts whose first interaction was this campaign">New contacts</th>
+                  <th className="px-2 py-2.5 text-right font-medium" title="Spend divided by new contacts (first touch). Flagged when money was spent and no new contact came.">Per contact</th>
                   <th className="px-2 py-2.5 text-right font-medium" title="Contacts who interacted with any of the campaign's assets">Influenced</th>
                   <th className="px-2 py-2.5 text-right font-medium" title="Contacts first brought in by the campaign who became MQLs (or went further)">MQLs</th>
                   <th className="px-2 py-2.5 text-right font-medium" title="People on the campaign's contact lists, counted once">On lists</th>
@@ -179,6 +195,9 @@ export default function HubSpotCampaignsTable({ campaigns, loading, onOpen }: Pr
                     <td className={`whitespace-nowrap px-2 py-3 text-right tabular-nums ${overBudget(c) ? "font-medium text-red-600 dark:text-red-400" : ""}`}>{fmtPercent(c.budget_used_pct)}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{fmtCount(c.sessions)}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{fmtCount(c.new_contacts_first_touch)}</td>
+                    <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">
+                      <PerContactCell campaign={c} />
+                    </td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{fmtCount(c.influenced_contacts)}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{fmtCount(c.funnel?.first_touch?.mql)}</td>
                     <td className="whitespace-nowrap px-2 py-3 text-right tabular-nums">{fmtCount(c.list_contacts)}</td>
@@ -222,6 +241,7 @@ export default function HubSpotCampaignsTable({ campaigns, loading, onOpen }: Pr
                     <Figure label="Used" value={fmtPercent(c.budget_used_pct)} />
                     <Figure label="Sessions" value={fmtCount(c.sessions)} />
                     <Figure label="New contacts" value={fmtCount(c.new_contacts_first_touch)} />
+                    <Figure label="Per contact" value={<PerContactCell campaign={c} />} />
                     <Figure label="MQLs" value={fmtCount(c.funnel?.first_touch?.mql)} />
                     <Figure label="On lists" value={fmtCount(c.list_contacts)} />
                     <Figure label="Assets" value={assetTotal(c.assets) || DASH} />

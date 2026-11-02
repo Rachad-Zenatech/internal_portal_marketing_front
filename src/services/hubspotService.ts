@@ -1,5 +1,10 @@
 import { apiClient } from "./apiClient";
-import type { HubSpotCampaign, HubSpotSyncStatus } from "@/types/hubspot";
+import type { HubSpotCampaign, HubSpotSocialPost, HubSpotSyncStatus } from "@/types/hubspot";
+
+/** Every social post from the last sync, newest first, with its counters and campaign */
+export function getHubSpotSocialPosts() {
+  return apiClient.get<HubSpotSocialPost[]>("/api/hubspot/social-posts");
+}
 
 /** Every HubSpot campaign from the last sync, with its report figures, assets and linked initiative */
 export function getHubSpotCampaigns() {

@@ -11,11 +11,13 @@ import { useHubSpotCampaigns, useHubSpotStatus } from "@/hooks/useHubSpot";
 import type { HubSpotCampaign } from "@/types/hubspot";
 import HubSpotCampaignPanel from "./HubSpotCampaignPanel";
 import HubSpotCampaignsTable from "./HubSpotCampaignsTable";
+import HubSpotSocialPosts from "./HubSpotSocialPosts";
 import HubSpotSyncStatus from "./HubSpotSyncStatus";
 import { brandCode, fmtCount, fmtMoney, NO_BRAND, overBudget, STATUS_LABELS, STATUS_ORDER, statusKey, sumOf, totalsByCurrency } from "./hubspotDisplay";
 
 const ANY = "all";
 const NO_OWNER = "none";
+const NO_CONTACTS = "no_contacts";
 
 /** The biggest currency's total as the value, the others under it */
 function MoneyKpi({ label, icon, tone, info, campaigns, field, loading }: {
@@ -31,6 +33,7 @@ function MoneyKpi({ label, icon, tone, info, campaigns, field, loading }: {
   const withAmount = campaigns.filter((c) => c[field] !== null).length;
   const [main, ...rest] = totals;
   const over = field === "spend_total" ? campaigns.filter(overBudget).length : 0;
+  const noContacts = field === "spend_total" ? campaigns.filter((c) => c.spend_without_contacts).length : 0;
   return (
     <KpiCard
       label={label}
@@ -42,7 +45,7 @@ function MoneyKpi({ label, icon, tone, info, campaigns, field, loading }: {
       caption={
         withAmount === 0
           ? "None recorded in HubSpot"
-          : `${withAmount} of ${campaigns.length} campaigns${rest.length ? `, plus ${rest.map((t) => fmtMoney(t.amount, t.currency)).join(", ")}` : ""}${over ? `; ${over} over budget` : ""}`
+          : `${withAmount} of ${campaigns.length} campaigns${rest.length ? `, plus ${rest.map((t) => fmtMoney(t.amount, t.currency)).join(", ")}` : ""}${over ? `; ${over} over budget` : ""}${noContacts ? `; ${noContacts} with no new contacts` : ""}`
       }
     />
   );
@@ -53,9 +56,11 @@ export default function HubSpotCampaignsPage() {
   const { data: campaigns = [], isLoading, error, refetch } = useHubSpotCampaigns();
   const { data: status } = useHubSpotStatus();
   const openId = params.get("campaign");
+  const view = params.get("view") === "social" ? "social" : "campaigns";
   const brand = params.get("brand") ?? ANY;
   const statusFilter = params.get("status") ?? ANY;
   const owner = params.get("owner") ?? ANY;
+  const check = params.get("check") ?? ANY;
 
   const update = (changes: Record<string, string | null>) => {
     const next = new URLSearchParams(params);
@@ -97,12 +102,14 @@ export default function HubSpotCampaignsPage() {
         (c) =>
           (brand === ANY || (brandCode(c.name) ?? NO_BRAND) === brand) &&
           (statusFilter === ANY || statusKey(c) === statusFilter) &&
-          (owner === ANY || (owner === NO_OWNER ? !c.owner_name : c.owner_name === owner)),
+          (owner === ANY || (owner === NO_OWNER ? !c.owner_name : c.owner_name === owner)) &&
+          (check !== NO_CONTACTS || c.spend_without_contacts),
       ),
-    [campaigns, brand, statusFilter, owner],
+    [campaigns, brand, statusFilter, owner, check],
   );
 
-  const filtersOn = brand !== ANY || statusFilter !== ANY || owner !== ANY;
+  const noContactsCount = campaigns.filter((c) => c.spend_without_contacts).length;
+  const filtersOn = brand !== ANY || statusFilter !== ANY || owner !== ANY || check !== ANY;
   const running = filtered.filter((c) => c.status === "active" || c.status === "in_progress").length;
   const open = campaigns.find((c) => c.id === openId) ?? null;
   const neverSynced = !isLoading && campaigns.length === 0 && status && !status.last_success_at;
@@ -111,11 +118,31 @@ export default function HubSpotCampaignsPage() {
     <div className="flex w-full min-w-0 flex-1 flex-col gap-5 animate-in fade-in duration-300 sm:gap-6">
       <DashboardHeader
         title="HubSpot Campaigns"
-        subtitle="Every campaign in HubSpot with its budget, spend, website sessions, new contacts and attached assets."
+        subtitle="Every campaign in HubSpot with its budget, spend, website sessions, new contacts and attached assets, and its social posts."
         actions={<HubSpotSyncStatus />}
       />
 
-      {error ? (
+      <div className="flex gap-1.5" role="tablist" aria-label="HubSpot views">
+        {[
+          { key: "campaigns", label: "Campaigns" },
+          { key: "social", label: "Social posts" },
+        ].map((tab) => (
+          <Button
+            key={tab.key}
+            role="tab"
+            aria-selected={view === tab.key}
+            variant={view === tab.key ? "default" : "outline"}
+            size="sm"
+            onClick={() => update({ view: tab.key === "campaigns" ? null : tab.key, campaign: null })}
+          >
+            {tab.label}
+          </Button>
+        ))}
+      </div>
+
+      {view === "social" ? (
+        <HubSpotSocialPosts />
+      ) : error ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/40">
           <p className="text-sm text-red-800 dark:text-red-300">{error.message || "Could not load the HubSpot campaigns."}</p>
           <Button variant="outline" size="sm" onClick={() => refetch()}>
@@ -193,10 +220,19 @@ export default function HubSpotCampaignsPage() {
             </KpiGrid>
           </section>
 
-          <FilterBar onClear={filtersOn ? () => update({ brand: null, status: null, owner: null }) : undefined}>
+          <FilterBar onClear={filtersOn ? () => update({ brand: null, status: null, owner: null, check: null }) : undefined}>
             <FilterSelect label="Brand" value={brand} onChange={(v) => update({ brand: v === ANY ? null : v })} options={brandOptions} />
             <FilterSelect label="Status" value={statusFilter} onChange={(v) => update({ status: v === ANY ? null : v })} options={statusOptions} />
             <FilterSelect label="Owner" value={owner} onChange={(v) => update({ owner: v === ANY ? null : v })} options={ownerOptions} />
+            <FilterSelect
+              label="Spend check"
+              value={check}
+              onChange={(v) => update({ check: v === ANY ? null : v })}
+              options={[
+                { value: ANY, label: "All campaigns" },
+                { value: NO_CONTACTS, label: `Spend, no new contacts (${noContactsCount})` },
+              ]}
+            />
           </FilterBar>
 
           <HubSpotCampaignsTable campaigns={filtered} loading={isLoading} onOpen={(id) => update({ campaign: id })} />

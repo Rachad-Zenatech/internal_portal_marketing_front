@@ -1,7 +1,16 @@
 import { useEffect, useRef } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "@/services/queryKeys";
-import { getHubSpotCampaigns, getHubSpotStatus, startHubSpotSync } from "@/services/hubspotService";
+import { getHubSpotCampaigns, getHubSpotSocialPosts, getHubSpotStatus, startHubSpotSync } from "@/services/hubspotService";
+
+/** The synced HubSpot social posts */
+export function useHubSpotSocialPosts() {
+  return useQuery({
+    queryKey: queryKeys.hubspotSocialPosts(),
+    queryFn: getHubSpotSocialPosts,
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
 /** The synced HubSpot campaigns */
 export function useHubSpotCampaigns() {
@@ -27,7 +36,10 @@ export function useHubSpotStatus() {
   const running = query.data?.running ?? false;
   const wasRunning = useRef(running);
   useEffect(() => {
-    if (wasRunning.current && !running) queryClient.invalidateQueries({ queryKey: queryKeys.hubspotCampaigns() });
+    if (wasRunning.current && !running) {
+      queryClient.invalidateQueries({ queryKey: queryKeys.hubspotCampaigns() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.hubspotSocialPosts() });
+    }
     wasRunning.current = running;
   }, [running, queryClient]);
   return query;

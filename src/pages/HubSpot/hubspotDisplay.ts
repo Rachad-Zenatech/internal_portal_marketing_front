@@ -26,6 +26,26 @@ export const STATUS_PILL: Record<string, string> = {
 
 export const statusKey = (c: HubSpotCampaign) => (c.status && STATUS_LABELS[c.status] ? c.status : NO_STATUS);
 
+export const PLATFORM_LABELS: Record<string, string> = {
+  facebook: "Facebook",
+  linkedin: "LinkedIn",
+  instagram: "Instagram",
+  x: "X",
+  youtube: "YouTube",
+  tiktok: "TikTok",
+};
+export const platformLabel = (platform: string) => PLATFORM_LABELS[platform] ?? platform.replace(/^\w/, (l) => l.toUpperCase());
+
+export const POST_STATUS_LABELS: Record<string, string> = {
+  SUCCESS: "Published",
+  SUCCESS_ARCHIVE: "Published (archived)",
+  DRAFT: "Draft",
+  CANCELED: "Cancelled",
+  ERROR_ARCHIVE: "Failed (archived)",
+};
+export const postStatusLabel = (status: string | null) => (status ? (POST_STATUS_LABELS[status] ?? status) : "No status");
+export const isPublished = (status: string | null) => status === "SUCCESS" || status === "SUCCESS_ARCHIVE";
+
 /** In the order they're shown */
 export const ASSET_LABELS: Record<string, string> = {
   SOCIAL_BROADCAST: "Social posts",
@@ -95,6 +115,19 @@ export const CURRENCY_SOURCE_LABELS: Record<string, string> = {
 
 /** A campaign with a budget that its spend has gone past */
 export const overBudget = (c: HubSpotCampaign) => c.remaining_budget !== null && c.remaining_budget < 0;
+
+/** Cost per contact with cents, since it is usually small ("$12.40"); a dash when it can't be worked out */
+export function fmtUnitCost(value: number | null | undefined, currency: string | null) {
+  if (value === null || value === undefined) return DASH;
+  if (!currency) return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(value);
+  } catch {
+    return `${currency} ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  }
+}
+
+export const NO_CONTACTS_NOTE = "Spend recorded, but HubSpot shows no new contact from this campaign (first touch).";
 
 /** Totals per currency, biggest first. Amounts without any known currency are kept apart (currency null). */
 export function totalsByCurrency(campaigns: HubSpotCampaign[], field: "budget_total" | "spend_total") {

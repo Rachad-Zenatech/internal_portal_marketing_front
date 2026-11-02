@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowUpRight, CalendarDays, Link2, UserRound } from "lucide-react";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import type { HubSpotCampaign } from "@/types/hubspot";
-import { assetGroups, brandCode, CURRENCY_SOURCE_LABELS, DASH, fmtCount, fmtMoney, fmtPercent, formatDates, formatDay, overBudget, STATUS_LABELS, statusKey } from "./hubspotDisplay";
+import { assetGroups, brandCode, CURRENCY_SOURCE_LABELS, DASH, fmtCount, fmtMoney, fmtPercent, fmtUnitCost, formatDates, formatDay, NO_CONTACTS_NOTE, overBudget, STATUS_LABELS, statusKey } from "./hubspotDisplay";
 import FunnelTable from "./FunnelTable";
 import { StatusPill } from "./HubSpotCampaignsTable";
 
@@ -77,7 +77,9 @@ export default function HubSpotCampaignPanel({ campaign, onClose }: { campaign: 
                   <Figure label="Spend" value={fmtMoney(c.spend_total, c.currency)} hint="Total of the campaign's spend items in HubSpot" />
                   <Figure label="Left of budget" value={fmtMoney(c.remaining_budget, c.currency)} hint="Budget less spend; negative when over budget" />
                   <Figure label="Of budget spent" value={fmtPercent(c.budget_used_pct)} hint="Spend as a percent of budget" />
+                  <Figure label="Cost per new contact" value={c.spend_without_contacts ? "No contacts" : fmtUnitCost(c.cost_per_contact, c.currency)} hint="Spend divided by new contacts (first touch)" />
                 </dl>
+                {c.spend_without_contacts && <p className="mt-2 text-xs font-medium text-amber-700 dark:text-amber-400">{NO_CONTACTS_NOTE}</p>}
                 {overBudget(c) && <p className="mt-2 text-xs font-medium text-red-600 dark:text-red-400">Spend is over the budget set in HubSpot.</p>}
                 {c.currency_source && c.currency_source !== "HUBSPOT" && (
                   <p className="mt-2 text-xs text-muted-foreground">
