@@ -17,6 +17,7 @@ const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
 const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
 const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
+const HubSpotCampaignsPage = lazy(() => import("./pages/HubSpot/HubSpotCampaignsPage"));
 const SocialMediaPage = lazy(() => import("./pages/SocialMedia/SocialMediaPage"));
 const Entities = lazy(() => import("./pages/Configurations/Entities"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
@@ -150,6 +151,14 @@ function App() {
                 element={
                   <ProtectedRoute navigationCode="INITIATIVES">
                     <PaidAdsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/hubspot-campaigns"
+                element={
+                  <ProtectedRoute navigationCode="INITIATIVES">
+                    <HubSpotCampaignsPage />
                   </ProtectedRoute>
                 }
               />

@@ -8,6 +8,7 @@ import {
   Wallet,
   Share2,
   Globe,
+  Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -97,6 +98,13 @@ export const navigation: NavigationItem[] = [
     label: "Paid Advertising",
     path: "/paid-ads",
     icon: ChartColumn,
+    section: "MARKETING",
+    navigationCode: "INITIATIVES",
+  },
+  {
+    label: "HubSpot Campaigns",
+    path: "/hubspot-campaigns",
+    icon: Target,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
