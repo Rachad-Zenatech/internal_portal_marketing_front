@@ -1,15 +1,30 @@
 # Agent Guidelines & Repository Rules
 
-This document defines the execution guidelines for all AI agents working on this codebase.
-Architectural standards are in `.agents/rules/` and loaded only when relevant.
+This document defines the execution guidelines for all AI agents working on **Internal Portal Marketing Frontend** (React/TypeScript frontend, Vite web + Expo mobile).
+Architectural standards are in `.agents/rules/` and loaded only when relevant:
+
+- `.agents/rules/project-guidelines.md` - Apply when modifying frontend code: stack, architecture conventions, real-time/SSE rules, platform parity and checks for this project.
 
 ---
 
-## 0. AI Agent Efficiency & Execution Budget
+## 0. MANDATORY ORIENTATION GATE (READ BEFORE ANY FILE ACCESS)
+
+Every AI agent working in this repository MUST follow this sequence before touching or reading code:
+1. **Never scan, glob, or read arbitrary source files or directories.**
+2. **First step for orientation:** Read `.agents/project-index.md` to identify the relevant module and directory layout.
+3. **Second step for symbols & functions:** Grep `.agents/code-map.md` for the exact function, class, or route name.
+4. **Third step for reading code:** Read ONLY the specific line range identified in `.agents/code-map.md` (never read entire files >400 lines).
+5. **After adding, moving, or renaming functions:** Regenerate the map immediately via `node .agents/gen_code_map.mjs`.
+
+Violating this order wastes context budget and violates repository execution rules.
+
+---
+
+## 0.1 AI Agent Efficiency & Execution Budget
 
 These rules apply to every AI coding agent working in this repository.
 
-### 0.1 Minimize Context Consumption
+### 0.1.1 Minimize Context Consumption
 
 - Do not scan the entire repository for individual assignments.
 - Use the existing Project Structure documentation to locate relevant files.
@@ -18,6 +33,7 @@ These rules apply to every AI coding agent working in this repository.
 - Do not load large documentation files unless directly relevant.
 - Prefer targeted searches over broad searches.
 - Before opening a source file, search `.agents/code-map.md` for the file or function name (grep it; do not read the whole map) and read only the line range you need.
+- For orientation (directory layout, what each area does), read `.agents/project-index.md` first; it is a short overview. Use `.agents/code-map.md` only for symbol-level lookups.
 - Do not read files over 400 lines in full, and do not re-read a line range already read in the same task.
 - After adding, moving or renaming functions, regenerate the map: `node .agents/gen_code_map.mjs`.
 - Do not summarize or re-analyze the entire codebase unnecessarily.
@@ -57,8 +73,8 @@ These rules apply to every AI coding agent working in this repository.
 
 ### 0.6 Verification
 
-- Run targeted tests for modified functionality.
-- Run py_compile or tsc/build for touched files.
+- Run `npm run build` after TypeScript or component changes.
+- Run `npm run lint` after broad or shared changes.
 - Run git diff --check.
 - Do not repeat successful verification commands.
 - Report pre-existing failures separately from new failures.
