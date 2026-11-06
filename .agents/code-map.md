@@ -22,9 +22,9 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L24 `NavigationContent` (function)
 - L57 `App` (export function)
 
-## src/App.tsx (363 lines)
-- L36 `NotFoundAlert` (function)
-- L54 `App` (function)
+## src/App.tsx (372 lines)
+- L37 `NotFoundAlert` (function)
+- L55 `App` (function)
 
 ## src/components/AppShell/AppShell.tsx (51 lines)
 - L7 `Props` (interface)
@@ -39,14 +39,14 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L34 `IntegrationStatusResponse` (export interface)
 - L39 `ConnectionStatusLight` (export function)
 
-## src/components/AppShell/Navigation.tsx (162 lines)
-- L14 `NavigationSubItem` (export interface)
-- L20 `NavigationItem` (export interface)
-- L33 `SET_ACTIVE_NAV_EVENT` (export const) - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
-- L36 `MAIN_CHANNEL_CODES` (export const) - The channels with their own sidebar link; every other channel is under "Other channels
-- L47 `OTHER_CHANNELS` (export const) - ?channel= value for every channel not in MAIN_CHANNEL_CODES
-- L49 `initiativesLink` (const)
-- L55 `navigation` (export const)
+## src/components/AppShell/Navigation.tsx (170 lines)
+- L15 `NavigationSubItem` (export interface)
+- L21 `NavigationItem` (export interface)
+- L34 `SET_ACTIVE_NAV_EVENT` (export const) - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
+- L37 `MAIN_CHANNEL_CODES` (export const) - The channels with their own sidebar link; every other channel is under "Other channels
+- L48 `OTHER_CHANNELS` (export const) - ?channel= value for every channel not in MAIN_CHANNEL_CODES
+- L50 `initiativesLink` (const)
+- L56 `navigation` (export const)
 
 ## src/components/AppShell/NotificationDropdown.tsx (180 lines)
 - L22 `formatRelativeTime` (function)
@@ -498,6 +498,12 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 
 ## src/hooks/useHeartbeat.ts (45 lines)
 - L4 `useHeartbeat` (export function)
+
+## src/hooks/useHubSpot.ts (56 lines)
+- L7 `useHubSpotSocialPosts` (export function) - The synced HubSpot social posts
+- L16 `useHubSpotCampaigns` (export function) - The synced HubSpot campaigns
+- L28 `useHubSpotStatus` (export function) - The HubSpot sync's status.
+- L49 `useStartHubSpotSync` (export function) - Start a sync now; the status starts checking for the end of it
 
 ## src/hooks/useImports.ts (46 lines)
 - L6 `useInitiativeImports` (export function)
@@ -1041,6 +1047,73 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 ## src/pages/Home/Home.native.tsx (101 lines)
 - L20 `Home` (export function) - Placeholder home screen; marketing modules (initiatives, budgets, results) land here.
 
+## src/pages/HubSpot/FunnelTable.tsx (52 lines)
+- L4 `FUNNEL_STAGES` (export const)
+- L12 `FunnelColumn` (export interface)
+- L19 `FunnelTable` (export function)
+
+## src/pages/HubSpot/HubSpotCampaignPanel.tsx (204 lines)
+- L10 `Figure` (function)
+- L21 `Row` (function)
+- L30 `HubSpotCampaignPanel` (export function)
+
+## src/pages/HubSpot/HubSpotCampaignsPage.tsx (254 lines)
+- L23 `MoneyKpi` (function) - The biggest currency's total as the value, the others under it
+- L54 `HubSpotCampaignsPage` (export function)
+
+## src/pages/HubSpot/HubSpotCampaignsTable.tsx (277 lines)
+- L14 `StatusPill` (export function)
+- L20 `AssetsCell` (function) - 3 lists, 1 URL": the assets in a few words, with all of them in the tooltip
+- L32 `PerContactCell` (function) - Cost per new contact; "No contacts" in amber when money was spent and none came
+- L44 `Figure` (function)
+- L53 `exportRows` (function)
+- L86 `Props` (interface)
+- L92 `HubSpotCampaignsTable` (export function)
+
+## src/pages/HubSpot/HubSpotSocialPosts.tsx (250 lines)
+- L20 `postDate` (const) - When the post went out, else when it's set to
+- L28 `StatusPill` (function)
+- L34 `exportRows` (function)
+- L56 `HubSpotSocialPosts` (export function)
+
+## src/pages/HubSpot/HubSpotSyncStatus.tsx (95 lines)
+- L9 `fullTime` (const)
+- L12 `every` (function) - 6 hours", "1 hour", "30 minutes
+- L23 `HubSpotSyncStatus` (export function) - How fresh the HubSpot campaigns are: "HubSpot, updated 2 hours ago", "Syncing with HubSpot..." while a sync runs,  or a clear message whe...
+
+## src/pages/HubSpot/hubspotDisplay.ts (182 lines)
+- L4 `DASH` (export const)
+- L5 `NO_STATUS` (export const)
+- L6 `NO_BRAND` (export const)
+- L8 `STATUS_LABELS` (export const)
+- L16 `STATUS_ORDER` (export const)
+- L18 `STATUS_PILL` (export const)
+- L27 `statusKey` (export const)
+- L29 `PLATFORM_LABELS` (export const)
+- L37 `platformLabel` (export const)
+- L39 `POST_STATUS_LABELS` (export const)
+- L46 `postStatusLabel` (export const)
+- L47 `isPublished` (export const)
+- L50 `ASSET_LABELS` (export const) - In the order they're shown
+- L65 `assetLabel` (export const)
+- L68 `assetGroups` (export function) - The campaign's asset types with their assets (none for meetings, which are counted only), in the shown order
+- L81 `assetTotal` (export const)
+- L87 `brandCode` (export function) - The brand code the campaign name starts with: "DS - EVT - ..." is DS, "[OPS] - ..." is OPS, "WA/AU - AWR" is WA/AU.
+- L92 `fmtCount` (export function)
+- L96 `fmtMoney` (export function)
+- L106 `fmtPercent` (export function)
+- L110 `CURRENCY_SOURCE_LABELS` (export const)
+- L117 `overBudget` (export const) - A campaign with a budget that its spend has gone past
+- L120 `fmtUnitCost` (export function) - Cost per contact with cents, since it is usually small ("$12.40"); a dash when it can't be worked out
+- L130 `NO_CONTACTS_NOTE` (export const)
+- L133 `totalsByCurrency` (export function) - Totals per currency, biggest first.
+- L144 `Measure` (type) - A campaign's number: one of its fields, or a first-touch funnel stage
+- L146 `measureOf` (export const)
+- L149 `sumOf` (export function)
+- L160 `parseDay` (const)
+- L165 `formatDay` (export function)
+- L170 `formatDates` (export function) - Sep 20 - Oct 2, 2026", "From Sep 20, 2026", "Until ...", or "-
+
 ## src/pages/Initiatives/CostLadder.tsx (115 lines)
 - L11 `inSentence` (function) - Booth visitors" → "booth visitors" mid-sentence, but acronyms like "SQLs" and "MQLs" keep their capitals
 - L15 `Figure` (function)
@@ -1144,25 +1217,25 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 ## src/pages/Initiatives/InitiativeDemos.tsx (17 lines)
 - L5 `InitiativeDemos` (export function)
 
-## src/pages/Initiatives/InitiativeDetail.tsx (537 lines)
-- L30 `Detail` (function)
-- L39 `StatProps` (interface)
-- L47 `Stat` (function)
-- L60 `StatIcon` (function)
-- L68 `CopyCode` (function)
-    - L71 `copy` (fn)
-- L91 `GoalSection` (function)
-- L128 `TimelineSection` (function)
-- L174 `TravelBudgetDetail` (function) - The travel budget (planned travel spend) and what has been spent against it (invoiced and paid, in the event's currency)
-- L182 `EventSection` (function)
-- L233 `SubPageLinkProps` (interface)
-- L242 `SubPageLink` (function) - A card that opens one of the initiative's own pages (Costs, Performance)
-- L264 `PerformanceSnapshot` (function) - The suggested rating and why, e.g.
-- L290 `DemosSnapshot` (function) - 20 demos given · $1,000 per demo · 2 became customers · 3 booked
-- L314 `AdsSnapshot` (function) - The latest period's spend against budget, clicks and cost per lead, from the Paid Ads page
-    - L323 `sum` (fn)
-- L353 `CostsSnapshot` (function)
-- L375 `InitiativeDetail` (export function)
+## src/pages/Initiatives/InitiativeDetail.tsx (547 lines)
+- L31 `Detail` (function)
+- L40 `StatProps` (interface)
+- L48 `Stat` (function)
+- L61 `StatIcon` (function)
+- L69 `CopyCode` (function)
+    - L72 `copy` (fn)
+- L92 `GoalSection` (function)
+- L129 `TimelineSection` (function)
+- L175 `TravelBudgetDetail` (function) - The travel budget (planned travel spend) and what has been spent against it (invoiced and paid, in the event's currency)
+- L183 `EventSection` (function)
+- L234 `SubPageLinkProps` (interface)
+- L243 `SubPageLink` (function) - A card that opens one of the initiative's own pages (Costs, Performance)
+- L265 `PerformanceSnapshot` (function) - The suggested rating and why, e.g.
+- L291 `DemosSnapshot` (function) - 20 demos given · $1,000 per demo · 2 became customers · 3 booked
+- L315 `AdsSnapshot` (function) - The latest period's spend against budget, clicks and cost per lead, from the Paid Ads page
+    - L324 `sum` (fn)
+- L354 `CostsSnapshot` (function)
+- L376 `InitiativeDetail` (export function)
 
 ## src/pages/Initiatives/InitiativeFormDialog.tsx (328 lines)
 - L30 `Stepper` (function) - 1 Basics  2 Budget ..." across the top; on phones, "Step 2 of 6" with a bar
@@ -1205,19 +1278,19 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
     - L691 `byId` (fn)
     - L693 `money` (fn)
 
-## src/pages/Initiatives/InitiativePanel.tsx (362 lines)
-- L28 `PanelTab` (type)
-- L30 `Detail` (function)
-- L40 `kpiText` (export function) - Primary KPI: Cost per lead, $45 target
-- L48 `SpendBar` (export function) - A thin bar for the share of the budget spent; red once it's over
-- L65 `KeyDetails` (function)
-- L121 `FinancialOverview` (function)
-- L156 `OutcomesSummary` (function)
-- L182 `timeAgo` (function) - 5 minutes ago", "yesterday", or the date for anything older than a week
-- L194 `RecentActivity` (function)
-- L248 `PerformanceTab` (function)
-- L259 `InitiativePanelProps` (interface)
-- L266 `InitiativePanel` (export function)
+## src/pages/Initiatives/InitiativePanel.tsx (368 lines)
+- L29 `PanelTab` (type)
+- L31 `Detail` (function)
+- L41 `kpiText` (export function) - Primary KPI: Cost per lead, $45 target
+- L49 `SpendBar` (export function) - A thin bar for the share of the budget spent; red once it's over
+- L66 `KeyDetails` (function)
+- L122 `FinancialOverview` (function)
+- L157 `OutcomesSummary` (function)
+- L183 `timeAgo` (function) - 5 minutes ago", "yesterday", or the date for anything older than a week
+- L195 `RecentActivity` (function)
+- L249 `PerformanceTab` (function)
+- L260 `InitiativePanelProps` (interface)
+- L267 `InitiativePanel` (export function)
 
 ## src/pages/Initiatives/InitiativePerformance.tsx (58 lines)
 - L14 `PerformanceContent` (function) - The answer first (was it worth it?), then what each outcome cost, the results behind it, and the budget
@@ -1230,38 +1303,38 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 ## src/pages/Initiatives/Initiatives.native.tsx (61 lines)
 - L15 `Initiatives` (export function) - Placeholder until the mobile initiatives list (task I9).
 
-## src/pages/Initiatives/Initiatives.tsx (637 lines)
-- L36 `ListTab` (type)
-- L38 `PageFilters` (interface)
-- L49 `toDateText` (const)
-- L84 `DateRangeFilter` (function)
-- L143 `OwnerFilter` (function)
-- L160 `pageNumbers` (function) - Pages to offer: the first, the last, and two either side of the current one
-- L190 `csvRow` (function)
-- L213 `amountIn` (const)
-- L215 `Initiatives` (export function)
-    - L255 `otherChannels` (fn)
-    - L282 `channelCodes` (fn)
-    - L284 `update` (fn)
-    - L289 `clearFilters` (fn)
-    - L302 `change` (fn)
-    - L304 `toggle` (fn)
-    - L311 `togglePage` (fn)
-    - L321 `fileName` (fn)
-    - L322 `exportSelected` (fn)
-    - L324 `exportAll` (fn) - Every initiative matching the filters, a page of 200 at a time
+## src/pages/Initiatives/Initiatives.tsx (667 lines)
+- L37 `ListTab` (type)
+- L39 `PageFilters` (interface)
+- L50 `toDateText` (const)
+- L85 `DateRangeFilter` (function)
+- L144 `OwnerFilter` (function)
+- L161 `pageNumbers` (function) - Pages to offer: the first, the last, and two either side of the current one
+- L204 `csvRow` (function)
+- L240 `amountIn` (const)
+- L242 `Initiatives` (export function)
+    - L283 `otherChannels` (fn)
+    - L310 `channelCodes` (fn)
+    - L312 `update` (fn)
+    - L317 `clearFilters` (fn)
+    - L330 `change` (fn)
+    - L332 `toggle` (fn)
+    - L339 `togglePage` (fn)
+    - L349 `fileName` (fn)
+    - L350 `exportSelected` (fn)
+    - L352 `exportAll` (fn) - Every initiative matching the filters, a page of 200 at a time
 
-## src/pages/Initiatives/InitiativesTable.tsx (313 lines)
-- L22 `RowActions` (export interface)
-- L30 `InitiativesTableProps` (interface)
-- L42 `actualOf` (const)
-- L44 `BrandPill` (function)
-- L52 `ChannelLabel` (function)
-- L67 `Progress` (function)
-- L78 `Kpi` (function)
-- L90 `ActualSpend` (function)
-- L103 `RowMenu` (function)
-- L142 `InitiativesTable` (export function)
+## src/pages/Initiatives/InitiativesTable.tsx (326 lines)
+- L23 `RowActions` (export interface)
+- L31 `InitiativesTableProps` (interface)
+- L43 `actualOf` (const)
+- L45 `BrandPill` (function)
+- L53 `ChannelLabel` (function)
+- L68 `Progress` (function)
+- L79 `Kpi` (function)
+- L91 `ActualSpend` (function)
+- L104 `RowMenu` (function)
+- L143 `InitiativesTable` (export function)
 
 ## src/pages/Initiatives/OwnerPicker.tsx (74 lines)
 - L9 `OwnerPickerProps` (interface)
@@ -1378,6 +1451,16 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L112 `area` (const)
 - L115 `formatBoothSize` (export function) - 18.6 m² (200 sq ft)
 - L120 `boothSizeEquivalent` (export function) - The other unit, for the hint under the booth size field: "200 sq ft = 18.6 m²
+
+## src/pages/Initiatives/hubspotFigures.tsx (100 lines)
+- L7 `ATTRIBUTION_LABELS` (export const)
+- L12 `count` (const)
+- L15 `costText` (function) - $121.01" with " (HubSpot spend)" when the spend came from HubSpot; null without a cost
+- L24 `costPerContactText` (export function) - $121.01 per new contact (HubSpot spend)
+- L30 `HubSpotCell` (export function) - The list's HubSpot column: new contacts and MQLs, and the cost per MQL (else per new contact) under them
+- L48 `HubSpotSnapshot` (export function) - A few lines for the detail page's HubSpot card
+- L63 `Figure` (function)
+- L73 `HubSpotFigureList` (export function) - Every figure, for the side panel
 
 ## src/pages/Initiatives/initiativeFields.ts (153 lines)
 - L6 `choice` (const)
@@ -1797,6 +1880,12 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L11 `errorMessage` (function) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
 - L22 `handleResponse` (export function)
 
+## src/services/hubspotService.ts (23 lines)
+- L5 `getHubSpotSocialPosts` (export function) - Every social post from the last sync, newest first, with its counters and campaign
+- L10 `getHubSpotCampaigns` (export function) - Every HubSpot campaign from the last sync, with its report figures, assets and linked initiative
+- L15 `getHubSpotStatus` (export function) - Whether HubSpot is set up, whether a sync is running, and the last run
+- L20 `startHubSpotSync` (export function) - Start reading every campaign from HubSpot.
+
 ## src/services/importsService.ts (26 lines)
 - L5 `uploadCostSheet` (export function) - Check a cost sheet; nothing is saved as costs until the preview is confirmed
 - L11 `downloadCostSheetTemplate` (export function)
@@ -1844,7 +1933,7 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L25 `getDecisions` (export function)
 - L29 `recordDecision` (export function)
 
-## src/services/queryKeys.ts (68 lines)
+## src/services/queryKeys.ts (71 lines)
 - L4 `queryKeys` (export const)
 
 ## src/services/referenceDataService.ts (7 lines)
@@ -1996,6 +2085,18 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L90 `EventPerformanceResponse` (export interface)
 - L103 `EventPerformanceFilters` (export interface)
 
+## src/types/hubspot.ts (130 lines)
+- L2 `HubSpotCampaignStatus` (export type) - HubSpot's own campaign status; null when it isn't set there
+- L5 `HubSpotAsset` (export interface) - One asset attached to a campaign (a list, email, page, event...)
+- L11 `HubSpotAssets` (export type) - By asset type (e.g.
+- L14 `HubSpotFunnel` (export interface) - Contacts who reached each lifecycle stage (a customer counts at every stage before too)
+- L23 `HubSpotFunnels` (export interface) - The funnel counted three ways; a kind is missing when it doesn't apply (no contact lists) or couldn't be read
+- L31 `HubSpotCurrencySource` (export type) - Where a campaign's currency came from: HubSpot itself, the country of the linked event, or the linked initiative
+- L34 `HubSpotCampaign` (export interface) - A HubSpot campaign as the last sync read it
+- L76 `HubSpotSocialPost` (export interface) - A social post on one of the connected accounts, with its counters to date (organic posts, not paid ads)
+- L99 `HubSpotSyncSummary` (export interface)
+- L118 `HubSpotSyncStatus` (export interface)
+
 ## src/types/imports.ts (103 lines)
 - L3 `ImportRowStatus` (export type)
 - L5 `ImportBatchStatus` (export type) - REPLACED: a cost sheet upload whose costs a newer upload of the same event's sheet took over
@@ -2008,27 +2109,28 @@ exact as of the last regeneration; if a symbol has moved, search for its name.
 - L73 `ImportUndoResult` (export interface)
 - L81 `ImportBatchSummary` (export interface)
 
-## src/types/initiatives.ts (216 lines)
-- L4 `InitiativeStatus` (export type) - DRAFT: saved part-way to finish later; event rules (e.g.
-- L7 `DataSource` (export type) - Where its results come from: a linked ad or CRM campaign, typed in, or decided later
-- L10 `LinkSystem` (export type) - External systems a campaign can be linked from
-- L13 `InitiativeLink` (export interface) - An external campaign that belongs to this initiative (one campaign belongs to one initiative)
-- L20 `InitiativeLinkInput` (export interface)
-- L27 `AttentionReason` (export type) - Why an initiative needs review
-- L29 `KpiUnit` (export type)
-- L32 `PrimaryKpiRef` (export interface) - The optional primary KPI: shown with its target, never used for the worth-it verdict
-- L40 `ChannelDetails` (export type) - Fields that depend on the channel (see CHANNEL_FIELDS); every one optional
-- L42 `InitiativeListItem` (export interface)
-- L108 `EventDetailsInput` (export interface) - Event-only fields.
-- L126 `InitiativeListResponse` (export interface)
-- L133 `InitiativeFilters` (export interface)
-- L152 `InitiativeCreate` (export interface)
-- L181 `MoneyAmount` (export interface)
-- L186 `SummaryCounts` (interface)
-- L195 `InitiativeSummary` (export interface) - GET /api/initiatives/summary: the KPI cards, with the same filters as the list
-- L201 `InitiativeActivity` (export interface) - One line of an initiative's recent activity, from the audit log
-- L208 `OwnerOption` (export interface)
-- L215 `InitiativeUpdate` (export type) - Partial update: only the fields sent are changed (including inside `event`); null clears an optional field
+## src/types/initiatives.ts (245 lines)
+- L5 `InitiativeStatus` (export type) - DRAFT: saved part-way to finish later; event rules (e.g.
+- L8 `DataSource` (export type) - Where its results come from: a linked ad or CRM campaign, typed in, or decided later
+- L11 `LinkSystem` (export type) - External systems a campaign can be linked from
+- L14 `InitiativeLink` (export interface) - An external campaign that belongs to this initiative (one campaign belongs to one initiative)
+- L21 `InitiativeLinkInput` (export interface)
+- L28 `AttentionReason` (export type) - Why an initiative needs review
+- L30 `KpiUnit` (export type)
+- L33 `PrimaryKpiRef` (export interface) - The optional primary KPI: shown with its target, never used for the worth-it verdict
+- L41 `ChannelDetails` (export type) - Fields that depend on the channel (see CHANNEL_FIELDS); every one optional
+- L44 `InitiativeHubSpotFigures` (export interface) - The linked HubSpot campaigns' report figures (to date, added up), from the last HubSpot sync
+- L69 `InitiativeListItem` (export interface)
+- L137 `EventDetailsInput` (export interface) - Event-only fields.
+- L155 `InitiativeListResponse` (export interface)
+- L162 `InitiativeFilters` (export interface)
+- L181 `InitiativeCreate` (export interface)
+- L210 `MoneyAmount` (export interface)
+- L215 `SummaryCounts` (interface)
+- L224 `InitiativeSummary` (export interface) - GET /api/initiatives/summary: the KPI cards, with the same filters as the list
+- L230 `InitiativeActivity` (export interface) - One line of an initiative's recent activity, from the audit log
+- L237 `OwnerOption` (export interface)
+- L244 `InitiativeUpdate` (export type) - Partial update: only the fields sent are changed (including inside `event`); null clears an optional field
 
 ## src/types/navan.ts (44 lines)
 - L2 `NavanEvent` (export interface) - A Navan event seen in the bookings, with its active booking total and the event it's linked to
