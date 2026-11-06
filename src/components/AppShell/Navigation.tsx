@@ -82,7 +82,6 @@ export const navigation: NavigationItem[] = [
       initiativesLink("SEO", "SEO"),
       initiativesLink("Content Marketing", "CONTENT_MARKETING"),
       initiativesLink("Email Marketing", "EMAIL_MARKETING"),
-      initiativesLink("Events", "EVENTS"),
       initiativesLink("Partnerships", "PARTNERSHIPS"),
       initiativesLink("Other channels", OTHER_CHANNELS),
     ],
