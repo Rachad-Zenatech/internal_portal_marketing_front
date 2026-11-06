@@ -207,9 +207,9 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/pages/PaidAds/adsDisplay.ts (206 lines) - Labels, colours and number formats for the Paid Ads page
 - src/pages/PaidAds/adsPeriods.ts (66 lines) - Period presets for the Paid Advertising page, and how campaigns sort into running / upcoming / finished
 - src/pages/PaidAds/overviewDisplay.ts (172 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
-- src/pages/PaidSearch/PaidSearchBoard.tsx (192 lines) - Kept in this browser for now, until the board has its own API
+- src/pages/PaidSearch/PaidSearchBoard.tsx (420 lines) - Kept in this browser for now, until the board has its own API
 - src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
-- src/pages/PaidSearch/paidSearchFields.ts (322 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+- src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
 - src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - src/services/adSyncService.ts (26 lines) - Each ad platform with a sync: its name, its API path, and its settings' prefix (for set-up hints)
 - src/services/adsService.ts (80 lines) - ads service (services)

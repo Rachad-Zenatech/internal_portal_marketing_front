@@ -39,7 +39,15 @@ export const PAID_SEARCH_FIELDS = [
 export type PaidSearchKey = (typeof PAID_SEARCH_FIELDS)[number]["key"];
 
 /** One row on the board; every value is kept as typed text so half-filled rows can be saved */
-export type PaidSearchEntry = { id: string } & Record<PaidSearchKey, string>;
+export type PaidSearchEntry = {
+  id: string;
+  /** The HubSpot campaign whose MQLs and SQLs this row takes */
+  hubspot_campaign_id?: string;
+  /** How it was linked: matched by name, picked by someone, or "none" when someone said it has no HubSpot campaign */
+  hubspot_link?: "auto" | "manual" | "none";
+  /** Leads from that HubSpot campaign, to date (filled by Sync HubSpot; not a spreadsheet column) */
+  leads?: string;
+} & Record<PaidSearchKey, string>;
 
 export const newEntryId = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
 

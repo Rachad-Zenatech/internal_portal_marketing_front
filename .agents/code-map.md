@@ -1780,12 +1780,29 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `attentionText` (export function) - A short title and one line of detail, e.g.
 - `ATTENTION_INFO` (export const)
 
-## src/pages/PaidSearch/PaidSearchBoard.tsx (192 lines) - Kept in this browser for now, until the board has its own API
+## src/pages/PaidSearch/PaidSearchBoard.tsx (420 lines) - Kept in this browser for now, until the board has its own API
 - `loadEntries` (function)
 - `saveEntries` (function)
 - `widthOf` (const)
 - `Cell` (function) - One editable cell; numbers and dates are checked when you leave the cell
+- `PickerOption` (function) - One choice in the HubSpot campaign picker
+- `HubSpotLinkCell` (function) - The HubSpot campaign a row takes its leads, MQLs and SQLs from, with a search box: the brand's paid campaigns first  (best fit first, Goo...
+    - `fits` (fn)
+    - `pick` (fn)
+- `plural` (const)
+- `fillSummary` (function) - Linked 9 rows to HubSpot campaigns · MQLs and SQLs filled for 13 rows · 2 rows have no HubSpot campaign
 - `PaidSearchBoard` (export function) - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
+    - `queryClient` (fn) - HubSpot: the campaigns from the last sync (read with the backend's HUBSPOT_API_KEY), and the sync itself
+    - `hubspotCampaigns` (fn)
+    - `startSync` (fn)
+    - `applyHubSpot` (fn)
+    - `syncHubSpot` (fn)
+    - `setHubSpotLink` (fn)
+    - `updateCell` (fn)
+    - `addRow` (fn)
+    - `removeRow` (fn)
+    - `importEntries` (fn)
+    - `notConnected` (fn)
 
 ## src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - `plural` (const)
@@ -1797,7 +1814,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `PaidSearchUploadProps` (interface)
 - `PaidSearchUpload` (export function) - Upload a Paid Search spreadsheet: choose a file, check the preview, import onto the board
 
-## src/pages/PaidSearch/paidSearchFields.ts (322 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+## src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
 - `PaidSearchFieldKind` (export type)
 - `PaidSearchField` (export interface)
 - `PAID_SEARCH_FIELDS` (export const) - Every column on the board, in spreadsheet order
