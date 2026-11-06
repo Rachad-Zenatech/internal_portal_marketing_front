@@ -1301,7 +1301,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 ## src/pages/Initiatives/Initiatives.native.tsx (61 lines) - Placeholder until the mobile initiatives list (task I9).
 - `Initiatives` (export function) - Placeholder until the mobile initiatives list (task I9).
 
-## src/pages/Initiatives/Initiatives.tsx (663 lines) - initiatives (pages  initiatives)
+## src/pages/Initiatives/Initiatives.tsx (665 lines) - initiatives (pages  initiatives)
 - `ListTab` (type)
 - `PageFilters` (interface)
 - `toDateText` (const)

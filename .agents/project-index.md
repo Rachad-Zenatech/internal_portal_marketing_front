@@ -169,7 +169,7 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/pages/Initiatives/InitiativePerformance.tsx (58 lines) - The answer first (was it worth it?), then what each outcome cost, the results behind it, and the budget
 - src/pages/Initiatives/InitiativeSubPage.tsx (66 lines) - Page name, e.g.
 - src/pages/Initiatives/Initiatives.native.tsx (61 lines) - Placeholder until the mobile initiatives list (task I9).
-- src/pages/Initiatives/Initiatives.tsx (663 lines) - initiatives (pages  initiatives)
+- src/pages/Initiatives/Initiatives.tsx (665 lines) - initiatives (pages  initiatives)
 - src/pages/Initiatives/InitiativesTable.tsx (326 lines) - The initiatives list: a table on wide screens, cards below lg
 - src/pages/Initiatives/OwnerPicker.tsx (74 lines) - Shown when no one is picked
 - src/pages/Initiatives/ResultsSection.tsx (233 lines) - Every month from start to end (inclusive), as "YYYY-MM-01
