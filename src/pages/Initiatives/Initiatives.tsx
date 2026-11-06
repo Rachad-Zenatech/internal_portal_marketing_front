@@ -20,6 +20,7 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import { getInitiatives } from "@/services/initiativesService";
 import EventBudgetUpload from "./EventBudgetUpload";
+import HubSpotSyncStatus from "../HubSpot/HubSpotSyncStatus";
 import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
 import { DeleteInitiativeDialog } from "./DeleteInitiativeButton";
@@ -414,6 +415,7 @@ export default function Initiatives() {
         }
         actions={
           <>
+            {!channel && !isOtherChannels && <HubSpotSyncStatus />}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" aria-label="More actions" disabled={exporting}>
