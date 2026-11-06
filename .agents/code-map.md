@@ -1322,48 +1322,6 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `exportSelected` (fn)
     - `exportAll` (fn) - Every initiative matching the filters, a page of 200 at a time
 
-## src/pages/Initiatives/Initiatives.tsx (669 lines) - initiatives (pages  initiatives)
-- `ListTab` (type)
-- `PageFilters` (interface)
-- `toDateText` (const)
-- `DateRangeFilter` (function)
-- `OwnerFilter` (function)
-- `pageNumbers` (function) - Pages to offer: the first, the last, and two either side of the current one
-- `csvRow` (function)
-- `amountIn` (const)
-- `Initiatives` (export function)
-    - `otherChannels` (fn)
-    - `channelCodes` (fn)
-    - `update` (fn)
-    - `clearFilters` (fn)
-    - `change` (fn)
-    - `toggle` (fn)
-    - `togglePage` (fn)
-    - `fileName` (fn)
-    - `exportSelected` (fn)
-    - `exportAll` (fn) - Every initiative matching the filters, a page of 200 at a time
-
-## src/pages/Initiatives/Initiatives.tsx (669 lines) - initiatives (pages  initiatives)
-- `ListTab` (type)
-- `PageFilters` (interface)
-- `toDateText` (const)
-- `DateRangeFilter` (function)
-- `OwnerFilter` (function)
-- `pageNumbers` (function) - Pages to offer: the first, the last, and two either side of the current one
-- `csvRow` (function)
-- `amountIn` (const)
-- `Initiatives` (export function)
-    - `otherChannels` (fn)
-    - `channelCodes` (fn)
-    - `update` (fn)
-    - `clearFilters` (fn)
-    - `change` (fn)
-    - `toggle` (fn)
-    - `togglePage` (fn)
-    - `fileName` (fn)
-    - `exportSelected` (fn)
-    - `exportAll` (fn) - Every initiative matching the filters, a page of 200 at a time
-
 ## src/pages/Initiatives/InitiativesTable.tsx (326 lines) - The initiatives list: a table on wide screens, cards below lg
 - `RowActions` (export interface)
 - `InitiativesTableProps` (interface)
@@ -1829,14 +1787,17 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `Cell` (function) - One editable cell; numbers and dates are checked when you leave the cell
 - `PaidSearchBoard` (export function) - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
 
-## src/pages/PaidSearch/PaidSearchUpload.tsx (252 lines) - The columns worth seeing in the preview; every column is still imported
+## src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - `plural` (const)
+- `RowResult` (type)
+- `CheckedRow` (interface)
+- `checkRows` (function) - Sorts each row into New, Duplicate or Problem.
 - `PreviewTable` (function)
 - `HeaderErrorDetail` (function) - The header problem, column by column, so it's clear what to fix in the sheet
 - `PaidSearchUploadProps` (interface)
 - `PaidSearchUpload` (export function) - Upload a Paid Search spreadsheet: choose a file, check the preview, import onto the board
 
-## src/pages/PaidSearch/paidSearchFields.ts (306 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+## src/pages/PaidSearch/paidSearchFields.ts (322 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
 - `PaidSearchFieldKind` (export type)
 - `PaidSearchField` (export interface)
 - `PAID_SEARCH_FIELDS` (export const) - Every column on the board, in spreadsheet order
@@ -1862,6 +1823,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `rowsToEntries` (function)
 - `parseCsv` (function) - Splits CSV text into rows of cells (handles quoted commas, quotes and line breaks)
 - `parsePaidSearchFile` (export function) - Reads a .csv, or an .xlsx, into board rows.
+- `entryFingerprint` (export function) - Every field of an entry as one comparable string, for spotting duplicates.
 
 ## src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - `SocialPlatformConfig` (export interface)

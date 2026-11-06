@@ -185,7 +185,7 @@ export default function PaidSearchBoard({ canEdit }: { canEdit: boolean }) {
         </table>
       </div>
 
-      {canEdit && <PaidSearchUpload open={uploadOpen} onOpenChange={setUploadOpen} onImport={importEntries} />}
+      {canEdit && <PaidSearchUpload open={uploadOpen} onOpenChange={setUploadOpen} onImport={importEntries} existing={entries} />}
     </section>
   );
 }

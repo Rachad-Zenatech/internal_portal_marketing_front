@@ -1,12 +1,12 @@
-import { Fragment, useState } from "react";
-import { AlertCircle, Download, Loader2 } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import { AlertCircle, Copy, Download, Loader2 } from "lucide-react";
 import ConfirmBar from "@/components/imports/ConfirmBar";
 import FileDropZone from "@/components/imports/FileDropZone";
 import { downloadCsv } from "@/components/dashboard/csv";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { HeaderMismatchError, PAID_SEARCH_FIELDS, parsePaidSearchFile, type PaidSearchEntry, type ParsedSheet } from "./paidSearchFields";
+import { entryFingerprint, HeaderMismatchError, PAID_SEARCH_FIELDS, parsePaidSearchFile, type PaidSearchEntry, type ParsedRow, type ParsedSheet } from "./paidSearchFields";
 
 const NOUN: [string, string] = ["entry", "entries"];
 const plural = (n: number, [one, many]: [string, string]) => `${n} ${n === 1 ? one : many}`;
@@ -16,7 +16,42 @@ const muted = <span className="text-slate-400">-</span>;
 const PREVIEW_KEYS = ["campaign_name", "brand", "market", "period_start", "period_end", "sub_channel", "budget_allocated", "actual_spend", "status"] as const;
 const PREVIEW_FIELDS = PREVIEW_KEYS.map((k) => PAID_SEARCH_FIELDS.find((f) => f.key === k)!);
 
-function PreviewTable({ sheet }: { sheet: ParsedSheet }) {
+type RowResult = "NEW" | "DUPLICATE" | "PROBLEM";
+
+interface CheckedRow extends ParsedRow {
+  result: RowResult;
+  /** Why it won't be imported */
+  messages: string[];
+}
+
+const RESULT_LABELS: Record<RowResult, string> = { NEW: "New", DUPLICATE: "Duplicate", PROBLEM: "Problem" };
+const RESULT_BADGES: Record<RowResult, string> = {
+  NEW: "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400",
+  DUPLICATE: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300",
+  PROBLEM: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400",
+};
+const RESULT_TINTS: Record<RowResult, string> = { NEW: "", DUPLICATE: "opacity-80", PROBLEM: "bg-red-50/60 dark:bg-red-950/20" };
+const RESULT_TEXT: Record<RowResult, string> = { NEW: "", DUPLICATE: "text-amber-800 dark:text-amber-300", PROBLEM: "text-red-700 dark:text-red-400" };
+
+/**
+ * Sorts each row into New, Duplicate or Problem. A duplicate has every one of the 24 fields the same as an entry
+ * already on the board, or as an earlier row in the same file.
+ */
+function checkRows(rows: ParsedRow[], existing: PaidSearchEntry[]): CheckedRow[] {
+  const onBoard = new Set(existing.map(entryFingerprint));
+  const inFile = new Map<string, number>();
+  return rows.map((row): CheckedRow => {
+    if (row.problems.length) return { ...row, result: "PROBLEM", messages: row.problems };
+    const key = entryFingerprint(row.entry);
+    if (onBoard.has(key)) return { ...row, result: "DUPLICATE", messages: ["Already on the board: every field matches an existing entry."] };
+    const earlier = inFile.get(key);
+    if (earlier !== undefined) return { ...row, result: "DUPLICATE", messages: [`Same as row ${earlier} in this file: every field matches.`] };
+    inFile.set(key, row.row_number);
+    return { ...row, result: "NEW", messages: [] };
+  });
+}
+
+function PreviewTable({ rows }: { rows: CheckedRow[] }) {
   const span = PREVIEW_FIELDS.length + 2;
   return (
     <div className="max-h-[55vh] overflow-auto rounded-lg border border-slate-200 dark:border-zinc-800">
@@ -33,23 +68,16 @@ function PreviewTable({ sheet }: { sheet: ParsedSheet }) {
           </tr>
         </thead>
         <tbody>
-          {sheet.rows.map((row) => {
-            const bad = row.problems.length > 0;
-            const tint = bad ? "bg-red-50/60 dark:bg-red-950/20" : "";
+          {rows.map((row) => {
+            const bad = row.messages.length > 0;
+            const tint = RESULT_TINTS[row.result];
             return (
               <Fragment key={row.row_number}>
                 <tr className={`${tint} ${bad ? "" : "border-b border-slate-100 dark:border-zinc-800"}`}>
                   <td className="px-3 py-2 align-top tabular-nums text-slate-500 dark:text-zinc-400">{row.row_number}</td>
                   <td className="px-3 py-2 align-top">
-                    <Badge
-                      variant="outline"
-                      className={
-                        bad
-                          ? "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400"
-                          : "border-green-200 bg-green-50 text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-400"
-                      }
-                    >
-                      {bad ? "Problem" : "New"}
+                    <Badge variant="outline" className={RESULT_BADGES[row.result]}>
+                      {RESULT_LABELS[row.result]}
                     </Badge>
                   </td>
                   {PREVIEW_FIELDS.map((f) => (
@@ -62,10 +90,14 @@ function PreviewTable({ sheet }: { sheet: ParsedSheet }) {
                   <tr className={`${tint} border-b border-slate-100 dark:border-zinc-800`}>
                     <td />
                     <td colSpan={span - 1} className="px-3 pb-2">
-                      <ul className="flex flex-col gap-0.5 text-xs text-red-700 dark:text-red-400">
-                        {row.problems.map((p) => (
+                      <ul className={`flex flex-col gap-0.5 text-xs ${RESULT_TEXT[row.result]}`}>
+                        {row.messages.map((p) => (
                           <li key={p} className="flex items-start gap-1.5">
-                            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            {row.result === "DUPLICATE" ? (
+                              <Copy className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            ) : (
+                              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            )}
                             {p}
                           </li>
                         ))}
@@ -111,10 +143,12 @@ interface PaidSearchUploadProps {
   onOpenChange: (open: boolean) => void;
   /** Adds the checked rows to the board */
   onImport: (entries: PaidSearchEntry[]) => void;
+  /** What's on the board now, so rows already there aren't added again */
+  existing: PaidSearchEntry[];
 }
 
 /** Upload a Paid Search spreadsheet: choose a file, check the preview, import onto the board */
-export default function PaidSearchUpload({ open, onOpenChange, onImport }: PaidSearchUploadProps) {
+export default function PaidSearchUpload({ open, onOpenChange, onImport, existing }: PaidSearchUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ParsedSheet | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -147,8 +181,10 @@ export default function PaidSearchUpload({ open, onOpenChange, onImport }: PaidS
     }
   };
 
-  const valid = preview?.rows.filter((r) => r.problems.length === 0) ?? [];
-  const invalid = (preview?.rows.length ?? 0) - valid.length;
+  const checked = useMemo(() => (preview ? checkRows(preview.rows, existing) : []), [preview, existing]);
+  const valid = checked.filter((r) => r.result === "NEW");
+  const invalid = checked.filter((r) => r.result === "PROBLEM").length;
+  const duplicates = checked.filter((r) => r.result === "DUPLICATE").length;
 
   const importRows = () => {
     onImport(valid.map((r) => r.entry));
@@ -195,6 +231,7 @@ export default function PaidSearchUpload({ open, onOpenChange, onImport }: PaidS
                 <p>We look through every sheet for the header row. It must have exactly these columns (any order, upper or lower case):</p>
                 <p className="text-xs leading-relaxed">{PAID_SEARCH_FIELDS.map((f) => f.header).join(" · ")}</p>
                 <p>Rows without a Campaign Name, or with numbers or dates we can't read, are shown as problems and not imported.</p>
+                <p>A row whose fields all match an entry already on the board, or an earlier row in the file, is a duplicate and is not imported.</p>
                 <Button
                   type="button"
                   variant="link"
@@ -233,14 +270,21 @@ export default function PaidSearchUpload({ open, onOpenChange, onImport }: PaidS
                   is imported.
                 </p>
               </div>
-              <PreviewTable sheet={preview} />
+              <PreviewTable rows={checked} />
               <ConfirmBar
                 count={valid.length}
                 noun={NOUN}
                 onConfirm={importRows}
                 onCancel={close}
                 onChooseAnother={reset}
-                note={invalid > 0 ? `${plural(invalid, ["row", "rows"])} with problems won't be imported.` : undefined}
+                note={
+                  [
+                    duplicates > 0 ? `${plural(duplicates, ["duplicate row", "duplicate rows"])} won't be imported.` : "",
+                    invalid > 0 ? `${plural(invalid, ["row", "rows"])} with problems won't be imported.` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ") || undefined
+                }
               />
             </section>
           )}

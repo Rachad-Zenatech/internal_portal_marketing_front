@@ -303,3 +303,19 @@ export async function parsePaidSearchFile(file: File): Promise<ParsedSheet> {
   }
   throw firstMismatch;
 }
+
+/**
+ * Every field of an entry as one comparable string, for spotting duplicates.
+ * Ignores case, extra spaces and number formatting ("4311" = "4311.00"), so only real differences count.
+ */
+export function entryFingerprint(entry: PaidSearchEntry): string {
+  return PAID_SEARCH_FIELDS.map((f) => {
+    const text = (entry[f.key] ?? "").replace(/\s+/g, " ").trim();
+    if (f.kind === "number") {
+      const n = cleanNumber(text);
+      return n === null || n === "" ? text : String(Number(n));
+    }
+    if (f.kind === "date") return cleanDate(text) ?? text;
+    return text.toLowerCase();
+  }).join("\u001f");
+}
