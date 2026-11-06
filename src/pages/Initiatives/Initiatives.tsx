@@ -20,6 +20,7 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import { getInitiatives } from "@/services/initiativesService";
 import EventBudgetUpload from "./EventBudgetUpload";
+import PaidSearchBoard from "../PaidSearch/PaidSearchBoard";
 import HubSpotSyncStatus from "../HubSpot/HubSpotSyncStatus";
 import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
@@ -279,6 +280,7 @@ export default function Initiatives() {
   // "Other channels" in the sidebar: every channel without its own link
   const isOtherChannels = channelCode === OTHER_CHANNELS;
   const isEvents = channel?.code === "EVENTS";
+  const isPaidSearch = channel?.code === "PAID_SEARCH";
   const otherChannels = useMemo(() => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)), [reference]);
   // A channel in the URL can't be resolved without the channel list, or may not exist at all
   const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
@@ -444,6 +446,8 @@ export default function Initiatives() {
           </>
         }
       />
+
+      {isPaidSearch && <PaidSearchBoard canEdit={canEdit} />}
 
       <Tabs
         value={tab}

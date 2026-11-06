@@ -1301,7 +1301,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 ## src/pages/Initiatives/Initiatives.native.tsx (61 lines) - Placeholder until the mobile initiatives list (task I9).
 - `Initiatives` (export function) - Placeholder until the mobile initiatives list (task I9).
 
-## src/pages/Initiatives/Initiatives.tsx (663 lines) - initiatives (pages  initiatives)
+## src/pages/Initiatives/Initiatives.tsx (669 lines) - initiatives (pages  initiatives)
 - `ListTab` (type)
 - `PageFilters` (interface)
 - `toDateText` (const)
@@ -1779,6 +1779,51 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `pointLabel` (export function) - Chart label for a point: "Oct 7" for a day or week (its first day), "Oct 2026" for a month
 - `attentionText` (export function) - A short title and one line of detail, e.g.
 - `ATTENTION_INFO` (export const)
+
+## src/pages/PaidSearch/PaidSearchBoard.tsx (192 lines) - Kept in this browser for now, until the board has its own API
+- `loadEntries` (function)
+- `saveEntries` (function)
+- `widthOf` (const)
+- `Cell` (function) - One editable cell; numbers and dates are checked when you leave the cell
+- `PaidSearchBoard` (export function) - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
+
+## src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
+- `plural` (const)
+- `RowResult` (type)
+- `CheckedRow` (interface)
+- `checkRows` (function) - Sorts each row into New, Duplicate or Problem.
+- `PreviewTable` (function)
+- `HeaderErrorDetail` (function) - The header problem, column by column, so it's clear what to fix in the sheet
+- `PaidSearchUploadProps` (interface)
+- `PaidSearchUpload` (export function) - Upload a Paid Search spreadsheet: choose a file, check the preview, import onto the board
+
+## src/pages/PaidSearch/paidSearchFields.ts (322 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+- `PaidSearchFieldKind` (export type)
+- `PaidSearchField` (export interface)
+- `PAID_SEARCH_FIELDS` (export const) - Every column on the board, in spreadsheet order
+- `PaidSearchKey` (export type)
+- `PaidSearchEntry` (export type) - One row on the board; every value is kept as typed text so half-filled rows can be saved
+- `newEntryId` (export const)
+- `emptyEntry` (export const)
+- `normalizeHeader` (const) - actual   SPEND " and "Actual Spend" are the same header
+- `HeaderMismatchError` (export class) - A sheet whose headers are not exactly the board's columns
+- `ParsedRow` (export interface)
+- `ParsedSheet` (export interface)
+- `matchHeaders` (export function) - Checks the header row: every board column exactly once, nothing else (order doesn't matter, blank trailing headers are ignored)
+- `pad` (const)
+- `isoDate` (const)
+- `roundText` (const) - 0.0507 -> "0.05", 3 -> "3": at most 2 decimals
+- `cellText` (function) - Spreadsheet cell to text: dates as YYYY-MM-DD, links as their address, formulas as their result.
+- `isBlank` (const) - .", "-", "N/A" and the like mean "nothing here yet
+- `cleanNumber` (export function) - $1,234.50", "12%", "1 234" -> "1234.50", "12", "1234"; null when it isn't a number
+- `cleanDate` (export function) - YYYY-MM-DD, or the date written another common way; null when it can't be read
+- `cleanValue` (export function) - Checks one value for its column; returns the cleaned value or a problem
+- `headerScore` (function) - How many board columns a row's cells name (0 to 24)
+- `findHeaderRow` (function) - The row near the top of the sheet most like the header row, and how many board columns it names
+- `rowsToEntries` (function)
+- `parseCsv` (function) - Splits CSV text into rows of cells (handles quoted commas, quotes and line breaks)
+- `parsePaidSearchFile` (export function) - Reads a .csv, or an .xlsx, into board rows.
+- `entryFingerprint` (export function) - Every field of an entry as one comparable string, for spotting duplicates.
 
 ## src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - `SocialPlatformConfig` (export interface)
