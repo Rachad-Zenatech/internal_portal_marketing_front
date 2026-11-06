@@ -12,7 +12,7 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/components/AppShell/AppShell.tsx (51 lines) - Start closed on phones and tablets, so the sidebar doesn't slide open and shut on every page load
 - src/components/AppShell/Breadcrumbs.tsx (141 lines) - breadcrumbs (components  app shell)
 - src/components/AppShell/ConnectionStatusLight.tsx (255 lines) - connection status light (components  app shell)
-- src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
+- src/components/AppShell/Navigation.tsx (169 lines) - navigation (components  app shell)
 - src/components/AppShell/NotificationDropdown.tsx (180 lines) - notification dropdown (components  app shell)
 - src/components/AppShell/Sidebar.tsx (309 lines) - sidebar (components  app shell)
 - src/components/AppShell/ThemeSwitch.tsx (41 lines) - theme switch (components  app shell)
@@ -81,6 +81,7 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/hooks/useBudgets.ts (146 lines) - month is YYYY-MM-01
 - src/hooks/useDemos.ts (59 lines) - A demo changes the log, its summary (counts, cost per demo, customers), and the performance view's demo count
 - src/hooks/useEventManagement.ts (76 lines) - use event management (hooks)
+- src/hooks/useEventsOverview.ts (64 lines) - The Navan events for the period and filters; the previous data stays on screen while new filters load
 - src/hooks/useHeartbeat.ts (45 lines) - Track user activity
 - src/hooks/useHubSpot.ts (56 lines) - The synced HubSpot social posts
 - src/hooks/useImports.ts (46 lines) - Upload a cost sheet for a preview (the upload appears in the history straight away)
@@ -129,11 +130,16 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/pages/Configurations/Users.tsx (692 lines) - users (pages  configurations)
 - src/pages/Events/CostSources.tsx (196 lines) - Statuses whose cost is in (the invoice has arrived); the rest is awaiting invoices
 - src/pages/Events/EventBudgetChart.tsx (90 lines) - Actual spend on the events in the same month a year earlier
+- src/pages/Events/EventDataDialog.tsx (168 lines) - Type in what's missing for an event: its approved budget and its results (attendees, leads, MQLs, demos, customers,
+- src/pages/Events/EventDetailPanel.tsx (446 lines) - One Navan event in full, in a side panel opened from the list: money, travel, the HubSpot results matched to it,
 - src/pages/Events/EventFlags.tsx (119 lines) - The event it's about, for the link
 - src/pages/Events/EventFunnel.tsx (52 lines) - True when no step of the funnel has a number yet
 - src/pages/Events/EventPerformanceTable.tsx (340 lines) - event performance table (pages  events)
 - src/pages/Events/EventWorkspace.tsx (294 lines) - event workspace (pages  events)
-- src/pages/Events/EventsPage.tsx (394 lines) - events page (pages  events)
+- src/pages/Events/EventsCharts.tsx (221 lines) - Charts for the Events Overview dashboard.
+- src/pages/Events/EventsDashboard.tsx (163 lines) - The Dashboard tab of the Events Overview: key figures and charts comparing the Navan events
+- src/pages/Events/EventsList.tsx (519 lines) - The Events tab of the Events Overview: every Navan event with its budget, cost, travel and HubSpot results
+- src/pages/Events/EventsPage.tsx (198 lines) - events page (pages  events)
 - src/pages/Events/ImportEventDataDialog.tsx (111 lines) - Every event to choose from
 - src/pages/Events/NavanSyncStatus.tsx (110 lines) - The "Sync with Navan" button on its own
 - src/pages/Events/StaffDialog.tsx (128 lines) - staff dialog (pages  events)
@@ -197,18 +203,20 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/pages/PaidAds/AdResultDialog.tsx (480 lines) - ad result dialog (pages  paid ads)
 - src/pages/PaidAds/AdSyncStatus.tsx (243 lines) - The last attempt failed when it's newer than the last success
 - src/pages/PaidAds/AdsCharts.tsx (143 lines) - Charts for the Paid Advertising page.
-- src/pages/PaidAds/AdsPieces.tsx (113 lines) - Small pieces for the Paid Advertising page: platform icon, status pill, date range picker, progress bar
+- src/pages/PaidAds/AdsPieces.tsx (130 lines) - Small pieces for the Paid Advertising page: platform icon, status pill, date range picker, progress bar
 - src/pages/PaidAds/AdsSidePanels.tsx (184 lines) - The right column of the Paid Advertising page: campaigns needing attention, platform performance, budget by brand
 - src/pages/PaidAds/AdsTabs.tsx (385 lines) - The Platforms, Budget & Spend and Data Health tabs of the Paid Advertising page
 - src/pages/PaidAds/CampaignPanel.tsx (511 lines) - The side panel for one campaign: Overview, Performance, Budget & Spend, CRM Outcomes, Campaign Details
-- src/pages/PaidAds/CampaignsTable.tsx (413 lines) - The Campaigns tab: every campaign for the date range, with search, a column picker, selection, CSV export and pages
-- src/pages/PaidAds/PaidAdsPage.tsx (384 lines) - paid ads page (pages  paid ads)
+- src/pages/PaidAds/CampaignsTable.tsx (501 lines) - The Campaigns tab: every campaign for the date range, with search, a column picker, selection, CSV export and pages
+- src/pages/PaidAds/InsightsCharts.tsx (217 lines) - Charts and the cut/fund summary for the Insights tab of the Paid Advertising page.
+- src/pages/PaidAds/PaidAdsPage.tsx (408 lines) - paid ads page (pages  paid ads)
 - src/pages/PaidAds/PaidAdsUpload.tsx (417 lines) - paid ads upload (pages  paid ads)
-- src/pages/PaidAds/adsDisplay.ts (206 lines) - Labels, colours and number formats for the Paid Ads page
+- src/pages/PaidAds/adsDisplay.ts (212 lines) - Labels, colours and number formats for the Paid Ads page
 - src/pages/PaidAds/adsPeriods.ts (66 lines) - Period presets for the Paid Advertising page, and how campaigns sort into running / upcoming / finished
-- src/pages/PaidAds/overviewDisplay.ts (172 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
-- src/pages/PaidSearch/PaidSearchBoard.tsx (420 lines) - Kept in this browser for now, until the board has its own API
+- src/pages/PaidAds/overviewDisplay.ts (173 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
+- src/pages/PaidSearch/PaidSearchBoard.tsx (505 lines) - Wait this long after the last change before saving the board
 - src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
+- src/pages/PaidSearch/hubspotMatch.ts (187 lines) - Linking Paid Search board rows to HubSpot campaigns, so a HubSpot sync can fill their leads, MQLs and SQLs.
 - src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
 - src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - src/services/adSyncService.ts (26 lines) - Each ad platform with a sync: its name, its API path, and its settings' prefix (for set-up hints)
@@ -219,6 +227,7 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/services/demosService.ts (24 lines) - Quick inline changes (e.g.
 - src/services/errorReporting.ts (75 lines) - error reporting (services)
 - src/services/eventManagementService.ts (40 lines) - What events in a period cost and brought in; filters left out are not sent
+- src/services/eventsOverviewService.ts (46 lines) - The Navan events for the period and filters, with the HubSpot results matched to each
 - src/services/helper.ts (29 lines) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
 - src/services/hubspotService.ts (23 lines) - Every social post from the last sync, newest first, with its counters and campaign
 - src/services/importsService.ts (26 lines) - Check a cost sheet; nothing is saved as costs until the preview is confirmed
@@ -226,11 +235,11 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/services/navanService.ts (13 lines) - Whether the Navan sync is set up, and its last run with the Navan events it found
 - src/services/oauthService.ts (160 lines) - oauth service (services)
 - src/services/performanceService.ts (32 lines) - periodStart is the first of the month, e.g.
-- src/services/queryKeys.ts (71 lines) - Centralized React Query keys for consistent invalidation and caching.
+- src/services/queryKeys.ts (74 lines) - Centralized React Query keys for consistent invalidation and caching.
 - src/services/referenceDataService.ts (7 lines) - reference data service (services)
 - src/services/spendService.ts (23 lines) - spend service (services)
 - src/types/adSync.ts (63 lines) - The ad platforms with a campaign and weekly results sync (oauth provider codes)
-- src/types/ads.ts (456 lines) - Paid ads (every Paid Search and Paid Social platform): mirrors the shared paid ads API contract
+- src/types/ads.ts (462 lines) - Paid ads (every Paid Search and Paid Social platform): mirrors the shared paid ads API contract
 - src/types/aiAssistant.ts (5 lines) - ai assistant (types)
 - src/types/auth.ts (97 lines) - auth (types)
 - src/types/budgets.ts (366 lines) - Monthly budgets — mirrors the shared budget contract (backend models/budget_model.py)
@@ -238,6 +247,7 @@ For detailed function and route definitions, see `.agents/code-map.md`.
 - src/types/eventBudgets.ts (35 lines) - Uploading many events' budgets at once.
 - src/types/eventManagement.ts (85 lines) - Event management — mirrors backend models/event_management_model.py
 - src/types/eventPerformance.ts (114 lines) - Events Overview: what events cost and what they brought in.
+- src/types/eventsOverview.ts (205 lines) - Events Overview: the Navan events with the HubSpot results matched to them (GET /api/events/navan-events)
 - src/types/hubspot.ts (130 lines) - HubSpot's own campaign status; null when it isn't set there
 - src/types/imports.ts (103 lines) - Spreadsheet uploads — mirrors backend models/import_model.py
 - src/types/initiatives.ts (245 lines) - Marketing initiatives — mirrors backend models/initiative_model.py

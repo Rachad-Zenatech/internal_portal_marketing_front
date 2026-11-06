@@ -37,7 +37,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `IntegrationStatusResponse` (export interface)
 - `ConnectionStatusLight` (export function)
 
-## src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
+## src/components/AppShell/Navigation.tsx (169 lines) - navigation (components  app shell)
 - `NavigationSubItem` (export interface)
 - `NavigationItem` (export interface)
 - `SET_ACTIVE_NAV_EVENT` (export const) - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
@@ -494,6 +494,14 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `useUpdateEventStaff` (export function)
 - `useRemoveEventStaff` (export function)
 
+## src/hooks/useEventsOverview.ts (64 lines) - The Navan events for the period and filters; the previous data stays on screen while new filters load
+- `useEventsOverview` (export function) - The Navan events for the period and filters; the previous data stays on screen while new filters load
+- `useEventOverviewDetail` (export function) - One event in full
+- `useHubSpotOptions` (export function) - The HubSpot campaigns and marketing events an event can be linked to (loaded when the picker opens)
+- `useSetEventHubSpotLink` (export function) - Save an event's HubSpot link, then reload the overview and that event
+- `useNavanTripOptions` (export function) - The Navan trips that can still be joined to a HubSpot event
+- `useSetNavanTripLink` (export function) - Join a Navan trip to a HubSpot event, or take it off, then reload the overview
+
 ## src/hooks/useHeartbeat.ts (45 lines) - Track user activity
 - `useHeartbeat` (export function)
 
@@ -935,6 +943,35 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `ChartTooltip` (function)
 - `EventBudgetChart` (export function) - Per month (by the month each event starts): the events' approved budgets, their actual spend (invoiced and paid),  and the actual spend o...
 
+## src/pages/Events/EventDataDialog.tsx (168 lines) - Type in what's missing for an event: its approved budget and its results (attendees, leads, MQLs, demos, customers,
+- `ResultKey` (type)
+- `Form` (type)
+- `periodOf` (const) - The first of the month the event starts in: the month its typed-in results are kept under
+- `toText` (const)
+- `typedValues` (function)
+- `EditForm` (function)
+- `EventDataDialogProps` (interface)
+- `EventDataDialog` (export function)
+
+## src/pages/Events/EventDetailPanel.tsx (446 lines) - One Navan event in full, in a side panel opened from the list: money, travel, the HubSpot results matched to it,
+- `Section` (function)
+- `Figure` (function)
+- `optionLabel` (const)
+- `HubSpotLinkEditor` (function) - Pick the event's HubSpot campaign and marketing event, mark it as having none, or go back to the name match
+    - `options` (fn)
+    - `save` (fn)
+    - `run` (fn)
+- `NavanTripLinks` (function) - The Navan trips joined to a HubSpot event: take one off, or join another that's still on its own
+    - `options` (fn)
+    - `save` (fn)
+    - `run` (fn)
+- `PanelBody` (function)
+    - `typed` (fn)
+    - `money` (fn)
+- `EventDetailPanelProps` (interface)
+- `EventDetailPanel` (export function)
+    - `detail` (fn)
+
 ## src/pages/Events/EventFlags.tsx (119 lines) - The event it's about, for the link
 - `Severity` (type)
 - `EventFlag` (interface)
@@ -973,10 +1010,46 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `Checklist` (function)
 - `EventWorkspace` (export function)
 
-## src/pages/Events/EventsPage.tsx (394 lines) - events page (pages  events)
+## src/pages/Events/EventsCharts.tsx (221 lines) - Charts for the Events Overview dashboard.
+- `shortName` (const)
+- `chartHeight` (const)
+- `EventSpendLegend` (export function)
+- `EventSpendChart` (export function) - Each event's approved budget and actual cost, the biggest first; the cost bar turns red when over budget
+- `MonthlyLegend` (export function)
+- `MonthlyChart` (export function) - Budget, actual cost and Navan travel of the events starting each month
+- `TravellersChart` (export function) - Travellers per event (the people on its Navan bookings)
+- `hubspotResultsEmpty` (export function) - Whether there is any HubSpot result to chart
+- `HubSpotResultsChart` (export function) - The HubSpot results of all matched events added up, from sign-up to customer; steps HubSpot knows nothing about are left out
+
+## src/pages/Events/EventsDashboard.tsx (163 lines) - The Dashboard tab of the Events Overview: key figures and charts comparing the Navan events
+- `EventsDashboardProps` (interface)
+- `EventsDashboard` (export function)
+
+## src/pages/Events/EventsList.tsx (519 lines) - The Events tab of the Events Overview: every Navan event with its budget, cost, travel and HubSpot results
+- `ColumnKey` (type)
+- `Column` (interface)
+- `readHidden` (function)
+- `sortValue` (function) - The value a column sorts and exports by
+- `MatchPill` (export function)
+- `leadsBasis` (export function) - Where the event's leads come from, for a tooltip
+- `hubspotMark` (function) - A cost or budget taken from the HubSpot campaign (the portal has none) says so on hover
+- `typedMark` (function) - A figure someone typed in (HubSpot had none) says so on hover
+- `NavanPill` (function) - Whether Navan trips are joined to a HubSpot event
+- `cell` (function)
+    - `money` (fn)
+- `MatchFilter` (type)
+- `BudgetFilter` (type)
+- `exportRows` (function)
+- `EventsListProps` (interface)
+- `EventsList` (export function)
+    - `toggleColumn` (fn)
+    - `sortBy` (fn)
+    - `filtered` (fn)
+
+## src/pages/Events/EventsPage.tsx (198 lines) - events page (pages  events)
+- `Tab` (type)
 - `UploadTarget` (type)
-- `monthlyPoints` (function) - Each month in the period (by the month events start) for one currency; months without events show as empty
-- `EventsPage` (export function)
+- `EventsPage` (export function) - The Events Overview: the events Navan has bookings for, matched to what HubSpot has for them.
 
 ## src/pages/Events/ImportEventDataDialog.tsx (111 lines) - Every event to choose from
 - `ImportEventDataDialogProps` (interface)
@@ -1627,8 +1700,10 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `SpendLeadsLegend` (export function)
 - `SpendLeadsChart` (export function) - Spend as bars on the left axis, verified leads as a line on its own right axis
 
-## src/pages/PaidAds/AdsPieces.tsx (113 lines) - Small pieces for the Paid Advertising page: platform icon, status pill, date range picker, progress bar
+## src/pages/PaidAds/AdsPieces.tsx (130 lines) - Small pieces for the Paid Advertising page: platform icon, status pill, date range picker, progress bar
 - `PlatformIcon` (export function) - A small coloured tile with the platform's mark; with its name unless `iconOnly
+- `VERDICT_LABELS` (export const)
+- `VerdictPill` (export function) - Cut, Fund or Watch, with the reason on hover; a dash when the campaign has no spend yet
 - `CampaignStatusPill` (export function)
 - `UsageBar` (export function) - A thin bar: green while there's room, amber from 90%, red when over
 - `parse` (const)
@@ -1678,7 +1753,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `CampaignPanel` (export function)
     - `detail` (fn)
 
-## src/pages/PaidAds/CampaignsTable.tsx (413 lines) - The Campaigns tab: every campaign for the date range, with search, a column picker, selection, CSV export and pages
+## src/pages/PaidAds/CampaignsTable.tsx (501 lines) - The Campaigns tab: every campaign for the date range, with search, a column picker, selection, CSV export and pages
 - `ColumnKey` (type)
 - `Column` (interface)
 - `readHidden` (function)
@@ -1690,6 +1765,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `money` (fn)
 - `exportRows` (function)
 - `Figure` (function)
+- `BudgetFilter` (type)
 - `CampaignsTableProps` (interface)
 - `CampaignsTable` (export function)
     - `toggleColumn` (fn)
@@ -1697,9 +1773,32 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `toggle` (fn)
     - `togglePage` (fn)
 
-## src/pages/PaidAds/PaidAdsPage.tsx (384 lines) - paid ads page (pages  paid ads)
+## src/pages/PaidAds/InsightsCharts.tsx (217 lines) - Charts and the cut/fund summary for the Insights tab of the Paid Advertising page.
+- `shortName` (const)
+- `chartHeight` (const)
+- `CampaignBudgetLegend` (export function)
+- `CampaignBudgetChart` (export function) - Each campaign's budget and what it has spent since it started; the spend bar turns red once it's over
+- `CostPerLeadLegend` (export function)
+- `CostPerLeadChart` (export function) - Cost per lead for each campaign that has leads, coloured by cut / fund / watch, against the median
+- `FunnelChart` (export function) - New contacts, MQLs and SQLs from HubSpot, added up over the campaigns shown
+- `VerdictSummary` (export function) - How many campaigns to cut, fund or watch and the spend behind each, with the ones to cut listed
+
+## src/pages/PaidAds/PaidAdsPage.tsx (408 lines) - paid ads page (pages  paid ads)
 - `Tab` (type)
 - `PaidAdsPage` (export function)
+    - `location` (fn)
+    - `navigate` (fn)
+    - `queryClient` (fn)
+    - `update` (fn)
+    - `clearFilters` (fn)
+    - `setPreset` (fn)
+    - `setCustom` (fn)
+    - `openPanel` (fn) - Opening a campaign adds a history step, so the browser's back button closes it
+    - `closePanel` (fn)
+    - `overview` (fn)
+    - `money` (fn)
+    - `template` (fn)
+    - `pageMenu` (fn)
 
 ## src/pages/PaidAds/PaidAdsUpload.tsx (417 lines) - paid ads upload (pages  paid ads)
 - `plural` (const)
@@ -1719,8 +1818,8 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
     - `importRows` (fn)
     - `template` (fn)
 
-## src/pages/PaidAds/adsDisplay.ts (206 lines) - Labels, colours and number formats for the Paid Ads page
-- `PLATFORMS` (export const) - Every Paid Search and Paid Social platform, in display order
+## src/pages/PaidAds/adsDisplay.ts (212 lines) - Labels, colours and number formats for the Paid Ads page
+- `PLATFORMS` (export const) - The platforms the page covers, in display order: Paid Search only for now.
 - `PLATFORM_LABELS` (export const)
 - `PLATFORM_MARK` (export const) - Short mark for the platform icon tile, and its brand-like tile colour
 - `PLATFORM_STYLES` (export const) - Each platform's own colour (spelled out so Tailwind keeps the classes)
@@ -1758,7 +1857,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `firstStart` (export const) - Earliest period start
 - `lastDate` (export const) - Latest date a period reaches (its end, or its start when it has no end)
 
-## src/pages/PaidAds/overviewDisplay.ts (172 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
+## src/pages/PaidAds/overviewDisplay.ts (173 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
 - `OBJECTIVE_LABELS` (export const)
 - `OBJECTIVES` (export const)
 - `CAMPAIGN_STATUSES` (export const)
@@ -1780,9 +1879,11 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `attentionText` (export function) - A short title and one line of detail, e.g.
 - `ATTENTION_INFO` (export const)
 
-## src/pages/PaidSearch/PaidSearchBoard.tsx (420 lines) - Kept in this browser for now, until the board has its own API
-- `loadEntries` (function)
-- `saveEntries` (function)
+## src/pages/PaidSearch/PaidSearchBoard.tsx (505 lines) - Wait this long after the last change before saving the board
+- `takeLegacyEntries` (function)
+- `dropLegacyEntries` (function)
+- `normalize` (const) - A saved row as the board uses it: every field present, and no nulls
+- `SaveState` (type)
 - `widthOf` (const)
 - `Cell` (function) - One editable cell; numbers and dates are checked when you leave the cell
 - `PickerOption` (function) - One choice in the HubSpot campaign picker
@@ -1792,6 +1893,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `plural` (const)
 - `fillSummary` (function) - Linked 9 rows to HubSpot campaigns · MQLs and SQLs filled for 13 rows · 2 rows have no HubSpot campaign
 - `PaidSearchBoard` (export function) - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
+    - `saved` (fn) - The board is saved on the server: load it once, then save it a moment after each change
     - `queryClient` (fn) - HubSpot: the campaigns from the last sync (read with the backend's HUBSPOT_API_KEY), and the sync itself
     - `hubspotCampaigns` (fn)
     - `startSync` (fn)
@@ -1813,6 +1915,19 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `HeaderErrorDetail` (function) - The header problem, column by column, so it's clear what to fix in the sheet
 - `PaidSearchUploadProps` (interface)
 - `PaidSearchUpload` (export function) - Upload a Paid Search spreadsheet: choose a file, check the preview, import onto the board
+
+## src/pages/PaidSearch/hubspotMatch.ts (187 lines) - Linking Paid Search board rows to HubSpot campaigns, so a HubSpot sync can fill their leads, MQLs and SQLs.
+- `words` (const)
+- `marketsIn` (function) - The market codes a text names ("AU - Safety ..." -> AU, "London" -> UK)
+- `codeOf` (const) - The brand code a HubSpot campaign name starts with ("WA/AU - ..." -> WA/AU)
+- `isPaid` (const)
+- `isBing` (const)
+- `matchScore` (export function) - How well a HubSpot campaign fits a board row; null when it can't be the one (other brand, not paid, other  platform, or another market).
+- `brandCampaigns` (export function) - The row brand's paid HubSpot campaigns, for picking by hand: the ones that fit (matchScore) first, best first,  then the brand's other pa...
+- `bestMatch` (export function) - The HubSpot campaign that fits a row best; null when none fits, or two fit equally well
+- `funnelCounts` (export function) - Leads, MQLs and SQLs to date: first touch (the backend's default attribution), else last touch
+- `HubSpotFillResult` (export interface)
+- `fillFromHubSpot` (export function) - Links each row to its HubSpot campaign (a link someone chose is kept; rows without one are matched by name) and  sets its leads, MQLs and...
 
 ## src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
 - `PaidSearchFieldKind` (export type)
@@ -1935,6 +2050,14 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `updateEventStaff` (export function)
 - `removeEventStaff` (export function)
 
+## src/services/eventsOverviewService.ts (46 lines) - The Navan events for the period and filters, with the HubSpot results matched to each
+- `getEventsOverview` (export function) - The Navan events for the period and filters, with the HubSpot results matched to each
+- `getEventOverviewDetail` (export function) - One event in full: money, travellers, HubSpot results, who attended, the campaign's assets
+- `getHubSpotOptions` (export function) - Every HubSpot campaign and marketing event, for picking an event's match
+- `setEventHubSpotLink` (export function) - Pick an event's HubSpot campaign / marketing event, mark it as having none, or (neither) use the name match
+- `getNavanTripOptions` (export function) - The Navan trips that aren't joined to a HubSpot event
+- `setNavanTripLink` (export function) - Join a Navan trip to a HubSpot event (its travel then counts for the event), or take it off again
+
 ## src/services/helper.ts (29 lines) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
 - `ApiError` (export class)
 - `errorMessage` (function) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
@@ -1993,7 +2116,7 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `getDecisions` (export function)
 - `recordDecision` (export function)
 
-## src/services/queryKeys.ts (71 lines) - Centralized React Query keys for consistent invalidation and caching.
+## src/services/queryKeys.ts (74 lines) - Centralized React Query keys for consistent invalidation and caching.
 - `queryKeys` (export const)
 
 ## src/services/referenceDataService.ts (7 lines) - reference data service (services)
@@ -2014,10 +2137,11 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `AdSyncConnectedAccount` (export interface)
 - `AdSyncStatus` (export interface)
 
-## src/types/ads.ts (456 lines) - Paid ads (every Paid Search and Paid Social platform): mirrors the shared paid ads API contract
+## src/types/ads.ts (462 lines) - Paid ads (every Paid Search and Paid Social platform): mirrors the shared paid ads API contract
 - `AdPlatform` (export type) - The campaign's sub-channel is its platform
 - `AdResultStatus` (export type)
 - `AdResultSource` (export type) - Where a row came from: typed in, a spreadsheet upload, or (later) the Data Studio feed
+- `AdsVerdict` (export type) - Cut, fund or keep watching a campaign, from its cost per lead against its peers and its budget
 - `AdMetrics` (export interface) - CTR, CPC, conversion rate, CPL and the cost per figures are calculated by the API; null when they can't be
 - `AdResult` (export interface) - One campaign (or one of its ad groups) for one period
 - `AdTotals` (export interface)
@@ -2144,6 +2268,30 @@ How to use: check `.agents/project-index.md` first to locate the file, then insp
 - `EventPerformance` (export interface)
 - `EventPerformanceResponse` (export interface)
 - `EventPerformanceFilters` (export interface)
+
+## src/types/eventsOverview.ts (205 lines) - Events Overview: the Navan events with the HubSpot results matched to them (GET /api/events/navan-events)
+- `NavanFigures` (export interface)
+- `HubSpotCampaignFigures` (export interface)
+- `HubSpotMarketingEventFigures` (export interface)
+- `HubSpotMatchMethod` (export type) - CAMPAIGN: the event is a HubSpot campaign.
+- `EventHubSpotMatch` (export interface)
+- `EventTurnout` (export interface) - The results HubSpot has for the event; null where there's no match or HubSpot doesn't know
+- `NavanTrip` (export interface) - A Navan trip joined to a HubSpot event (AUTO: by name, MANUAL: joined by hand)
+- `EventOverviewRow` (export interface)
+- `OverviewTotals` (export interface)
+- `OverviewMonth` (export interface)
+- `OverviewCostBreakdown` (export interface)
+- `OverviewHubSpotSummary` (export interface)
+- `EventsOverviewResponse` (export interface)
+- `Traveller` (export interface)
+- `Participant` (export interface)
+- `EventOverviewDetail` (export interface)
+- `HubSpotOption` (export interface)
+- `HubSpotOptions` (export interface)
+- `NavanTripOption` (export interface)
+- `NavanTripLinkUpdate` (export interface)
+- `HubSpotLinkUpdate` (export interface)
+- `EventsOverviewFilters` (export type)
 
 ## src/types/hubspot.ts (130 lines) - HubSpot's own campaign status; null when it isn't set there
 - `HubSpotCampaignStatus` (export type) - HubSpot's own campaign status; null when it isn't set there

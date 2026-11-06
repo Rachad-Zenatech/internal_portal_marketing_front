@@ -1,38 +1,53 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, ExternalLink, Loader2, Plus, RefreshCw, Search, Table2, Trash2, Upload } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, ChevronsUpDown, CircleAlert, CloudCheck, ExternalLink, Loader2, Plus, RefreshCw, Search, Table2, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DASH_CARD } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useHubSpotCampaigns, useHubSpotStatus, useStartHubSpotSync } from "@/hooks/useHubSpot";
+import { getPaidSearchEntries, savePaidSearchEntries } from "@/services/paidSearchService";
 import { queryKeys } from "@/services/queryKeys";
 import type { HubSpotCampaign } from "@/types/hubspot";
 import { brandCampaigns, fillFromHubSpot, funnelCounts, type HubSpotFillResult } from "./hubspotMatch";
 import { cleanValue, emptyEntry, PAID_SEARCH_FIELDS, type PaidSearchEntry, type PaidSearchField, type PaidSearchKey } from "./paidSearchFields";
 import PaidSearchUpload from "./PaidSearchUpload";
 
-// Kept in this browser for now, until the board has its own API
-const STORAGE_KEY = "marketing.paidSearchBoard.v1";
 const NEW_ROW_DEFAULTS = { channel: "Paid Search" };
+// Wait this long after the last change before saving the board
+const SAVE_DELAY_MS = 800;
 
-function loadEntries(): PaidSearchEntry[] {
+// Where the board was kept before it was saved on the server; read once, moved to the server, then removed
+const LEGACY_STORAGE_KEY = "marketing.paidSearchBoard.v1";
+
+function takeLegacyEntries(): PaidSearchEntry[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY);
     const parsed = raw ? (JSON.parse(raw) as PaidSearchEntry[]) : [];
-    return Array.isArray(parsed) ? parsed.map((e) => ({ ...emptyEntry(), ...e })) : [];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
 }
 
-function saveEntries(entries: PaidSearchEntry[]) {
+function dropLegacyEntries() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
-    // Storage blocked or full: the board still works for this visit
+    // Storage blocked: nothing to remove
   }
 }
+
+/** A saved row as the board uses it: every field present, and no nulls */
+const normalize = (e: PaidSearchEntry): PaidSearchEntry => ({
+  ...emptyEntry(),
+  ...e,
+  hubspot_campaign_id: e.hubspot_campaign_id ?? undefined,
+  hubspot_link: e.hubspot_link ?? undefined,
+  leads: e.leads ?? undefined,
+});
+
+type SaveState = "idle" | "saving" | "saved" | "error";
 
 const WIDTHS: Partial<Record<PaidSearchKey, string>> = {
   campaign_name: "min-w-56",
@@ -202,11 +217,54 @@ function fillSummary(result: HubSpotFillResult) {
 }
 
 /** The Paid Search data entry board: type entries in, or upload them from a spreadsheet */
-export default function PaidSearchBoard({ canEdit }: { canEdit: boolean }) {
-  const [entries, setEntries] = useState<PaidSearchEntry[]>(loadEntries);
+export default function PaidSearchBoard({ canEdit: mayEdit }: { canEdit: boolean }) {
+  const [entries, setEntries] = useState<PaidSearchEntry[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
 
-  useEffect(() => saveEntries(entries), [entries]);
+  // The board is saved on the server: load it once, then save it a moment after each change
+  const saved = useQuery({
+    queryKey: ["paid-search-entries"],
+    queryFn: getPaidSearchEntries,
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+  const [loaded, setLoaded] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
+  // What the server has, so loading the board doesn't save it straight back
+  const lastSaved = useRef<string | null>(null);
+  // Nothing can change until the saved board is on screen, so a change can't be lost under it
+  const canEdit = mayEdit && loaded;
+
+  useEffect(() => {
+    if (loaded || !saved.data) return;
+    const fromServer = saved.data.map(normalize);
+    // A board kept in this browser before it was saved on the server moves to the server once
+    const legacy = fromServer.length === 0 && mayEdit ? takeLegacyEntries().map(normalize) : [];
+    lastSaved.current = JSON.stringify(fromServer);
+    setEntries(legacy.length ? legacy : fromServer);
+    setLoaded(true);
+    if (legacy.length) toast.success(`Moved ${legacy.length} ${legacy.length === 1 ? "entry" : "entries"} from this browser to the server`);
+  }, [saved.data, loaded, mayEdit]);
+
+  useEffect(() => {
+    if (!loaded || !mayEdit) return;
+    const body = JSON.stringify(entries);
+    if (body === lastSaved.current) return;
+    const timer = setTimeout(() => {
+      setSaveState("saving");
+      savePaidSearchEntries(entries)
+        .then(() => {
+          lastSaved.current = body;
+          setSaveState("saved");
+          dropLegacyEntries();
+        })
+        .catch((err: Error) => {
+          setSaveState("error");
+          toast.error("Couldn't save the Paid Search board", { description: err.message || "Your changes are still on screen; the next change tries again." });
+        });
+    }, SAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [entries, loaded, mayEdit]);
 
   // HubSpot: the campaigns from the last sync (read with the backend's HUBSPOT_API_KEY), and the sync itself
   const queryClient = useQueryClient();
@@ -310,6 +368,24 @@ export default function PaidSearchBoard({ canEdit }: { canEdit: boolean }) {
           <span className="text-xs text-muted-foreground">
             {entries.length} {entries.length === 1 ? "entry" : "entries"}
           </span>
+          {saveState === "saving" && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" role="status">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Saving...
+            </span>
+          )}
+          {saveState === "saved" && (
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" role="status">
+              <CloudCheck className="h-3.5 w-3.5" />
+              Saved
+            </span>
+          )}
+          {saveState === "error" && (
+            <span className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400" role="alert">
+              <CircleAlert className="h-3.5 w-3.5" />
+              Not saved
+            </span>
+          )}
         </div>
         {canEdit && (
           <div className="flex flex-wrap gap-2">
@@ -360,7 +436,16 @@ export default function PaidSearchBoard({ canEdit }: { canEdit: boolean }) {
             {entries.length === 0 ? (
               <tr>
                 <td colSpan={PAID_SEARCH_FIELDS.length + 4} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  No entries yet. {canEdit ? "Add a row or upload a spreadsheet." : ""}
+                  {saved.isPending ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading the board...
+                    </span>
+                  ) : saved.isError ? (
+                    <span className="text-red-600 dark:text-red-400">Couldn't load the board. Refresh the page to try again.</span>
+                  ) : (
+                    <>No entries yet. {canEdit ? "Add a row or upload a spreadsheet." : ""}</>
+                  )}
                 </td>
               </tr>
             ) : (
