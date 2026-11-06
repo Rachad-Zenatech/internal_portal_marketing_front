@@ -1,16 +1,17 @@
 // The Campaigns tab: every campaign for the date range, with search, a column picker, selection, CSV export and pages
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Columns3, Download, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Columns3, Download, ExternalLink, Plus, Search } from "lucide-react";
 import { downloadCsv } from "@/components/dashboard/csv";
 import { DASH_CARD } from "@/components/dashboard/tones";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { appStorage } from "@/lib/storage";
-import type { AdsCampaignRow, AdsPrimaryKpi } from "@/types/ads";
+import type { AdsCampaignRow, AdsPrimaryKpi, AdsVerdict } from "@/types/ads";
 import { DASH, fmtCount, fmtPercent, fmtUnitCost, fmtWholeMoney, PLATFORM_LABELS } from "./adsDisplay";
-import { CampaignStatusPill, PlatformIcon } from "./AdsPieces";
+import { CampaignStatusPill, PlatformIcon, VERDICT_LABELS, VerdictPill } from "./AdsPieces";
 import { CAMPAIGN_STATUS_LABELS, formatDay, HEALTH_DOT, HEALTH_LABELS, HEALTH_TONE, OBJECTIVE_LABELS } from "./overviewDisplay";
 
 const PAGE_SIZE = 8;
@@ -20,6 +21,7 @@ type ColumnKey =
   | "brand"
   | "region"
   | "platform"
+  | "period"
   | "objective"
   | "kpi"
   | "budget"
@@ -31,8 +33,13 @@ type ColumnKey =
   | "conversions"
   | "leads"
   | "cpl"
+  | "mqls"
+  | "sqls"
+  | "verdict"
   | "health"
-  | "status";
+  | "status"
+  | "updated"
+  | "report";
 
 interface Column {
   key: ColumnKey;
@@ -46,7 +53,8 @@ interface Column {
 const COLUMNS: Column[] = [
   { key: "brand", label: "Brand" },
   { key: "region", label: "Region", optional: true },
-  { key: "platform", label: "Platform" },
+  { key: "platform", label: "Sub-channel" },
+  { key: "period", label: "Period", info: "The campaign's start and end dates" },
   { key: "objective", label: "Objective" },
   { key: "kpi", label: "Primary KPI", optional: true },
   { key: "budget", label: "Budget", right: true, info: "Budget allocated to the date range" },
@@ -58,8 +66,13 @@ const COLUMNS: Column[] = [
   { key: "conversions", label: "Conversions", right: true, info: "Reported by the ad platform" },
   { key: "leads", label: "Verified Leads", right: true, info: "From HubSpot" },
   { key: "cpl", label: "CPL", right: true },
+  { key: "mqls", label: "MQLs", right: true, info: "From HubSpot, among the new contacts" },
+  { key: "sqls", label: "SQLs", right: true, info: "From HubSpot, among the new contacts" },
+  { key: "verdict", label: "Cut / Fund", info: "Cost per lead against the other campaigns, and the budget used. Hover for the reason." },
   { key: "health", label: "Data Health", optional: true },
   { key: "status", label: "Status" },
+  { key: "updated", label: "Last update", info: "When the results were last added or changed" },
+  { key: "report", label: "Report" },
 ];
 
 const DEFAULT_HIDDEN = COLUMNS.filter((c) => c.optional).map((c) => c.key);
@@ -121,6 +134,8 @@ function cell(key: ColumnKey, c: AdsCampaignRow): React.ReactNode {
       return c.market_name ?? DASH;
     case "platform":
       return <PlatformIcon platform={c.platform} iconOnly />;
+    case "period":
+      return c.start_date ? `${formatDay(c.start_date)} - ${c.end_date ? formatDay(c.end_date) : "ongoing"}` : DASH;
     case "objective":
       return c.objective ? (OBJECTIVE_LABELS[c.objective] ?? c.objective) : DASH;
     case "kpi":
@@ -143,10 +158,26 @@ function cell(key: ColumnKey, c: AdsCampaignRow): React.ReactNode {
       return fmtCount(c.verified_leads);
     case "cpl":
       return fmtUnitCost(c.cpl, c.currency);
+    case "mqls":
+      return fmtCount(c.mqls);
+    case "sqls":
+      return fmtCount(c.sqls);
+    case "verdict":
+      return <VerdictPill verdict={c.verdict} reason={c.verdict_reason} />;
     case "health":
       return <HealthCell c={c} />;
     case "status":
       return <CampaignStatusPill status={c.status} />;
+    case "updated":
+      return formatDay(c.last_updated);
+    case "report":
+      return c.report_url ? (
+        <a href={c.report_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 text-primary hover:underline">
+          Open <ExternalLink className="h-3 w-3" />
+        </a>
+      ) : (
+        DASH
+      );
   }
 }
 
@@ -156,13 +187,15 @@ function exportRows(rows: AdsCampaignRow[], name: string) {
     [
       "Campaign", "Brand", "Region", "Platform", "Objective", "Status", "Start", "End", "Currency", "Allocated budget", "Spend", "Impressions", "Clicks",
       "CTR (%)", "CPC", "Platform conversions", "Verified leads", "CPL", "MQLs", "SQLs", "Success metric", "Success metric value", "Target",
-      "Primary KPI", "Primary KPI value", "KPI target", "Campaign budget", "Spent to date", "Data health", "Last data date",
+      "Primary KPI", "Primary KPI value", "KPI target", "Campaign budget", "Spent to date", "Data health", "Last data date", "Last update", "Report link",
+      "Cut / Fund", "Reason",
     ],
     rows.map((c) => [
       c.name, c.brand_name, c.market_name, PLATFORM_LABELS[c.platform], c.objective ? OBJECTIVE_LABELS[c.objective] : null, CAMPAIGN_STATUS_LABELS[c.status],
       c.start_date, c.end_date, c.currency, c.allocated_budget, c.spend, c.impressions, c.clicks, c.ctr, c.cpc, c.conversions, c.verified_leads, c.cpl,
       c.mqls, c.sqls, c.success_metric.label, c.success_metric.value, c.success_metric.target, c.primary_kpi?.name, c.primary_kpi_value, c.kpi_target,
       c.budget_amount, c.spend_to_date, HEALTH_LABELS[c.data_health.status], c.data_health.last_data_date,
+      c.last_updated, c.report_url, c.verdict ? VERDICT_LABELS[c.verdict] : null, c.verdict_reason,
     ]),
   );
 }
@@ -176,6 +209,15 @@ function Figure({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+type BudgetFilter = "ALL" | "OVER" | "NEAR" | "NONE";
+const BUDGET_FILTER_LABELS: Record<BudgetFilter, string> = {
+  ALL: "Any budget",
+  OVER: "Over budget",
+  NEAR: "80-100% used",
+  NONE: "No budget set",
+};
+const VERDICT_FILTERS: Array<AdsVerdict | "ALL"> = ["ALL", "CUT", "FUND", "WATCH"];
+
 interface CampaignsTableProps {
   campaigns: AdsCampaignRow[];
   loading: boolean;
@@ -187,6 +229,8 @@ interface CampaignsTableProps {
 export default function CampaignsTable({ campaigns, loading, exportName, onOpen, onNew }: CampaignsTableProps) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [verdictFilter, setVerdictFilter] = useState<AdsVerdict | "ALL">("ALL");
+  const [budgetFilter, setBudgetFilter] = useState<BudgetFilter>("ALL");
   const [hidden, setHidden] = useState<ColumnKey[]>(readHidden);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -210,9 +254,17 @@ export default function CampaignsTable({ campaigns, loading, exportName, onOpen,
           ),
         )
       : campaigns;
+    const byVerdict = verdictFilter === "ALL" ? list : list.filter((c) => c.verdict === verdictFilter);
+    const byBudget = byVerdict.filter((c) => {
+      const used = c.budget_used_percent;
+      if (budgetFilter === "OVER") return used !== null && used > 100;
+      if (budgetFilter === "NEAR") return used !== null && used >= 80 && used <= 100;
+      if (budgetFilter === "NONE") return !c.budget_amount;
+      return true;
+    });
     // Most spend first, then the ones without spend by name
-    return [...list].sort((a, b) => (b.spend ?? -1) - (a.spend ?? -1) || a.name.localeCompare(b.name));
-  }, [campaigns, query]);
+    return [...byBudget].sort((a, b) => (b.spend ?? -1) - (a.spend ?? -1) || a.name.localeCompare(b.name));
+  }, [campaigns, query, verdictFilter, budgetFilter]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const current = Math.min(page, pages - 1);
@@ -260,6 +312,42 @@ export default function CampaignsTable({ campaigns, loading, exportName, onOpen,
               className="h-9 bg-card pl-8"
             />
           </div>
+          <Select
+            value={verdictFilter}
+            onValueChange={(v) => {
+              setVerdictFilter(v as AdsVerdict | "ALL");
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="h-9 w-32 bg-card" aria-label="Filter by cut or fund">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {VERDICT_FILTERS.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v === "ALL" ? "Cut / Fund" : VERDICT_LABELS[v]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={budgetFilter}
+            onValueChange={(v) => {
+              setBudgetFilter(v as BudgetFilter);
+              setPage(0);
+            }}
+          >
+            <SelectTrigger className="h-9 w-36 bg-card" aria-label="Filter by budget">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(BUDGET_FILTER_LABELS) as BudgetFilter[]).map((b) => (
+                <SelectItem key={b} value={b}>
+                  {BUDGET_FILTER_LABELS[b]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="h-9 gap-2 bg-card">
@@ -308,7 +396,7 @@ export default function CampaignsTable({ campaigns, loading, exportName, onOpen,
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <p className="px-4 py-10 text-center text-sm text-muted-foreground">{query ? "No campaigns match your search." : "No campaigns for these filters and dates."}</p>
+        <p className="px-4 py-10 text-center text-sm text-muted-foreground">{query || verdictFilter !== "ALL" || budgetFilter !== "ALL" ? "No campaigns match your search and filters." : "No campaigns for these filters and dates."}</p>
       ) : (
         <>
           {/* Wide screens: the table */}

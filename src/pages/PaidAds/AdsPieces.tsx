@@ -5,7 +5,7 @@ import { CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import type { AdPlatform, CampaignStatus } from "@/types/ads";
+import type { AdPlatform, AdsVerdict, CampaignStatus } from "@/types/ads";
 import { PLATFORM_LABELS, PLATFORM_MARK } from "./adsDisplay";
 import { isoDate } from "./adsPeriods";
 import { CAMPAIGN_STATUS_LABELS, CAMPAIGN_STATUS_PILL, formatRange, RANGE_OPTIONS, type RangeKey } from "./overviewDisplay";
@@ -20,6 +20,23 @@ export function PlatformIcon({ platform, iconOnly = false, size = "sm" }: { plat
         {mark.text}
       </span>
       {iconOnly ? <span className="sr-only">{PLATFORM_LABELS[platform]}</span> : <span className="truncate">{PLATFORM_LABELS[platform]}</span>}
+    </span>
+  );
+}
+
+const VERDICT_STYLE: Record<AdsVerdict, string> = {
+  CUT: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300",
+  FUND: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300",
+  WATCH: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/50 dark:text-amber-300",
+};
+export const VERDICT_LABELS: Record<AdsVerdict, string> = { CUT: "Cut", FUND: "Fund", WATCH: "Watch" };
+
+/** Cut, Fund or Watch, with the reason on hover; a dash when the campaign has no spend yet */
+export function VerdictPill({ verdict, reason }: { verdict: AdsVerdict | null; reason: string | null }) {
+  if (!verdict) return <span className="text-muted-foreground">-</span>;
+  return (
+    <span title={reason ?? undefined} className={`inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${VERDICT_STYLE[verdict]}`}>
+      {VERDICT_LABELS[verdict]}
     </span>
   );
 }

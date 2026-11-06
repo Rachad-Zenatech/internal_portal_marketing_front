@@ -14,7 +14,9 @@ export type AdPlatform =
   | "OTHER";
 export type AdResultStatus = "ACTIVE" | "PAUSED" | "ENDED";
 /** Where a row came from: typed in, a spreadsheet upload, or (later) the Data Studio feed */
-export type AdResultSource = "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API";
+export type AdResultSource = "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API" | "HUBSPOT";
+/** Cut, fund or keep watching a campaign, from its cost per lead against its peers and its budget */
+export type AdsVerdict = "CUT" | "FUND" | "WATCH";
 
 /** CTR, CPC, conversion rate, CPL and the cost per figures are calculated by the API; null when they can't be */
 export interface AdMetrics {
@@ -185,7 +187,7 @@ export type CampaignObjective = "AWARENESS" | "TRAFFIC" | "LEADS" | "CONVERSIONS
 export type CampaignStatus = "DRAFT" | "PLANNED" | "ACTIVE" | "COMPLETED" | "PAUSED" | "CANCELLED";
 export type AttentionKind = "BUDGET" | "CPL_ABOVE_TARGET" | "CPL_ABOVE_PLATFORM" | "UNEXPECTEDLY_PAUSED" | "DATA_DELAYED";
 export type DataHealthStatus = "OK" | "STALE" | "NO_DATA" | "CONNECTION" | "NOT_STARTED";
-export type DataSourceKind = "API" | "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API";
+export type DataSourceKind = "API" | "MANUAL" | "SPREADSHEET" | "DATA_STUDIO" | "GOOGLE_ADS_API" | "MICROSOFT_ADS_API" | "HUBSPOT";
 
 export interface AdsOverviewFilters {
   /** YYYY-MM-DD */
@@ -352,6 +354,10 @@ export interface AdsCampaignRow {
   primary_kpi_on_target: boolean | null;
   success_metric: AdsSuccessMetric;
   report_url: string | null;
+  /** When its results were last added or changed (for HubSpot ones, the last HubSpot sync) */
+  last_updated: string | null;
+  verdict: AdsVerdict | null;
+  verdict_reason: string | null;
   result_count: number;
   data_health: AdsDataHealth;
   attention: AdsAttentionReason[];

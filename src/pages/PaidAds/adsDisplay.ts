@@ -2,8 +2,12 @@
 import type { AdPlatform, AdResultSource, AdResultStatus } from "@/types/ads";
 import { formatMoney } from "../Initiatives/format";
 
-/** Every Paid Search and Paid Social platform, in display order */
-export const PLATFORMS: AdPlatform[] = ["GOOGLE_ADS", "BING_ADS", "LINKEDIN_ADS", "META_ADS", "YOUTUBE_ADS", "TIKTOK_ADS", "X_ADS", "REDDIT_ADS", "DISPLAY_PROGRAMMATIC", "OTHER"];
+/**
+ * The platforms the page covers, in display order: Paid Search only for now. Paid Social (LINKEDIN_ADS, META_ADS,
+ * YOUTUBE_ADS, TIKTOK_ADS, X_ADS, REDDIT_ADS, DISPLAY_PROGRAMMATIC, OTHER) comes back by adding them here and to
+ * PLATFORMS in the backend's services/shared/ads_service.py.
+ */
+export const PLATFORMS: AdPlatform[] = ["GOOGLE_ADS", "BING_ADS"];
 
 export const PLATFORM_LABELS: Record<AdPlatform, string> = {
   GOOGLE_ADS: "Google Ads",
@@ -116,6 +120,7 @@ export const SOURCE_LABELS: Record<AdResultSource, string> = {
   DATA_STUDIO: "Data Studio",
   GOOGLE_ADS_API: "Google Ads",
   MICROSOFT_ADS_API: "Microsoft Ads",
+  HUBSPOT: "HubSpot",
 };
 
 export const SOURCE_STYLES: Record<AdResultSource, string> = {
@@ -124,6 +129,7 @@ export const SOURCE_STYLES: Record<AdResultSource, string> = {
   DATA_STUDIO: "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-900 dark:bg-indigo-950/60 dark:text-indigo-300",
   GOOGLE_ADS_API: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950/60 dark:text-blue-300",
   MICROSOFT_ADS_API: "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-900 dark:bg-cyan-950/60 dark:text-cyan-300",
+  HUBSPOT: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950/60 dark:text-orange-300",
 };
 
 // ─── Numbers ─────────────────────────────────────────────────────────────────

@@ -23,20 +23,20 @@ import { fmtCount, fmtUnitCost, fmtWholeMoney, PLATFORM_LABELS, PLATFORMS } from
 import { PlatformBudgetChart, PlatformBudgetLegend, SpendLeadsChart, SpendLeadsLegend } from "./AdsCharts";
 import { DateRangePicker } from "./AdsPieces";
 import { AttentionPanel, BrandUtilizationPanel, PlatformPerformancePanel } from "./AdsSidePanels";
-import { BudgetTab, DataHealthTab, PlatformsTab } from "./AdsTabs";
+import { DataHealthTab } from "./AdsTabs";
 import CampaignPanel from "./CampaignPanel";
 import CampaignsTable from "./CampaignsTable";
+import { CampaignBudgetChart, CampaignBudgetLegend, CostPerLeadChart, CostPerLeadLegend, FunnelChart, VerdictSummary } from "./InsightsCharts";
 import { CAMPAIGN_STATUS_LABELS, CAMPAIGN_STATUSES, DEFAULT_RANGE, formatRange, OBJECTIVE_LABELS, OBJECTIVES, resolveRange, type RangeKey } from "./overviewDisplay";
 import AdDataStatus from "./AdSyncStatus";
 import PaidAdsUpload from "./PaidAdsUpload";
 
 const ANY = "ANY";
 
+// Two tabs: the list of initiatives, and the charts. Any other ?tab= falls back to the list.
 const TABS = [
-  { value: "campaigns", label: "Campaigns" },
-  { value: "platforms", label: "Platforms" },
-  { value: "budget", label: "Budget & Spend" },
-  { value: "health", label: "Data Health" },
+  { value: "campaigns", label: "Initiatives" },
+  { value: "insights", label: "Insights" },
 ] as const;
 type Tab = (typeof TABS)[number]["value"];
 
@@ -178,7 +178,7 @@ export default function PaidAdsPage() {
     <div className="flex w-full min-w-0 flex-1 flex-col gap-5 animate-in fade-in duration-300 sm:gap-6">
       <DashboardHeader
         title="Paid Advertising"
-        subtitle="Monitor campaign performance, spending, and results across all advertising platforms."
+        subtitle="Google Ads and Bing Ads campaigns: budget, spend, leads and what to cut or fund."
         actions={
           <>
             <AdDataStatus />
@@ -300,7 +300,17 @@ export default function PaidAdsPage() {
           <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_22rem] 2xl:grid-cols-[minmax(0,1fr)_24rem]">
             <div className={`flex min-w-0 flex-col gap-4 transition-opacity sm:gap-5 ${fading}`}>
               {tab === "campaigns" && (
+                <CampaignsTable
+                  campaigns={data?.campaigns ?? []}
+                  loading={loading}
+                  exportName={`${range.from}-to-${range.to}`}
+                  onOpen={openPanel}
+                  onNew={canCreate ? () => setCreateOpen(true) : undefined}
+                />
+              )}
+              {tab === "insights" && (
                 <>
+                  <VerdictSummary campaigns={data?.campaigns ?? []} currency={currency} onOpen={openPanel} />
                   <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
                     <ChartCard title="Ad Spend vs. Allocated Budget by Platform" subtitle={`${formatRange(range.from, range.to)}, ${currency}`} action={<PlatformBudgetLegend />}>
                       {loading ? (
@@ -325,18 +335,32 @@ export default function PaidAdsPage() {
                       )}
                     </ChartCard>
                   </div>
-                  <CampaignsTable
-                    campaigns={data?.campaigns ?? []}
-                    loading={loading}
-                    exportName={`${range.from}-to-${range.to}`}
-                    onOpen={openPanel}
-                    onNew={canCreate ? () => setCreateOpen(true) : undefined}
-                  />
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:gap-5 lg:grid-cols-2">
+                    <ChartCard title="Spend vs. Budget by Campaign" subtitle={`Since each campaign started, ${currency}`} action={<CampaignBudgetLegend />}>
+                      {loading ? (
+                        <Skeleton className="h-[260px] w-full rounded-lg" />
+                      ) : (data?.campaigns ?? []).every((c) => !c.spend_to_date && !c.budget_amount) ? (
+                        <ChartEmpty text="No campaign has a budget or spend yet." />
+                      ) : (
+                        <CampaignBudgetChart campaigns={data!.campaigns} />
+                      )}
+                    </ChartCard>
+                    <ChartCard title="Cost per Lead by Campaign" subtitle={`Coloured by cut / fund, ${currency}`} action={<CostPerLeadLegend />}>
+                      {loading ? (
+                        <Skeleton className="h-[260px] w-full rounded-lg" />
+                      ) : (data?.campaigns ?? []).every((c) => !c.cpl) ? (
+                        <ChartEmpty text="No campaign has leads in this date range." />
+                      ) : (
+                        <CostPerLeadChart campaigns={data!.campaigns} currency={currency} />
+                      )}
+                    </ChartCard>
+                  </div>
+                  <ChartCard title="HubSpot Funnel" subtitle={`New contacts, MQLs and SQLs, ${formatRange(range.from, range.to)}`}>
+                    {loading ? <Skeleton className="h-[180px] w-full rounded-lg" /> : <FunnelChart kpis={data?.kpis} />}
+                  </ChartCard>
+                  <DataHealthTab filters={healthFilters} onOpen={openPanel} />
                 </>
               )}
-              {tab === "platforms" && <PlatformsTab data={data} loading={loading} />}
-              {tab === "budget" && <BudgetTab data={data} loading={loading} onOpen={openPanel} />}
-              {tab === "health" && <DataHealthTab filters={healthFilters} onOpen={openPanel} />}
             </div>
 
             <aside className="flex min-w-0 flex-col gap-4 sm:gap-5" aria-label="Highlights">
