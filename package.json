@@ -13,7 +13,8 @@
     "web": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prepare": "node -e \"try{require('child_process').execSync('git config core.hooksPath .githooks',{stdio:'ignore'})}catch(e){}\""
   },
   "dependencies": {
     "@expo/metro-runtime": "^57.0.11",
