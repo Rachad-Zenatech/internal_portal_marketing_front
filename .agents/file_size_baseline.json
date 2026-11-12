@@ -1,5 +1,9 @@
 {
   "limit": 500,
+  "block_limits": {
+    "jsx_return": 80,
+    "py_function": 120
+  },
   "files": {
     "src/components/AppShell/TopBar.tsx": {
       "max_lines": 538,
@@ -68,6 +72,256 @@
     "src/pages/SocialMedia/SocialMediaPage.tsx": {
       "max_lines": 796,
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
+    }
+  },
+  "blocks": {
+    "src/App.tsx#App": {
+      "max_lines": 313,
+      "kind": "jsx_return"
+    },
+    "src/components/AppShell/ConnectionStatusLight.tsx#ConnectionStatusLight": {
+      "max_lines": 93,
+      "kind": "jsx_return"
+    },
+    "src/components/AppShell/NotificationDropdown.tsx#NotificationDropdownContent": {
+      "max_lines": 112,
+      "kind": "jsx_return"
+    },
+    "src/components/AppShell/Sidebar.tsx#Icon": {
+      "max_lines": 92,
+      "kind": "jsx_return"
+    },
+    "src/components/AppShell/Sidebar.tsx#Sidebar": {
+      "max_lines": 214,
+      "kind": "jsx_return"
+    },
+    "src/components/AppShell/TopBar.tsx#TopBar": {
+      "max_lines": 273,
+      "kind": "jsx_return"
+    },
+    "src/components/ui/calendar.tsx#Calendar": {
+      "max_lines": 151,
+      "kind": "jsx_return"
+    },
+    "src/components/ui/FloatingVerticalFilter.tsx#FloatingVerticalFilter": {
+      "max_lines": 121,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/ApprovedBudgetsTab.tsx#ApprovedBudgetsTab": {
+      "max_lines": 114,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetDetailSheet.tsx#BudgetDetailSheet": {
+      "max_lines": 157,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetDetailSheet.tsx#MoneyMoves": {
+      "max_lines": 84,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetFormDialog.tsx#BudgetForm": {
+      "max_lines": 144,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetsPage.tsx#BudgetsPage": {
+      "max_lines": 106,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetsUpload.tsx#BudgetsUpload": {
+      "max_lines": 137,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/BudgetTrackerTab.tsx#BudgetTrackerTab": {
+      "max_lines": 279,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/EventsBudgetSection.tsx#EventsBudgetSection": {
+      "max_lines": 82,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/ExpensesTab.tsx#ExpensesTab": {
+      "max_lines": 130,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/MoveMoneyDialog.tsx#MoveMoneyForm": {
+      "max_lines": 130,
+      "kind": "jsx_return"
+    },
+    "src/pages/Budgets/NotesThread.tsx#NotesThread": {
+      "max_lines": 117,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/Entities.tsx#Entities": {
+      "max_lines": 559,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/OAuthIntegrations.tsx#OAuthIntegrations": {
+      "max_lines": 571,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/RoleApiPermissions.tsx#RoleApiPermissions": {
+      "max_lines": 173,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/RoleGroupPermissions.tsx#RoleGroupPermissions": {
+      "max_lines": 323,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/RoleMcpToolPermissions.tsx#RoleMcpToolPermissions": {
+      "max_lines": 158,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/Roles.tsx#Roles": {
+      "max_lines": 354,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/UserRoleAssignment.tsx#UserRoleAssignment": {
+      "max_lines": 127,
+      "kind": "jsx_return"
+    },
+    "src/pages/Configurations/Users.tsx#Users": {
+      "max_lines": 273,
+      "kind": "jsx_return"
+    },
+    "src/pages/Events/EventDetailPanel.tsx#PanelBody": {
+      "max_lines": 172,
+      "kind": "jsx_return"
+    },
+    "src/pages/Events/EventPerformanceTable.tsx#EventPerformanceTable": {
+      "max_lines": 127,
+      "kind": "jsx_return"
+    },
+    "src/pages/Events/EventsDashboard.tsx#EventsDashboard": {
+      "max_lines": 121,
+      "kind": "jsx_return"
+    },
+    "src/pages/Events/EventsList.tsx#EventsList": {
+      "max_lines": 186,
+      "kind": "jsx_return"
+    },
+    "src/pages/Events/EventWorkspace.tsx#EventWorkspace": {
+      "max_lines": 91,
+      "kind": "jsx_return"
+    },
+    "src/pages/HubSpot/HubSpotCampaignPanel.tsx#HubSpotCampaignPanel": {
+      "max_lines": 169,
+      "kind": "jsx_return"
+    },
+    "src/pages/HubSpot/HubSpotCampaignsPage.tsx#HubSpotCampaignsPage": {
+      "max_lines": 136,
+      "kind": "jsx_return"
+    },
+    "src/pages/HubSpot/HubSpotCampaignsTable.tsx#HubSpotCampaignsTable": {
+      "max_lines": 168,
+      "kind": "jsx_return"
+    },
+    "src/pages/HubSpot/HubSpotSocialPosts.tsx#HubSpotSocialPosts": {
+      "max_lines": 138,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/CostLadder.tsx#CostLadder": {
+      "max_lines": 82,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/CostOverview.tsx#CostOverview": {
+      "max_lines": 103,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/CostSheetUpload.tsx#CostSheetUpload": {
+      "max_lines": 131,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/DemoDialog.tsx#DemoForm": {
+      "max_lines": 110,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/DemoLog.tsx#DemoLog": {
+      "max_lines": 119,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/EventBudgetUpload.tsx#EventBudgetUpload": {
+      "max_lines": 160,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/InitiativeDetail.tsx#InitiativeDetail": {
+      "max_lines": 140,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/InitiativeFormDialog.tsx#InitiativeWizard": {
+      "max_lines": 86,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/InitiativeFormSteps.tsx#EventFields": {
+      "max_lines": 128,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/InitiativePanel.tsx#InitiativePanel": {
+      "max_lines": 91,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/Initiatives.tsx#Initiatives": {
+      "max_lines": 262,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/InitiativesTable.tsx#InitiativesTable": {
+      "max_lines": 162,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/SpendLineActions.tsx#SpendLineActions": {
+      "max_lines": 85,
+      "kind": "jsx_return"
+    },
+    "src/pages/Initiatives/SpendLineDialog.tsx#SpendLineForm": {
+      "max_lines": 216,
+      "kind": "jsx_return"
+    },
+    "src/pages/Logs/AuditLog.tsx#AuditLog": {
+      "max_lines": 205,
+      "kind": "jsx_return"
+    },
+    "src/pages/Logs/SystemLogsPage.tsx#SystemLogsPage": {
+      "max_lines": 679,
+      "kind": "jsx_return"
+    },
+    "src/pages/MarketingDashboard/MarketingDashboard.tsx#MarketingDashboard": {
+      "max_lines": 353,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/AdResultDialog.tsx#AdResultForm": {
+      "max_lines": 217,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/AdsTabs.tsx#DataHealthTab": {
+      "max_lines": 108,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/CampaignPanel.tsx#CampaignPanel": {
+      "max_lines": 100,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/CampaignsTable.tsx#CampaignsTable": {
+      "max_lines": 205,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/PaidAdsPage.tsx#PaidAdsPage": {
+      "max_lines": 230,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidAds/PaidAdsUpload.tsx#PaidAdsUpload": {
+      "max_lines": 106,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidSearch/PaidSearchBoard.tsx#PaidSearchBoard": {
+      "max_lines": 144,
+      "kind": "jsx_return"
+    },
+    "src/pages/PaidSearch/PaidSearchUpload.tsx#PaidSearchUpload": {
+      "max_lines": 101,
+      "kind": "jsx_return"
+    },
+    "src/pages/SocialMedia/SocialMediaPage.tsx#SocialMediaPage": {
+      "max_lines": 470,
+      "kind": "jsx_return"
     }
   }
 }
