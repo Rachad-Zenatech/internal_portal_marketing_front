@@ -222,7 +222,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/services/adSyncService.ts (26 lines) - Each ad platform with a sync: its name, its API path, and its settings' prefix (for set-up hints)
 - src/services/adsService.ts (80 lines) - ads service (services)
 - src/services/api.ts (6 lines) - api (services)
-- src/services/apiClient.ts (330 lines) - api client (services)
+- src/services/apiClient.ts (333 lines) - api client (services)
 - src/services/budgetService.ts (98 lines) - month is YYYY-MM-01
 - src/services/demosService.ts (24 lines) - Quick inline changes (e.g.
 - src/services/errorReporting.ts (75 lines) - error reporting (services)
