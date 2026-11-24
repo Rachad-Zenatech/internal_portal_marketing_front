@@ -23,6 +23,9 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `useConfirmAdsImport` (export function) L112
 - `useUndoAdsImport` (export function) L120
 
+## src/hooks/useAiOverview.ts (16 lines) - use ai overview (hooks)
+- `useAiOverview` (export function) L5
+
 ## src/hooks/useBudgets.ts (146 lines) - month is YYYY-MM-01
 - `useBudgetMonth` (export function) L24 - month is YYYY-MM-01
 - `useBudgetPeriod` (export function) L33 - A period of months (YYYY-MM-01 each); refreshed with everything else under the months

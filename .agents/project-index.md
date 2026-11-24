@@ -8,11 +8,11 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - scripts/reload-android.js (97 lines) - Check ANDROID_HOME or ANDROID_SDK_ROOT first
 - scripts/start-android.js (207 lines) - Check ANDROID_HOME or ANDROID_SDK_ROOT environment variables first
 - src/App.native.tsx (79 lines) - app.native
-- src/App.tsx (372 lines) - app
+- src/App.tsx (374 lines) - app
 - src/components/AppShell/AppShell.tsx (51 lines) - Start closed on phones and tablets, so the sidebar doesn't slide open and shut on every page load
 - src/components/AppShell/Breadcrumbs.tsx (141 lines) - breadcrumbs (components  app shell)
 - src/components/AppShell/ConnectionStatusLight.tsx (255 lines) - connection status light (components  app shell)
-- src/components/AppShell/Navigation.tsx (169 lines) - navigation (components  app shell)
+- src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
 - src/components/AppShell/NotificationDropdown.tsx (180 lines) - notification dropdown (components  app shell)
 - src/components/AppShell/Sidebar.tsx (309 lines) - sidebar (components  app shell)
 - src/components/AppShell/ThemeSwitch.tsx (41 lines) - theme switch (components  app shell)
@@ -78,6 +78,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/components/ui/tooltip.tsx (56 lines) - tooltip (components ui)
 - src/hooks/useAdSync.ts (38 lines) - One ad platform's sync mode (mock or live), connected accounts and last run
 - src/hooks/useAds.ts (127 lines) - The Paid Advertising page: figures, charts, attention list and campaign rows for a date range
+- src/hooks/useAiOverview.ts (16 lines) - use ai overview (hooks)
 - src/hooks/useBudgets.ts (146 lines) - month is YYYY-MM-01
 - src/hooks/useDemos.ts (59 lines) - A demo changes the log, its summary (counts, cost per demo, customers), and the performance view's demo count
 - src/hooks/useEventManagement.ts (76 lines) - use event management (hooks)
@@ -119,6 +120,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Budgets/budgetDisplay.ts (117 lines) - Labels, colours and month helpers for the Budgets & Expenses page
 - src/pages/Budgets/budgetPeriods.ts (102 lines) - Reporting periods for Budgets & Expenses: a month, a quarter or a year, and what it's compared with.
 - src/pages/Budgets/expenseDisplay.ts (55 lines) - Labels and checks for cost lines on the Expenses and Reconciliation tabs
+- src/pages/Configurations/AiStatusPage.tsx (85 lines) - ai status page (pages  configurations)
 - src/pages/Configurations/Entities.tsx (1020 lines) - entities (pages  configurations)
 - src/pages/Configurations/OAuthCallbackPage.tsx (119 lines) - o auth callback page (pages  configurations)
 - src/pages/Configurations/OAuthIntegrations.tsx (1050 lines) - o auth integrations (pages  configurations)
@@ -128,6 +130,12 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Configurations/Roles.tsx (799 lines) - roles (pages  configurations)
 - src/pages/Configurations/UserRoleAssignment.tsx (387 lines) - user role assignment (pages  configurations)
 - src/pages/Configurations/Users.tsx (692 lines) - users (pages  configurations)
+- src/pages/Configurations/aiStatus/AiCoresGrid.tsx (78 lines) - ai cores grid (pages  configurations ai status)
+- src/pages/Configurations/aiStatus/AiErrorsDialog.tsx (110 lines) - ai errors dialog (pages  configurations ai status)
+- src/pages/Configurations/aiStatus/AiFeatureMatrix.tsx (203 lines) - ai feature matrix (pages  configurations ai status)
+- src/pages/Configurations/aiStatus/AiPipelineTelemetry.tsx (179 lines) - ai pipeline telemetry (pages  configurations ai status)
+- src/pages/Configurations/aiStatus/AiSummaryCards.tsx (140 lines) - ai summary cards (pages  configurations ai status)
+- src/pages/Configurations/aiStatus/statusStyles.ts (31 lines) - status styles (pages  configurations ai status)
 - src/pages/Events/CostSources.tsx (196 lines) - Statuses whose cost is in (the invoice has arrived); the rest is awaiting invoices
 - src/pages/Events/EventBudgetChart.tsx (90 lines) - Actual spend on the events in the same month a year earlier
 - src/pages/Events/EventDataDialog.tsx (168 lines) - Type in what's missing for an event: its approved budget and its results (attendees, leads, MQLs, demos, customers,
@@ -242,6 +250,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/types/adSync.ts (63 lines) - The ad platforms with a campaign and weekly results sync (oauth provider codes)
 - src/types/ads.ts (462 lines) - Paid ads (every Paid Search and Paid Social platform): mirrors the shared paid ads API contract
 - src/types/aiAssistant.ts (5 lines) - ai assistant (types)
+- src/types/aiOverview.ts (152 lines) - ai overview (types)
 - src/types/auth.ts (97 lines) - auth (types)
 - src/types/budgets.ts (366 lines) - Monthly budgets — mirrors the shared budget contract (backend models/budget_model.py)
 - src/types/demos.ts (105 lines) - Demos given at events — mirrors backend models/demo_model.py

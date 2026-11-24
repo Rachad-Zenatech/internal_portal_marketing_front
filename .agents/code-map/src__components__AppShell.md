@@ -17,7 +17,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `IntegrationStatusResponse` (export interface) L34
 - `ConnectionStatusLight` (export function) L39
 
-## src/components/AppShell/Navigation.tsx (169 lines) - navigation (components  app shell)
+## src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
 - `NavigationSubItem` (export interface) L15
 - `NavigationItem` (export interface) L21
 - `SET_ACTIVE_NAV_EVENT` (export const) L34 - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
