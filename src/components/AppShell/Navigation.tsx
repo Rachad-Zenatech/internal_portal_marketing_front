@@ -128,6 +128,7 @@ export const navigation: NavigationItem[] = [
     icon: ShieldCheck,
     section: "ADMINISTRATION",
     subItems: [
+      { label: "AI Status & Usage", path: "/configurations/ai-status", navigationCode: "SYSTEM_LOGS" },
         { label: "Entities", path: "/configurations/entities", navigationCode: "CONFIG_ROLES" },
       { label: "Users", path: "/configurations/users", navigationCode: "CONFIG_USERS" },
       { label: "Roles", path: "/configurations/roles", navigationCode: "CONFIG_ROLES" },
