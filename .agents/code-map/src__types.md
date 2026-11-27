@@ -182,6 +182,12 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `HubSpotLinkUpdate` (export interface) L197
 - `EventsOverviewFilters` (export type) L204
 
+## src/types/googleReporting.ts (31 lines) - google reporting (types)
+- `GoogleReportingBrand` (export interface) L1
+- `GoogleReportSection` (export interface) L7
+- `GoogleReportFilters` (export interface) L16
+- `GoogleMarketingReport` (export interface) L22
+
 ## src/types/hubspot.ts (130 lines) - HubSpot's own campaign status; null when it isn't set there
 - `HubSpotCampaignStatus` (export type) L2 - HubSpot's own campaign status; null when it isn't set there
 - `HubSpotAsset` (export interface) L5 - One asset attached to a campaign (a list, email, page, event...)

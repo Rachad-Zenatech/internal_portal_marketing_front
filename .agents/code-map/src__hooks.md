@@ -71,6 +71,10 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `useNavanTripOptions` (export function) L46 - The Navan trips that can still be joined to a HubSpot event
 - `useSetNavanTripLink` (export function) L55 - Join a Navan trip to a HubSpot event, or take it off, then reload the overview
 
+## src/hooks/useGoogleReporting.ts (34 lines) - use google reporting (hooks)
+- `initialFilters` (function) L8
+- `useGoogleReporting` (export function) L13
+
 ## src/hooks/useHeartbeat.ts (45 lines) - Track user activity
 - `useHeartbeat` (export function) L4
 

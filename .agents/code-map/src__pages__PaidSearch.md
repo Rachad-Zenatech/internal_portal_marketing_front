@@ -4,32 +4,35 @@
 
 Each symbol shows its start line (`L<n>`); read from there to the next symbol's line, not the whole file.
 
-## src/pages/PaidSearch/PaidSearchBoard.tsx (505 lines) - Wait this long after the last change before saving the board
-- `takeLegacyEntries` (function) L23
-- `dropLegacyEntries` (function) L33
-- `normalize` (const) L42 - A saved row as the board uses it: every field present, and no nulls
-- `SaveState` (type) L50
-- `widthOf` (const) L62
-- `Cell` (function) L65 - One editable cell; numbers and dates are checked when you leave the cell
-- `PickerOption` (function) L96 - One choice in the HubSpot campaign picker
-- `HubSpotLinkCell` (function) L115 - The HubSpot campaign a row takes its leads, MQLs and SQLs from, with a search box: the brand's paid campaigns first  (best fit first, Goo...
-    - `fits` (fn) L132
-    - `pick` (fn) L140
-- `plural` (const) L206
-- `fillSummary` (function) L209 - Linked 9 rows to HubSpot campaigns · MQLs and SQLs filled for 13 rows · 2 rows have no HubSpot campaign
-- `PaidSearchBoard` (export function) L220 - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
-    - `saved` (fn) L225 - The board is saved on the server: load it once, then save it a moment after each change
-    - `queryClient` (fn) L270 - HubSpot: the campaigns from the last sync (read with the backend's HUBSPOT_API_KEY), and the sync itself
-    - `hubspotCampaigns` (fn) L272
-    - `startSync` (fn) L274
-    - `applyHubSpot` (fn) L279
-    - `syncHubSpot` (fn) L309
-    - `setHubSpotLink` (fn) L328
-    - `updateCell` (fn) L340
-    - `addRow` (fn) L341
-    - `removeRow` (fn) L342
-    - `importEntries` (fn) L349
-    - `notConnected` (fn) L357
+## src/pages/PaidSearch/PaidSearchBoard.tsx (503 lines) - Wait this long after the last change before saving the board
+- `takeLegacyEntries` (function) L24
+- `dropLegacyEntries` (function) L34
+- `normalize` (const) L43 - A saved row as the board uses it: every field present, and no nulls
+- `SaveState` (type) L51
+- `widthOf` (const) L63
+- `Cell` (function) L66 - One editable cell; numbers and dates are checked when you leave the cell
+- `PickerOption` (function) L97 - One choice in the HubSpot campaign picker
+- `HubSpotLinkCell` (function) L116 - The HubSpot campaign a row takes its leads, MQLs and SQLs from, with a search box: the brand's paid campaigns first  (best fit first, Goo...
+    - `fits` (fn) L133
+    - `pick` (fn) L141
+- `plural` (const) L207
+- `fillSummary` (function) L210 - Linked 9 rows to HubSpot campaigns · MQLs and SQLs filled for 13 rows · 2 rows have no HubSpot campaign
+- `PaidSearchBoard` (export function) L221 - The Paid Search data entry board: type entries in, or upload them from a spreadsheet
+    - `saved` (fn) L226 - The board is saved on the server: load it once, then save it a moment after each change
+    - `queryClient` (fn) L271 - HubSpot: the campaigns from the last sync (read with the backend's HUBSPOT_API_KEY), and the sync itself
+    - `hubspotCampaigns` (fn) L273
+    - `startSync` (fn) L275
+    - `applyHubSpot` (fn) L280
+    - `syncHubSpot` (fn) L310
+    - `setHubSpotLink` (fn) L329
+    - `updateCell` (fn) L341
+    - `addRow` (fn) L342
+    - `removeRow` (fn) L343
+    - `importEntries` (fn) L350
+
+## src/pages/PaidSearch/PaidSearchPage.tsx (42 lines) - paid search page (pages  paid search)
+- `WorkspaceLinks` (function) L10
+- `PaidSearchPage` (export function) L20
 
 ## src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - `plural` (const) L12

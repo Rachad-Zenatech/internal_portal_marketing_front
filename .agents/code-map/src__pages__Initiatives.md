@@ -193,26 +193,26 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 ## src/pages/Initiatives/Initiatives.native.tsx (61 lines) - Placeholder until the mobile initiatives list (task I9).
 - `Initiatives` (export function) L15 - Placeholder until the mobile initiatives list (task I9).
 
-## src/pages/Initiatives/Initiatives.tsx (669 lines) - initiatives (pages  initiatives)
-- `ListTab` (type) L38
-- `PageFilters` (interface) L40
-- `toDateText` (const) L51
-- `DateRangeFilter` (function) L86
-- `OwnerFilter` (function) L145
-- `pageNumbers` (function) L162 - Pages to offer: the first, the last, and two either side of the current one
-- `csvRow` (function) L205
-- `amountIn` (const) L241
-- `Initiatives` (export function) L243
-    - `otherChannels` (fn) L284
-    - `channelCodes` (fn) L311
-    - `update` (fn) L313
-    - `clearFilters` (fn) L318
-    - `change` (fn) L331
-    - `toggle` (fn) L333
-    - `togglePage` (fn) L340
-    - `fileName` (fn) L350
-    - `exportSelected` (fn) L351
-    - `exportAll` (fn) L353 - Every initiative matching the filters, a page of 200 at a time
+## src/pages/Initiatives/Initiatives.tsx (667 lines) - initiatives (pages  initiatives)
+- `ListTab` (type) L37
+- `PageFilters` (interface) L39
+- `toDateText` (const) L50
+- `DateRangeFilter` (function) L85
+- `OwnerFilter` (function) L144
+- `pageNumbers` (function) L161 - Pages to offer: the first, the last, and two either side of the current one
+- `csvRow` (function) L204
+- `amountIn` (const) L240
+- `Initiatives` (export function) L242
+    - `otherChannels` (fn) L282
+    - `channelCodes` (fn) L309
+    - `update` (fn) L311
+    - `clearFilters` (fn) L316
+    - `change` (fn) L329
+    - `toggle` (fn) L331
+    - `togglePage` (fn) L338
+    - `fileName` (fn) L348
+    - `exportSelected` (fn) L349
+    - `exportAll` (fn) L351 - Every initiative matching the filters, a page of 200 at a time
 
 ## src/pages/Initiatives/InitiativesTable.tsx (326 lines) - The initiatives list: a table on wide screens, cards below lg
 - `RowActions` (export interface) L23

@@ -10,7 +10,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/App.native.tsx (79 lines) - app.native
 - src/App.tsx (374 lines) - app
 - src/components/AppShell/AppShell.tsx (51 lines) - Start closed on phones and tablets, so the sidebar doesn't slide open and shut on every page load
-- src/components/AppShell/Breadcrumbs.tsx (141 lines) - breadcrumbs (components  app shell)
+- src/components/AppShell/Breadcrumbs.tsx (144 lines) - breadcrumbs (components  app shell)
 - src/components/AppShell/ConnectionStatusLight.tsx (255 lines) - connection status light (components  app shell)
 - src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
 - src/components/AppShell/NotificationDropdown.tsx (180 lines) - notification dropdown (components  app shell)
@@ -83,6 +83,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/hooks/useDemos.ts (59 lines) - A demo changes the log, its summary (counts, cost per demo, customers), and the performance view's demo count
 - src/hooks/useEventManagement.ts (76 lines) - use event management (hooks)
 - src/hooks/useEventsOverview.ts (64 lines) - The Navan events for the period and filters; the previous data stays on screen while new filters load
+- src/hooks/useGoogleReporting.ts (34 lines) - use google reporting (hooks)
 - src/hooks/useHeartbeat.ts (45 lines) - Track user activity
 - src/hooks/useHubSpot.ts (56 lines) - The synced HubSpot social posts
 - src/hooks/useImports.ts (46 lines) - Upload a cost sheet for a preview (the upload appears in the history straight away)
@@ -136,6 +137,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Configurations/aiStatus/AiPipelineTelemetry.tsx (179 lines) - ai pipeline telemetry (pages  configurations ai status)
 - src/pages/Configurations/aiStatus/AiSummaryCards.tsx (140 lines) - ai summary cards (pages  configurations ai status)
 - src/pages/Configurations/aiStatus/statusStyles.ts (31 lines) - status styles (pages  configurations ai status)
+- src/pages/Connections/DataConnectionsPage.tsx (61 lines) - data connections page (pages  connections)
 - src/pages/Events/CostSources.tsx (196 lines) - Statuses whose cost is in (the invoice has arrived); the rest is awaiting invoices
 - src/pages/Events/EventBudgetChart.tsx (90 lines) - Actual spend on the events in the same month a year earlier
 - src/pages/Events/EventDataDialog.tsx (168 lines) - Type in what's missing for an event: its approved budget and its results (attendees, leads, MQLs, demos, customers,
@@ -183,7 +185,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Initiatives/InitiativePerformance.tsx (58 lines) - The answer first (was it worth it?), then what each outcome cost, the results behind it, and the budget
 - src/pages/Initiatives/InitiativeSubPage.tsx (66 lines) - Page name, e.g.
 - src/pages/Initiatives/Initiatives.native.tsx (61 lines) - Placeholder until the mobile initiatives list (task I9).
-- src/pages/Initiatives/Initiatives.tsx (669 lines) - initiatives (pages  initiatives)
+- src/pages/Initiatives/Initiatives.tsx (667 lines) - initiatives (pages  initiatives)
 - src/pages/Initiatives/InitiativesTable.tsx (326 lines) - The initiatives list: a table on wide screens, cards below lg
 - src/pages/Initiatives/OwnerPicker.tsx (74 lines) - Shown when no one is picked
 - src/pages/Initiatives/ResultsSection.tsx (233 lines) - Every month from start to end (inclusive), as "YYYY-MM-01
@@ -206,7 +208,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Initiatives/useInitiativeNavigation.ts (45 lines) - A page inside an initiative, e.g.
 - src/pages/Logs/AuditLog.tsx (490 lines) - audit log (pages  logs)
 - src/pages/Logs/SystemLogsPage.tsx (1022 lines) - system logs page (pages  logs)
-- src/pages/MarketingDashboard/MarketingDashboard.tsx (615 lines) - marketing dashboard (pages  marketing dashboard)
+- src/pages/MarketingDashboard/MarketingDashboard.tsx (583 lines) - marketing dashboard (pages  marketing dashboard)
 - src/pages/MarketingDashboard/dashboardMock.ts (195 lines) - SAMPLE DATA for the Dashboard mock-up: nothing here comes from the API yet.
 - src/pages/PaidAds/AdResultDialog.tsx (480 lines) - ad result dialog (pages  paid ads)
 - src/pages/PaidAds/AdSyncStatus.tsx (243 lines) - The last attempt failed when it's newer than the last success
@@ -222,10 +224,13 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/PaidAds/adsDisplay.ts (212 lines) - Labels, colours and number formats for the Paid Ads page
 - src/pages/PaidAds/adsPeriods.ts (66 lines) - Period presets for the Paid Advertising page, and how campaigns sort into running / upcoming / finished
 - src/pages/PaidAds/overviewDisplay.ts (173 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
-- src/pages/PaidSearch/PaidSearchBoard.tsx (505 lines) - Wait this long after the last change before saving the board
+- src/pages/PaidSearch/PaidSearchBoard.tsx (503 lines) - Wait this long after the last change before saving the board
+- src/pages/PaidSearch/PaidSearchPage.tsx (42 lines) - paid search page (pages  paid search)
 - src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - src/pages/PaidSearch/hubspotMatch.ts (187 lines) - Linking Paid Search board rows to HubSpot campaigns, so a HubSpot sync can fill their leads, MQLs and SQLs.
 - src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+- src/pages/PaidSearch/reports/GoogleMarketingReports.tsx (44 lines) - google marketing reports (pages  paid search reports)
+- src/pages/PaidSearch/reports/GoogleReportCards.tsx (116 lines) - google report cards (pages  paid search reports)
 - src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - src/services/adSyncService.ts (26 lines) - Each ad platform with a sync: its name, its API path, and its settings' prefix (for set-up hints)
 - src/services/adsService.ts (80 lines) - ads service (services)
@@ -236,6 +241,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/services/errorReporting.ts (75 lines) - error reporting (services)
 - src/services/eventManagementService.ts (40 lines) - What events in a period cost and brought in; filters left out are not sent
 - src/services/eventsOverviewService.ts (46 lines) - The Navan events for the period and filters, with the HubSpot results matched to each
+- src/services/googleReportingService.ts (12 lines) - google reporting service (services)
 - src/services/helper.ts (29 lines) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
 - src/services/hubspotService.ts (23 lines) - Every social post from the last sync, newest first, with its counters and campaign
 - src/services/importsService.ts (26 lines) - Check a cost sheet; nothing is saved as costs until the preview is confirmed
@@ -244,7 +250,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/services/oauthService.ts (160 lines) - oauth service (services)
 - src/services/paidSearchService.ts (13 lines) - Every entry on the Paid Search board, in board order
 - src/services/performanceService.ts (32 lines) - periodStart is the first of the month, e.g.
-- src/services/queryKeys.ts (74 lines) - Centralized React Query keys for consistent invalidation and caching.
+- src/services/queryKeys.ts (76 lines) - Centralized React Query keys for consistent invalidation and caching.
 - src/services/referenceDataService.ts (7 lines) - reference data service (services)
 - src/services/spendService.ts (23 lines) - spend service (services)
 - src/types/adSync.ts (63 lines) - The ad platforms with a campaign and weekly results sync (oauth provider codes)
@@ -258,6 +264,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/types/eventManagement.ts (85 lines) - Event management — mirrors backend models/event_management_model.py
 - src/types/eventPerformance.ts (114 lines) - Events Overview: what events cost and what they brought in.
 - src/types/eventsOverview.ts (205 lines) - Events Overview: the Navan events with the HubSpot results matched to them (GET /api/events/navan-events)
+- src/types/googleReporting.ts (31 lines) - google reporting (types)
 - src/types/hubspot.ts (130 lines) - HubSpot's own campaign status; null when it isn't set there
 - src/types/imports.ts (103 lines) - Spreadsheet uploads — mirrors backend models/import_model.py
 - src/types/initiatives.ts (245 lines) - Marketing initiatives — mirrors backend models/initiative_model.py

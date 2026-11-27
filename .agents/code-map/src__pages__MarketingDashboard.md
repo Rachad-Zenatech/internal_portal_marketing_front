@@ -4,7 +4,7 @@
 
 Each symbol shows its start line (`L<n>`); read from there to the next symbol's line, not the whole file.
 
-## src/pages/MarketingDashboard/MarketingDashboard.tsx (615 lines) - marketing dashboard (pages  marketing dashboard)
+## src/pages/MarketingDashboard/MarketingDashboard.tsx (583 lines) - marketing dashboard (pages  marketing dashboard)
 - `money` (const) L58
 - `wholeK` (const) L60 - $102K": short enough for a highlight card
 - `TrendChart` (function) L139 - One measure over the months.

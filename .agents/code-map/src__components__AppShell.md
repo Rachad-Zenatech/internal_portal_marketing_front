@@ -8,7 +8,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `Props` (interface) L7
 - `AppShell` (export function) L11
 
-## src/components/AppShell/Breadcrumbs.tsx (141 lines) - breadcrumbs (components  app shell)
+## src/components/AppShell/Breadcrumbs.tsx (144 lines) - breadcrumbs (components  app shell)
 - `BreadcrumbItem` (export interface) L5
 - `Breadcrumbs` (export function) L10
 
@@ -18,13 +18,13 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `ConnectionStatusLight` (export function) L39
 
 ## src/components/AppShell/Navigation.tsx (170 lines) - navigation (components  app shell)
-- `NavigationSubItem` (export interface) L15
-- `NavigationItem` (export interface) L21
-- `SET_ACTIVE_NAV_EVENT` (export const) L34 - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
-- `MAIN_CHANNEL_CODES` (export const) L37 - The channels with their own sidebar link; every other channel is under "Other channels
-- `OTHER_CHANNELS` (export const) L48 - ?channel= value for every channel not in MAIN_CHANNEL_CODES
-- `initiativesLink` (const) L50
-- `navigation` (export const) L56
+- `NavigationSubItem` (export interface) L14
+- `NavigationItem` (export interface) L20
+- `SET_ACTIVE_NAV_EVENT` (export const) L33 - Event a page dispatches to highlight a sidebar link other than its own URL,  e.g.
+- `MAIN_CHANNEL_CODES` (export const) L36 - The channels with their own sidebar link; every other channel is under "Other channels
+- `OTHER_CHANNELS` (export const) L47 - ?channel= value for every channel not in MAIN_CHANNEL_CODES
+- `initiativesLink` (const) L49
+- `navigation` (export const) L55
 
 ## src/components/AppShell/NotificationDropdown.tsx (180 lines) - notification dropdown (components  app shell)
 - `formatRelativeTime` (function) L22

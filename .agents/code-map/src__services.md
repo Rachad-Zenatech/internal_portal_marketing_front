@@ -91,6 +91,10 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `getNavanTripOptions` (export function) L38 - The Navan trips that aren't joined to a HubSpot event
 - `setNavanTripLink` (export function) L43 - Join a Navan trip to a HubSpot event (its travel then counts for the event), or take it off again
 
+## src/services/googleReportingService.ts (12 lines) - google reporting service (services)
+- `getGoogleReportingBrands` (export function) L4
+- `getGoogleMarketingReport` (export function) L8
+
 ## src/services/helper.ts (29 lines) - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
 - `ApiError` (export class) L1
 - `errorMessage` (function) L11 - FastAPI returns `detail` as a string, or as a list of field errors on validation failures
@@ -153,7 +157,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `getDecisions` (export function) L25
 - `recordDecision` (export function) L29
 
-## src/services/queryKeys.ts (74 lines) - Centralized React Query keys for consistent invalidation and caching.
+## src/services/queryKeys.ts (76 lines) - Centralized React Query keys for consistent invalidation and caching.
 - `queryKeys` (export const) L4
 
 ## src/services/referenceDataService.ts (7 lines) - reference data service (services)

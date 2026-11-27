@@ -10,7 +10,7 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `App` (export function) L57
 
 ## src/App.tsx (374 lines) - app
-- `NotFoundAlert` (function) L38
-- `App` (function) L56
+- `NotFoundAlert` (function) L46
+- `App` (function) L64
 
 ## src/main.tsx (51 lines) - Create a client

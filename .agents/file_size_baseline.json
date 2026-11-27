@@ -46,7 +46,7 @@
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/Initiatives/Initiatives.tsx": {
-      "max_lines": 668,
+      "max_lines": 666,
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/Initiatives/SpendLineDialog.tsx": {
@@ -58,7 +58,7 @@
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/MarketingDashboard/MarketingDashboard.tsx": {
-      "max_lines": 614,
+      "max_lines": 582,
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/PaidAds/CampaignPanel.tsx": {
@@ -66,7 +66,7 @@
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/PaidSearch/PaidSearchBoard.tsx": {
-      "max_lines": 504,
+      "max_lines": 502,
       "reason": "Over the limit when the check was introduced; split it when you next work on it."
     },
     "src/pages/SocialMedia/SocialMediaPage.tsx": {
@@ -76,7 +76,7 @@
   },
   "blocks": {
     "src/App.tsx#App": {
-      "max_lines": 313,
+      "max_lines": 306,
       "kind": "jsx_return"
     },
     "src/components/AppShell/ConnectionStatusLight.tsx#ConnectionStatusLight": {
@@ -284,7 +284,7 @@
       "kind": "jsx_return"
     },
     "src/pages/MarketingDashboard/MarketingDashboard.tsx#MarketingDashboard": {
-      "max_lines": 353,
+      "max_lines": 321,
       "kind": "jsx_return"
     },
     "src/pages/PaidAds/AdResultDialog.tsx#AdResultForm": {
@@ -312,7 +312,7 @@
       "kind": "jsx_return"
     },
     "src/pages/PaidSearch/PaidSearchBoard.tsx#PaidSearchBoard": {
-      "max_lines": 144,
+      "max_lines": 143,
       "kind": "jsx_return"
     },
     "src/pages/PaidSearch/PaidSearchUpload.tsx#PaidSearchUpload": {
