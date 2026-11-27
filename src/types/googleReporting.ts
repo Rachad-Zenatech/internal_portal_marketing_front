@@ -4,6 +4,20 @@ export interface GoogleReportingBrand {
   has_ads: boolean;
 }
 
+export interface GoogleAdsCampaign {
+  campaign_id: string;
+  campaign_name: string;
+  status: string;
+  channel: string;
+  spend: number;
+  clicks: number;
+  impressions: number;
+  conversions: number;
+  ctr: number | null;
+  cpc: number | null;
+  cost_per_conversion: number | null;
+}
+
 export interface GoogleReportSection {
   status: "ok" | "empty" | "unavailable" | "error";
   rows: Record<string, string | number>[];
@@ -11,6 +25,7 @@ export interface GoogleReportSection {
   message: string | null;
   time_zone: string | null;
   currency: string | null;
+  campaigns?: GoogleAdsCampaign[];
 }
 
 export interface GoogleReportFilters {

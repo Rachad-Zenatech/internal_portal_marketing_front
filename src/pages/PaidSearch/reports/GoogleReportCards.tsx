@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import GoogleAdsCampaigns from "./GoogleAdsCampaigns";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { GoogleMarketingReport, GoogleReportSection } from "@/types/googleReporting";
 
@@ -109,6 +110,7 @@ export function GoogleReportCards({ report }: { report: GoogleMarketingReport })
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{report.brand.name}: {report.date_from} to {report.date_to}. Fetched {new Date(report.fetched_at).toLocaleString()}.</p>
       <div className="grid gap-4 xl:grid-cols-3"><AdsCard section={report.ads} /><Ga4Card section={report.ga4} /><SearchCard section={report.search_console} /></div>
+      <GoogleAdsCampaigns key={`${report.brand.code}:${report.date_from}:${report.date_to}`} section={report.ads} />
       <SearchQueries section={report.search_console} />
     </div>
   );
