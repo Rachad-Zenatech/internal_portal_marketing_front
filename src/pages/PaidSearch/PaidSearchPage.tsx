@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/lib/AuthContext";
 import PaidSearchBoard from "./PaidSearchBoard";
 import GoogleMarketingReports from "./reports/GoogleMarketingReports";
+import LinkedInAdsConnections from "./LinkedInAdsConnections";
 
 function WorkspaceLinks() {
   return (
@@ -20,7 +21,8 @@ function WorkspaceLinks() {
 export default function PaidSearchPage() {
   const [params, setParams] = useSearchParams();
   const { hasPermission } = useAuth();
-  const view = params.get("view") === "planning" ? "planning" : "reports";
+  const requestedView = params.get("view");
+  const view = requestedView === "planning" || requestedView === "linkedin" ? requestedView : "reports";
   const setView = (value: string) => {
     const next = new URLSearchParams(params);
     next.set("view", value);
@@ -32,7 +34,8 @@ export default function PaidSearchPage() {
       <PageHeader title="Paid Search" description="Plan campaign work, measure advertising results, and review website and CRM context." icon={ChartColumn} actions={<Button variant="outline" asChild><Link to="/connections">Data connections</Link></Button>} />
       <WorkspaceLinks />
       <Tabs value={view} onValueChange={setView}>
-        <TabsList><TabsTrigger value="reports">Performance and context</TabsTrigger><TabsTrigger value="planning">Planning board</TabsTrigger></TabsList>
+        <TabsList><TabsTrigger value="reports">Performance and context</TabsTrigger><TabsTrigger value="planning">Planning board</TabsTrigger><TabsTrigger value="linkedin">LinkedIn Ads</TabsTrigger></TabsList>
+        <TabsContent value="linkedin" className="mt-4"><LinkedInAdsConnections /></TabsContent>
         <TabsContent value="reports" className="mt-4"><GoogleMarketingReports /></TabsContent>
         <TabsContent value="planning" forceMount className="mt-4 space-y-3 data-[state=inactive]:hidden"><p className="text-sm text-muted-foreground">Plan work and import spreadsheets here. Board entries save automatically; Google reports are viewed separately and do not overwrite your entries.</p><PaidSearchBoard canEdit={canEdit} /></TabsContent>
       </Tabs>
