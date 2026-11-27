@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, CalendarDays, ChevronLeft, ChevronRight, Download, Layers, Loader2, Megaphone, MoreHorizontal, PlayCircle, Plus, Search, Upload, Wallet, X } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/components/common/PageHeader";
@@ -20,7 +20,6 @@ import { useReferenceData } from "@/hooks/useReferenceData";
 import { useAuth } from "@/lib/AuthContext";
 import { getInitiatives } from "@/services/initiativesService";
 import EventBudgetUpload from "./EventBudgetUpload";
-import PaidSearchBoard from "../PaidSearch/PaidSearchBoard";
 import HubSpotSyncStatus from "../HubSpot/HubSpotSyncStatus";
 import type { InitiativeFilters, InitiativeListItem, InitiativeStatus, MoneyAmount, OwnerOption } from "@/types/initiatives";
 import { channelStyle } from "./channelStyles";
@@ -280,7 +279,6 @@ export default function Initiatives() {
   // "Other channels" in the sidebar: every channel without its own link
   const isOtherChannels = channelCode === OTHER_CHANNELS;
   const isEvents = channel?.code === "EVENTS";
-  const isPaidSearch = channel?.code === "PAID_SEARCH";
   const otherChannels = useMemo(() => (reference?.channels ?? []).filter((c) => !MAIN_CHANNEL_CODES.includes(c.code)), [reference]);
   // A channel in the URL can't be resolved without the channel list, or may not exist at all
   const referenceMissing = Boolean(channelCode) && !reference && referenceFailed;
@@ -447,7 +445,7 @@ export default function Initiatives() {
         }
       />
 
-      {isPaidSearch && <PaidSearchBoard canEdit={canEdit} />}
+      {channel?.code === "PAID_SEARCH" && <p className="text-sm text-muted-foreground">Looking for reports or the planning board? <Link className="text-primary underline underline-offset-4" to="/paid-search">Open the Paid Search workspace</Link>.</p>}
 
       <Tabs
         value={tab}

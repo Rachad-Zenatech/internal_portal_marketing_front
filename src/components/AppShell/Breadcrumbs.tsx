@@ -52,9 +52,12 @@ export default function Breadcrumbs() {
       configuration: "Configuration",
       configurations: "Configurations",
       dashboard: "Dashboard",
-      events: "Events Overview",
+      events: "Events & travel",
       budgets: "Budgets & Expenses",
-      "paid-ads": "Paid Advertising",
+      "paid-ads": "Advertising performance",
+      "paid-search": "Paid Search",
+      connections: "Data connections",
+      "hubspot-campaigns": "CRM outcomes (HubSpot)",
     };
     const key = name.toLowerCase();
     if (specialNames[key]) {

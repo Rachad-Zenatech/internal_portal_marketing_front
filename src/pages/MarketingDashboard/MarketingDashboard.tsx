@@ -262,41 +262,9 @@ export default function MarketingDashboard() {
     <div
       className={`flex w-full min-w-0 flex-1 flex-col gap-5 animate-in fade-in duration-300 sm:gap-6 ${CHART_VARS}`}
     >
-      <DashboardHeader
-        title={
-          <span className="flex flex-wrap items-center gap-2">
-            Dashboard
-            <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-              Sample data
-            </span>
-          </span>
-        }
-        subtitle="At-a-glance view of marketing performance, spend and outcomes."
-        actions={
-          <div
-            className={`${DASH_CARD} flex items-center gap-3 px-3 py-2 text-sm`}
-          >
-            <CalendarDays
-              className="h-4 w-4 text-muted-foreground"
-              aria-hidden
-            />
-            <span>
-              <span className="font-medium text-foreground">
-                {MOCK_PERIOD.label}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {MOCK_PERIOD.dates}
-              </span>
-            </span>
-            <span className="border-l border-border pl-3 text-muted-foreground">
-              Compared with{" "}
-              <span className="font-medium text-foreground">
-                {MOCK_PERIOD.compareLabel}
-              </span>
-            </span>
-          </div>
-        }
-      />
+      <DashboardHeader title="Dashboard" subtitle="A cross-channel overview of marketing performance, spend and outcomes." actions={<Link to="/paid-search" className="text-sm font-medium text-primary hover:underline">Open Paid Search reports</Link>} />
+      <h2 className="text-lg font-semibold">Sample marketing overview</h2>
+      <p className="text-sm text-muted-foreground">These overview figures are sample data. Open a channel workspace for its connected reports.</p>
 
       <section aria-label="Key figures">
         <KpiGrid>

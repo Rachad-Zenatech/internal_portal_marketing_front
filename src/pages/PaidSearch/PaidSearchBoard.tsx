@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, CircleAlert, CloudCheck, ExternalLink, Loader2, Plus, RefreshCw, Search, Table2, Trash2, Upload } from "lucide-react";
@@ -354,8 +355,6 @@ export default function PaidSearchBoard({ canEdit: mayEdit }: { canEdit: boolean
       duration: 10_000,
     });
   };
-  const notConnected = (service: string) =>
-    toast.info(`${service} sync isn't connected yet`, { description: "The button is in place; syncing will be added when the integration is built." });
 
   return (
     <section className={`${DASH_CARD} flex flex-col overflow-hidden`} aria-labelledby="paid-search-board-title">
@@ -397,9 +396,8 @@ export default function PaidSearchBoard({ canEdit: mayEdit }: { canEdit: boolean
               {hubspotBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               {hubspotBusy ? "Syncing HubSpot..." : "Sync HubSpot"}
             </Button>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => notConnected("Google")}>
-              <RefreshCw className="h-4 w-4" />
-              Sync Google
+            <Button size="sm" variant="outline" className="gap-1.5" asChild>
+              <Link to="/paid-search?view=reports">View Google reports</Link>
             </Button>
             <Button size="sm" className="gap-1.5" onClick={addRow}>
               <Plus className="h-4 w-4" />

@@ -8,7 +8,6 @@ import {
   Wallet,
   Share2,
   Globe,
-  Target,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -69,14 +68,14 @@ export const navigation: NavigationItem[] = [
     navigationCode: "INITIATIVES",
   },
   {
-    label: "Marketing Initiatives",
+    label: "Campaigns & initiatives",
     path: "/initiatives",
     icon: Megaphone,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
     subItems: [
       initiativesLink("All Initiatives"),
-      initiativesLink("Paid Search", "PAID_SEARCH"),
+      { label: "Paid Search", path: "/paid-search", navigationCode: "INITIATIVES" },
       initiativesLink("Paid Social", "PAID_SOCIAL"),
       initiativesLink("Organic Social", "ORGANIC_SOCIAL"),
       initiativesLink("SEO", "SEO"),
@@ -84,26 +83,27 @@ export const navigation: NavigationItem[] = [
       initiativesLink("Email Marketing", "EMAIL_MARKETING"),
       initiativesLink("Partnerships", "PARTNERSHIPS"),
       initiativesLink("Other channels", OTHER_CHANNELS),
+      { label: "CRM outcomes (HubSpot)", path: "/hubspot-campaigns", navigationCode: "INITIATIVES" },
     ],
   },
   {
-    label: "Events Overview",
+    label: "Events & travel",
     path: "/events",
     icon: CalendarDays,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
   {
-    label: "Paid Advertising",
+    label: "Advertising performance",
     path: "/paid-ads",
     icon: ChartColumn,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
   {
-    label: "HubSpot Campaigns",
-    path: "/hubspot-campaigns",
-    icon: Target,
+    label: "Data connections",
+    path: "/connections",
+    icon: Globe,
     section: "MARKETING",
     navigationCode: "INITIATIVES",
   },
@@ -139,7 +139,7 @@ export const navigation: NavigationItem[] = [
     ],
   },
   {
-    label: "OAuth Integrations",
+    label: "Account authorization",
     path: "/configurations/integrations?category=PAID_ADS",
     icon: Globe,
     section: "ADMINISTRATION",

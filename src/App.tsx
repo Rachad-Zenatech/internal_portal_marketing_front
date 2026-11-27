@@ -17,9 +17,17 @@ const InitiativeDemos = lazy(() => import("./pages/Initiatives/InitiativeDemos")
 const EventsPage = lazy(() => import("./pages/Events/EventsPage"));
 const EventWorkspace = lazy(() => import("./pages/Events/EventWorkspace"));
 const BudgetsPage = lazy(() => import("./pages/Budgets/BudgetsPage"));
+const PaidSearchPage = lazy(() => import("./pages/PaidSearch/PaidSearchPage"));
+const DataConnectionsPage = lazy(() => import("./pages/Connections/DataConnectionsPage"));
 const PaidAdsPage = lazy(() => import("./pages/PaidAds/PaidAdsPage"));
 const HubSpotCampaignsPage = lazy(() => import("./pages/HubSpot/HubSpotCampaignsPage"));
 const SocialMediaPage = lazy(() => import("./pages/SocialMedia/SocialMediaPage"));
+const REPORTING_WORKSPACE_ROUTES = [
+  <Route key="ai-status" path="/configurations/ai-status" element={<AiStatusPage />} />,
+  <Route key="paid-search" path="/paid-search" element={<ProtectedRoute navigationCode="INITIATIVES"><PaidSearchPage /></ProtectedRoute>} />,
+  <Route key="connections" path="/connections" element={<ProtectedRoute navigationCode="INITIATIVES"><DataConnectionsPage /></ProtectedRoute>} />,
+  <Route key="hubspot" path="/hubspot-campaigns" element={<ProtectedRoute navigationCode="INITIATIVES"><HubSpotCampaignsPage /></ProtectedRoute>} />,
+];
 const Entities = lazy(() => import("./pages/Configurations/Entities"));
 const Users = lazy(() => import("./pages/Configurations/Users"));
 const Roles = lazy(() => import("./pages/Configurations/Roles"));
@@ -155,14 +163,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
-                path="/hubspot-campaigns"
-                element={
-                  <ProtectedRoute navigationCode="INITIATIVES">
-                    <HubSpotCampaignsPage />
-                  </ProtectedRoute>
-                }
-              />
+              {REPORTING_WORKSPACE_ROUTES}
               <Route
                 path="/socials"
                 element={
@@ -360,7 +361,6 @@ function App() {
               />
 
               {/* Catch-All / 404 Route */}
-                        <Route path="/configurations/ai-status" element={<AiStatusPage />} />
           <Route path="*" element={<NotFoundAlert />} />
             </Route>
           </Routes>
