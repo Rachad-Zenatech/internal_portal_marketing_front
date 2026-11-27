@@ -2,6 +2,8 @@
 // Centralized React Query keys for consistent invalidation and caching.
 
 export const queryKeys = {
+  googleReportingBrands: () => ["google-reporting-brands"] as const,
+  googleMarketingReport: (brand: string, start: string, end: string) => ["google-marketing-report", brand, start, end] as const,
   // Auth & RBAC
   users: () => ["users"] as const,
   user: (id: string) => ["users", id] as const,
