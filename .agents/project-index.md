@@ -83,11 +83,13 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/hooks/useDemos.ts (59 lines) - A demo changes the log, its summary (counts, cost per demo, customers), and the performance view's demo count
 - src/hooks/useEventManagement.ts (76 lines) - use event management (hooks)
 - src/hooks/useEventsOverview.ts (64 lines) - The Navan events for the period and filters; the previous data stays on screen while new filters load
+- src/hooks/useGoogleAdsCampaigns.ts (27 lines) - use google ads campaigns (hooks)
 - src/hooks/useGoogleReporting.ts (34 lines) - use google reporting (hooks)
 - src/hooks/useHeartbeat.ts (45 lines) - Track user activity
 - src/hooks/useHubSpot.ts (56 lines) - The synced HubSpot social posts
 - src/hooks/useImports.ts (46 lines) - Upload a cost sheet for a preview (the upload appears in the history straight away)
 - src/hooks/useInitiatives.ts (136 lines) - Keep the current rows on screen while a new filter combination loads
+- src/hooks/useLinkedInAds.ts (32 lines) - use linked in ads (hooks)
 - src/hooks/useNavan.ts (23 lines) - The Navan sync's status and the Navan events from its last run (for linking an event to one)
 - src/hooks/useNotifications.ts (147 lines) - use notifications (hooks)
 - src/hooks/usePerformance.ts (83 lines) - use performance (hooks)
@@ -123,7 +125,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/Budgets/expenseDisplay.ts (55 lines) - Labels and checks for cost lines on the Expenses and Reconciliation tabs
 - src/pages/Configurations/AiStatusPage.tsx (85 lines) - ai status page (pages  configurations)
 - src/pages/Configurations/Entities.tsx (1020 lines) - entities (pages  configurations)
-- src/pages/Configurations/OAuthCallbackPage.tsx (119 lines) - o auth callback page (pages  configurations)
+- src/pages/Configurations/OAuthCallbackPage.tsx (125 lines) - o auth callback page (pages  configurations)
 - src/pages/Configurations/OAuthIntegrations.tsx (1050 lines) - o auth integrations (pages  configurations)
 - src/pages/Configurations/RoleApiPermissions.tsx (411 lines) - We order actions so they appear logically: CREATE, READ (VIEW), UPDATE, DELETE
 - src/pages/Configurations/RoleGroupPermissions.tsx (488 lines) - role group permissions (pages  configurations)
@@ -224,13 +226,19 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/pages/PaidAds/adsDisplay.ts (212 lines) - Labels, colours and number formats for the Paid Ads page
 - src/pages/PaidAds/adsPeriods.ts (66 lines) - Period presets for the Paid Advertising page, and how campaigns sort into running / upcoming / finished
 - src/pages/PaidAds/overviewDisplay.ts (173 lines) - Labels, date ranges and wording for the Paid Advertising page (plain wording, no em dashes)
+- src/pages/PaidSearch/LinkedInAdsConnections.tsx (57 lines) - linked in ads connections (pages  paid search)
+- src/pages/PaidSearch/LinkedInConnectionList.tsx (40 lines) - linked in connection list (pages  paid search)
 - src/pages/PaidSearch/PaidSearchBoard.tsx (503 lines) - Wait this long after the last change before saving the board
-- src/pages/PaidSearch/PaidSearchPage.tsx (42 lines) - paid search page (pages  paid search)
+- src/pages/PaidSearch/PaidSearchPage.tsx (45 lines) - paid search page (pages  paid search)
 - src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - src/pages/PaidSearch/hubspotMatch.ts (187 lines) - Linking Paid Search board rows to HubSpot campaigns, so a HubSpot sync can fill their leads, MQLs and SQLs.
 - src/pages/PaidSearch/paidSearchFields.ts (330 lines) - Paid Search board: its columns, and reading a spreadsheet of them (headers must match exactly)
+- src/pages/PaidSearch/reports/GoogleAdsCampaignChart.tsx (26 lines) - google ads campaign chart (pages  paid search reports)
+- src/pages/PaidSearch/reports/GoogleAdsCampaignTable.tsx (34 lines) - google ads campaign table (pages  paid search reports)
+- src/pages/PaidSearch/reports/GoogleAdsCampaigns.tsx (33 lines) - google ads campaigns (pages  paid search reports)
 - src/pages/PaidSearch/reports/GoogleMarketingReports.tsx (44 lines) - google marketing reports (pages  paid search reports)
-- src/pages/PaidSearch/reports/GoogleReportCards.tsx (116 lines) - google report cards (pages  paid search reports)
+- src/pages/PaidSearch/reports/GoogleReportCards.tsx (118 lines) - google report cards (pages  paid search reports)
+- src/pages/PaidSearch/reports/googleAdsCampaignDisplay.ts (10 lines) - google ads campaign display (pages  paid search reports)
 - src/pages/SocialMedia/SocialMediaPage.tsx (797 lines) - social media page (pages  social media)
 - src/services/adSyncService.ts (26 lines) - Each ad platform with a sync: its name, its API path, and its settings' prefix (for set-up hints)
 - src/services/adsService.ts (80 lines) - ads service (services)
@@ -264,7 +272,7 @@ For function and route definitions with their line numbers, grep `.agents/code-m
 - src/types/eventManagement.ts (85 lines) - Event management — mirrors backend models/event_management_model.py
 - src/types/eventPerformance.ts (114 lines) - Events Overview: what events cost and what they brought in.
 - src/types/eventsOverview.ts (205 lines) - Events Overview: the Navan events with the HubSpot results matched to them (GET /api/events/navan-events)
-- src/types/googleReporting.ts (31 lines) - google reporting (types)
+- src/types/googleReporting.ts (46 lines) - google reporting (types)
 - src/types/hubspot.ts (130 lines) - HubSpot's own campaign status; null when it isn't set there
 - src/types/imports.ts (103 lines) - Spreadsheet uploads — mirrors backend models/import_model.py
 - src/types/initiatives.ts (245 lines) - Marketing initiatives — mirrors backend models/initiative_model.py

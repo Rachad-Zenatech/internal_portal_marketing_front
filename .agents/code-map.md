@@ -18,7 +18,7 @@ to find the right file.
 | .agents/code-map/src__components__imports.md | 6 | 2 KB |
 | .agents/code-map/src__components__native.md | 1 | 2 KB |
 | .agents/code-map/src__components__ui.md | 36 | 8 KB |
-| .agents/code-map/src__hooks.md | 17 | 8 KB |
+| .agents/code-map/src__hooks.md | 19 | 9 KB |
 | .agents/code-map/src__lib.md | 7 | 2 KB |
 | .agents/code-map/src__pages__Auth.md | 4 | 1 KB |
 | .agents/code-map/src__pages__Budgets.md | 16 | 11 KB |
@@ -32,8 +32,8 @@ to find the right file.
 | .agents/code-map/src__pages__Logs.md | 2 | 1 KB |
 | .agents/code-map/src__pages__MarketingDashboard.md | 2 | 1 KB |
 | .agents/code-map/src__pages__PaidAds.md | 14 | 12 KB |
-| .agents/code-map/src__pages__PaidSearch.md | 5 | 6 KB |
-| .agents/code-map/src__pages__PaidSearch__reports.md | 2 | 1 KB |
+| .agents/code-map/src__pages__PaidSearch.md | 7 | 6 KB |
+| .agents/code-map/src__pages__PaidSearch__reports.md | 6 | 2 KB |
 | .agents/code-map/src__pages__SocialMedia.md | 1 | 1 KB |
 | .agents/code-map/src__services.md | 21 | 10 KB |
 | .agents/code-map/src__types.md | 21 | 18 KB |

@@ -23,8 +23,8 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
     - `metrics` (fn) L279 - Summary Metrics
     - `table` (fn) L446
 
-## src/pages/Configurations/OAuthCallbackPage.tsx (119 lines) - o auth callback page (pages  configurations)
-- `OAuthCallbackPage` (export function) L8
+## src/pages/Configurations/OAuthCallbackPage.tsx (125 lines) - o auth callback page (pages  configurations)
+- `OAuthCallbackPage` (export function) L9
 
 ## src/pages/Configurations/OAuthIntegrations.tsx (1050 lines) - o auth integrations (pages  configurations)
 - `IntegrationCategory` (export type) L58

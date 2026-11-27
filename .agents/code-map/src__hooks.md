@@ -71,6 +71,10 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `useNavanTripOptions` (export function) L46 - The Navan trips that can still be joined to a HubSpot event
 - `useSetNavanTripLink` (export function) L55 - Join a Navan trip to a HubSpot event, or take it off, then reload the overview
 
+## src/hooks/useGoogleAdsCampaigns.ts (27 lines) - use google ads campaigns (hooks)
+- `CampaignSort` (export type) L4
+- `useGoogleAdsCampaigns` (export function) L7
+
 ## src/hooks/useGoogleReporting.ts (34 lines) - use google reporting (hooks)
 - `initialFilters` (function) L8
 - `useGoogleReporting` (export function) L13
@@ -102,6 +106,9 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
 - `useOwnerOptions` (export function) L109
 - `usePreviewEventBudgets` (export function) L119
 - `useApplyEventBudgets` (export function) L124 - Many events' budgets at once: refresh everything that shows an event's budget
+
+## src/hooks/useLinkedInAds.ts (32 lines) - use linked in ads (hooks)
+- `useLinkedInAds` (export function) L5
 
 ## src/hooks/useNavan.ts (23 lines) - The Navan sync's status and the Navan events from its last run (for linking an event to one)
 - `useNavanStatus` (export function) L6 - The Navan sync's status and the Navan events from its last run (for linking an event to one)

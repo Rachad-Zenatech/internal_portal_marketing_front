@@ -4,20 +4,36 @@
 
 Each symbol shows its start line (`L<n>`); read from there to the next symbol's line, not the whole file.
 
+## src/pages/PaidSearch/reports/GoogleAdsCampaignChart.tsx (26 lines) - google ads campaign chart (pages  paid search reports)
+- `GoogleAdsCampaignChart` (export function) L6
+
+## src/pages/PaidSearch/reports/GoogleAdsCampaignTable.tsx (34 lines) - google ads campaign table (pages  paid search reports)
+- `CampaignRow` (function) L4
+- `GoogleAdsCampaignTable` (export function) L17
+
+## src/pages/PaidSearch/reports/GoogleAdsCampaigns.tsx (33 lines) - google ads campaigns (pages  paid search reports)
+- `GoogleAdsCampaigns` (export function) L9
+
 ## src/pages/PaidSearch/reports/GoogleMarketingReports.tsx (44 lines) - google marketing reports (pages  paid search reports)
 - `ReportingState` (type) L7
 - `ReportControls` (function) L9
 - `ReportResults` (function) L24
 - `GoogleMarketingReports` (export function) L33
 
-## src/pages/PaidSearch/reports/GoogleReportCards.tsx (116 lines) - google report cards (pages  paid search reports)
-- `number` (const) L6
-- `ReportFrame` (function) L8
-- `Metric` (function) L24
-- `TrafficChart` (function) L28
-- `Ga4Card` (function) L44
-- `SearchCard` (function) L56
-- `AdsCard` (function) L70
-- `QueryRow` (function) L86
-- `SearchQueries` (function) L91
-- `GoogleReportCards` (export function) L107
+## src/pages/PaidSearch/reports/GoogleReportCards.tsx (118 lines) - google report cards (pages  paid search reports)
+- `number` (const) L7
+- `ReportFrame` (function) L9
+- `Metric` (function) L25
+- `TrafficChart` (function) L29
+- `Ga4Card` (function) L45
+- `SearchCard` (function) L57
+- `AdsCard` (function) L71
+- `QueryRow` (function) L87
+- `SearchQueries` (function) L92
+- `GoogleReportCards` (export function) L108
+
+## src/pages/PaidSearch/reports/googleAdsCampaignDisplay.ts (10 lines) - google ads campaign display (pages  paid search reports)
+- `campaignNumber` (export const) L1
+- `campaignMoney` (export function) L3
+- `campaignPercent` (export const) L8
+- `campaignLabel` (export const) L9

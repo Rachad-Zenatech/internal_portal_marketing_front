@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { appStorage } from '@/lib/storage';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { CheckCircle2, AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ export default function OAuthCallbackPage() {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [connectedDetails, setConnectedDetails] = useState<any>(null);
+  const exchangeStarted = useRef(false);
 
   useEffect(() => {
     const code = searchParams.get('code');
@@ -43,6 +45,8 @@ export default function OAuthCallbackPage() {
 
     const redirectUri = `${window.location.origin}/oauth/callback`;
 
+    if (exchangeStarted.current) return;
+    exchangeStarted.current = true;
     oauthService
       .handleCallback({
         provider,
@@ -51,12 +55,14 @@ export default function OAuthCallbackPage() {
         redirect_uri: redirectUri,
       })
       .then((res) => {
+        const returnToPaidSearch = provider === 'LINKEDIN_ADS' && appStorage.getItem('marketing.linkedinAds.state') === state;
+        if (provider === 'LINKEDIN_ADS') appStorage.removeItem('marketing.linkedinAds.state');
         setStatus('success');
         setConnectedDetails(res);
         setTimeout(() => {
           // Google Ads and Microsoft Ads: the integrations page then suggests syncing their campaigns and results
           const synced = provider === 'GOOGLE_ADS' || provider === 'MICROSOFT_ADS';
-          navigate(`/configurations/integrations?category=PAID_ADS${synced ? `&connected=${provider}` : ''}`);
+          navigate(returnToPaidSearch ? "/paid-search?view=linkedin" : `/configurations/integrations?category=PAID_ADS${synced ? `&connected=${provider}` : ''}`);
         }, 2200);
       })
       .catch((err) => {

@@ -4,6 +4,14 @@
 
 Each symbol shows its start line (`L<n>`); read from there to the next symbol's line, not the whole file.
 
+## src/pages/PaidSearch/LinkedInAdsConnections.tsx (57 lines) - linked in ads connections (pages  paid search)
+- `LinkedInAdsConnections` (export function) L11
+
+## src/pages/PaidSearch/LinkedInConnectionList.tsx (40 lines) - linked in connection list (pages  paid search)
+- `Props` (interface) L4
+- `ConnectionRow` (function) L11
+- `LinkedInConnectionList` (export function) L28
+
 ## src/pages/PaidSearch/PaidSearchBoard.tsx (503 lines) - Wait this long after the last change before saving the board
 - `takeLegacyEntries` (function) L24
 - `dropLegacyEntries` (function) L34
@@ -30,9 +38,9 @@ Each symbol shows its start line (`L<n>`); read from there to the next symbol's 
     - `removeRow` (fn) L343
     - `importEntries` (fn) L350
 
-## src/pages/PaidSearch/PaidSearchPage.tsx (42 lines) - paid search page (pages  paid search)
-- `WorkspaceLinks` (function) L10
-- `PaidSearchPage` (export function) L20
+## src/pages/PaidSearch/PaidSearchPage.tsx (45 lines) - paid search page (pages  paid search)
+- `WorkspaceLinks` (function) L11
+- `PaidSearchPage` (export function) L21
 
 ## src/pages/PaidSearch/PaidSearchUpload.tsx (296 lines) - The columns worth seeing in the preview; every column is still imported
 - `plural` (const) L12
